@@ -1,6 +1,10 @@
-import Mathlib
-import EllipticCurves.VariableChange
-import EllipticCurves.WeakMordellWeil
+module
+
+public import Mathlib
+public import EllipticCurves.VariableChange
+public import EllipticCurves.WeakMordellWeil
+
+@[expose] public section
 
 /-!
 # The Mordell-Weil Theorem
@@ -169,6 +173,18 @@ lemma finite_preimage_xRep0 (x : F) : {P : W.Point | P.xRep 0 = x}.Finite := by
 
 -- end #40303
 
+/-- `sym2x` in terms of the projective `xRep` coordinates. Mathlib provides only the
+per-constructor `@[simp]` lemmas and does not `@[expose]` `sym2x`, so this general unfolding is
+stated here (a Mathlib-upstreaming candidate). -/
+lemma Point.sym2x_eq (P Q : W.Point) :
+    P.sym2x Q = ![P.xRep 0 * Q.xRep 0, P.xRep 0 * Q.xRep 1 + P.xRep 1 * Q.xRep 0,
+      P.xRep 1 * Q.xRep 1] := by
+  match P, Q with
+  | 0, 0 => simp [Point.xRep_zero]
+  | 0, .some x y h => simp [Point.xRep_zero, Point.xRep_some]
+  | .some x y h, 0 => simp [Point.xRep_zero, Point.xRep_some]
+  | .some x y h, .some x' y' h' => simp [Point.xRep_some]
+
 private lemma Point.sym2x_P_P_eq_addSubMap (P : W.Point) :
     sym2x P P = fun i ↦ (addSubMap W i).eval <| P.sym2x 0 := by
   match P with
@@ -208,7 +224,7 @@ private lemma Point.sym2x_P_add_P_zero (P : W.Point) :
       simp
     · have H' := (den_duplication_eq_zero_iff h.1).not.mpr H
       refine ⟨_, H', ?_⟩
-      simp [sym2x, Point.xRep_add_self_of_Y_ne h H, mul_div_cancel₀ _ H']
+      simp [Point.sym2x_eq, Point.xRep_add_self_of_Y_ne h H, mul_div_cancel₀ _ H']
 
 /-- `sym2x (P + Q) (P - Q)` is equal, up to scaling by a nonzero constant, to `addSubMap W`
 applied to `sym2x P Q`. -/
@@ -237,7 +253,7 @@ lemma Point.sym2x_add_sub_eq_addSubMap_sym2x (P Q : W.Point) :
     -- The following relations are needed for the `grobner` calls below.
     have HeqP := (W.equation_iff xP yP).mp hP.1
     have HeqQ := (W.equation_iff xQ yQ).mp hQ.1
-    rw [Hrs, sym2x, Point.xRep_add_of_X_ne hP hQ hxPQ, Point.xRep_sub_of_X_ne hP hQ hxPQ,
+    rw [Hrs, Point.sym2x_eq, Point.xRep_add_of_X_ne hP hQ hxPQ, Point.xRep_sub_of_X_ne hP hQ hxPQ,
       b₂, b₄, b₆, b₈]
     ext i : 1
     fin_cases i <;> simp [field] <;> grobner
@@ -273,7 +289,7 @@ lemma abs_logHeight_sym2x_sub_le :
     ∃ C, ∀ P Q : W.Point, |logHeight (P.sym2x Q) - (P.naiveHeight + Q.naiveHeight)| ≤ C := by
   obtain ⟨C, hC⟩ := abs_logHeight_sym2_sub_le F
   refine ⟨C, fun P Q ↦ ?_⟩
-  rw [P.naiveHeight_eq_logHeight, Q.naiveHeight_eq_logHeight, Point.sym2x]
+  rw [P.naiveHeight_eq_logHeight, Q.naiveHeight_eq_logHeight, Point.sym2x_eq]
   have H₁ := logHeight_fun_mul_eq P.xRep_ne_zero Q.xRep_ne_zero
   have H (v : Fin 2 → F) : ![v 0, v 1] = v := by ext i : 1; fin_cases i <;> simp
   have h₀ (P : W.Point) : ![P.xRep 0, P.xRep 1] ≠ 0 := H P.xRep ▸ P.xRep_ne_zero
@@ -411,3 +427,5 @@ theorem fg_point_of_numberField : AddGroup.FG W.Point := by
 end NumberField
 
 end WeierstrassCurve.Affine
+
+end

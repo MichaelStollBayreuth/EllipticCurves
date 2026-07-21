@@ -1,10 +1,14 @@
-import Mathlib
-import EllipticCurves.Mathlib.Basic
-import EllipticCurves.Mathlib.AdicCompletionExtension
-import EllipticCurves.Mathlib.FormalGroup
-import EllipticCurves.WeierstrassFormalGroup.Filtration
-import EllipticCurves.Mathlib.RealEtale
-import EllipticCurves.WeakMordellWeil
+module
+
+public import Mathlib
+public import EllipticCurves.Mathlib.Basic
+public import EllipticCurves.Mathlib.AdicCompletionExtension
+public import EllipticCurves.Mathlib.FormalGroup
+public import EllipticCurves.WeierstrassFormalGroup.Filtration
+public import EllipticCurves.Mathlib.RealEtale
+public import EllipticCurves.WeakMordellWeil
+
+@[expose] public section
 
 /-!
 # The 2-Selmer group of an elliptic curve
@@ -1463,3 +1467,5 @@ theorem finite_selmerGroup₂
 end NumberField
 
 end WeierstrassCurve.Affine
+
+end

@@ -1,6 +1,10 @@
-import EllipticCurves.Mathlib.Basic
-import EllipticCurves.Mathlib.SelmerGroup
-import Mathlib
+module
+
+public import EllipticCurves.Mathlib.Basic
+public import EllipticCurves.Mathlib.SelmerGroup
+public import Mathlib
+
+@[expose] public section
 
 /-!
 # The Weak Mordell-Weil Theorem
@@ -1621,3 +1625,5 @@ end Step7
 end Selmer
 
 end WeierstrassCurve.Affine
+
+end

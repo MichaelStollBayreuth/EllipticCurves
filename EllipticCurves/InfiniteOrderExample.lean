@@ -1,4 +1,8 @@
-import Mathlib
+module
+
+public import Mathlib
+
+@[expose] public section
 
 /-!
 # Example: `(1, 1)` on `y² = x³ - x + 1` has infinite order
@@ -41,7 +45,7 @@ def E3 : WeierstrassCurve (ZMod 3) := ⟨0, 0, 0, -1, 1⟩
 
 instance : E3.IsElliptic := by rw [WeierstrassCurve.isElliptic_iff]; decide
 
-private theorem ns3 {x y : ZMod 3} (h : y ^ 2 + x = x ^ 3 + 1) : E3.toAffine.Nonsingular x y := by
+theorem ns3 {x y : ZMod 3} (h : y ^ 2 + x = x ^ 3 + 1) : E3.toAffine.Nonsingular x y := by
   rw [← E3.toAffine.equation_iff_nonsingular, Affine.equation_iff]
   simp only [E3]; ring_nf; ring_nf at h; linear_combination h
 
@@ -77,7 +81,7 @@ def E5 : WeierstrassCurve (ZMod 5) := ⟨0, 0, 0, -1, 1⟩
 
 instance : E5.IsElliptic := by rw [WeierstrassCurve.isElliptic_iff]; decide
 
-private theorem ns5 {x y : ZMod 5} (h : y ^ 2 + x = x ^ 3 + 1) : E5.toAffine.Nonsingular x y := by
+theorem ns5 {x y : ZMod 5} (h : y ^ 2 + x = x ^ 3 + 1) : E5.toAffine.Nonsingular x y := by
   rw [← E5.toAffine.equation_iff_nonsingular, Affine.equation_iff]
   simp only [E5]; ring_nf; ring_nf at h; linear_combination h
 
@@ -112,3 +116,5 @@ theorem nsmul_eight_eq_zero_mod_five : (8 : ℕ) • P5 = 0 := by
 theorem coprime_seven_eight : Nat.Coprime 7 8 := by decide
 
 end InfiniteOrderExample
+
+end

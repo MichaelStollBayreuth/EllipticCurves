@@ -1,5 +1,9 @@
-import Mathlib
-import EllipticCurves.Mathlib.Basic
+module
+
+public import Mathlib
+public import EllipticCurves.Mathlib.Basic
+
+@[expose] public section
 
 /-!
 # Real étale algebras: the sign decomposition of `ℝ[X]/f`
@@ -662,3 +666,5 @@ lemma exists_eq_one_of_prod_eq_one_of_odd {ι : Type*} [Fintype ι]
   obtain ⟨k, hk⟩ := hodd
   obtain ⟨m, hm⟩ := (CharP.cast_eq_zero_iff (ZMod 2) 2 _).mp hc
   omega
+
+end

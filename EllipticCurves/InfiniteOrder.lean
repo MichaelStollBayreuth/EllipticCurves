@@ -1,6 +1,10 @@
-import Mathlib
-import EllipticCurves.WeierstrassFormalGroup.Reduction
-import EllipticCurves.SelmerGroup
+module
+
+public import Mathlib
+public import EllipticCurves.WeierstrassFormalGroup.Reduction
+public import EllipticCurves.SelmerGroup
+
+@[expose] public section
 
 /-!
 # An infinite-order certificate via reduction at two primes
@@ -105,3 +109,5 @@ theorem not_isOfFinAddOrder_of_coprime_red {v w : HeightOneSpectrum R}
     (nsmul_eq_zero_of_red_pointMap_nsmul_eq_zero E hWw hq hqmem hqram hfin hw)
 
 end WeierstrassCurve.Affine
+
+end
