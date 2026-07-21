@@ -1,5 +1,7 @@
 ## macOS
 .DS_Store
+## Local scratch/backup files
+README.md.save
 ## Lake
 .lake/*
 .cache/*
