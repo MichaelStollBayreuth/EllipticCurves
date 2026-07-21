@@ -1,212 +1,177 @@
-# Lean 4 Project Template
+# Elliptic Curves
 
-[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-lightblue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Zulip : Topic](https://img.shields.io/badge/Zulip-Topic-%237E57C2.svg?logo=zulip&logoColor=white)](https://leanprover.zulipchat.com/#narrow/channel/113488-general/topic/Tutorial.3A.20Getting.20Started.20with.20Blueprint-Driven.20Projects)
-[![YouTube : Tutorial](https://img.shields.io/badge/YouTube-Tutorial-%23FF0000.svg?logo=youtube&logoColor=white)](https://youtu.be/KyuyTsLgkMY)
+This project formalizes some of the arithmetic of elliptic curves over number fields (and, more
+generally, over fraction fields of Dedekind domains) in Lean 4. Its centerpieces are a complete
+proof of the **Mordell-Weil Theorem** and the machinery of **explicit 2-descent**: the 2-Selmer
+group, the formal group of an elliptic curve over a local field, and the local computations that
+feed a rank bound. The development is `sorry`-free.
 
-This repository contains a template for blueprint-driven formalization projects in Lean 4.
+It grew out of the [Heights](https://github.com/MichaelStollBayreuth/Heights) project and was split
+off from it once it became independent of the heights implementation there: the general theory of
+height functions (admissible absolute values, the Northcott property, heights on projective space,
+heights under polynomial maps) has meanwhile been upstreamed to Mathlib
+(`Mathlib.NumberTheory.Height`), and this repository builds on it.
 
-## Install Lean 4
+Everything under [`EllipticCurves/Mathlib/`](EllipticCurves/Mathlib) is general-purpose support
+that has nothing intrinsically to do with the elliptic-curve application and is intended for
+eventual upstreaming to Mathlib; the elliptic-curve-specific development lives directly under
+[`EllipticCurves/`](EllipticCurves).
 
-Ensure that you have a functioning Lean 4 installation. If you do not, please follow
-the [Lean installation guide](https://leanprover-community.github.io/get_started.html).
+## The Mordell-Weil Theorem
 
-## Use this Template
+The group `E(K)` of `K`-rational points of an elliptic curve `E` over a number field `K` is
+finitely generated. The end result is `WeierstrassCurve.Affine.fg_point_of_numberField` in
+[`MordellWeil.lean`](EllipticCurves/MordellWeil.lean), for arbitrary Weierstrass models. It is
+deduced from the more general `fg_point`, which works for `E` given by a Weierstrass equation
+`y² = x³ + a₂·x² + a₄·x + a₆` (so with `a₁ = a₃ = 0`) over the fraction field `K` of a Dedekind
+domain `R` such that `K` has admissible absolute values satisfying the Northcott property and such
+that for each irreducible factor `p` of the cubic, the integral closure of `R` in `K[X]/(p)` has
+finite class group and finitely generated unit group. (These per-factor hypotheses cannot be
+replaced by the corresponding hypotheses on `R` itself; see the docstring of `fg_point`.) The
+reduction to this normal form (`fg_point_of_variableChange`) completes the square via an admissible
+change of variables, which is possible whenever `2` is invertible in `K`, and uses the induced
+isomorphism of the groups of points from
+[`Mathlib/VariableChange.lean`](EllipticCurves/Mathlib/VariableChange.lean).
 
-To create a new repository using this template, ensure you are on the correct repository page
-([LeanProject](https://github.com/leanprover-community/LeanProject)) and then follow these steps:
+The proof follows the classical route:
 
-1. Click the **Use this template** button located at the top right of the repository page.
-2. Click the **Create a new repository** button.
-3. Select the account or organization where you want to create it, choose a name for the new
-repository, and click the **Create repository** button.
+* The **descent** step is Mathlib's `AddCommGroup.fg_of_descent'` (an abelian group carrying a
+  suitable height function with `G/2G` finite is finitely generated), originally developed in the
+  Heights project and since upstreamed.
+* The **height function**: [`MordellWeil.lean`](EllipticCurves/MordellWeil.lean) shows that the
+  naïve height `h(P) = logHeight (x(P))` on `E(K)` satisfies the *approximate parallelogram law*
+  `|h(P+Q) + h(P−Q) − 2·h(P) − 2·h(Q)| ≤ C` (`approx_parallelogram_law`), using Mathlib's bounds
+  on heights of images under tuples of homogeneous polynomials, and that sets of points of bounded
+  height are finite when `K` has the Northcott property (`finite_naiveHeight_le`). This also yields
+  the finiteness of the torsion subgroup of `E(K)` (`finite_torsion`).
+* The **Weak Mordell-Weil Theorem** (below) supplies the finiteness of `E(K)/2E(K)`.
 
-## Clone this Repository
+## Explicit 2-descent and the 2-Selmer group
 
-To clone this repository to your local machine, please refer to the relevant section of the
-GitHub documentation [here](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository).
+* The **Weak Mordell-Weil Theorem**: `E(K)/2E(K)` is finite. This is
+  `finite_index_range_nsmulAddMonoidHom_two` in
+  [`WeakMordellWeil.lean`](EllipticCurves/WeakMordellWeil.lean), proved over fraction fields of
+  Dedekind domains (with the finiteness hypotheses above) via the `x − T` descent map: `E(K)/2E(K)`
+  embeds into the group `Aˣ/(Aˣ)²` of square classes of the étale algebra `A = K[X]/(f)` for the
+  cubic `f` with `y² = f(x)`, with image contained in the 2-Selmer group `A(S, 2)` for the finite
+  set `S` of bad primes, and the latter group is finite
+  (`IsDedekindDomain.finite_selmerGroup`). The image also lies in the kernel of the norm map, which
+  is not needed for finiteness but cuts the group down in explicit computations
+  (`AdjoinRoot.norm_mk_eq_resultant`).
 
-## Customize this Template
+* The **2-Selmer group** of an elliptic curve is set up in
+  [`SelmerGroup.lean`](EllipticCurves/SelmerGroup.lean): the local conditions
+  `W.localCondition L ≤ Units.modPow W.A 2` at the completions of `K`, the Selmer group
+  `W.selmerGroup₂` as a subgroup of the square classes of the étale algebra cut out by them, and:
+  * `range_μ_le_selmerGroup₂` together with `ker μ = 2E(K)` bounds `E(K)/2E(K)` by the Selmer group;
+  * `card_range_μ` gives `#(im μ) = 2^(rank E(K)) · #E(K)[2]`, whence the rank bound
+    `pow_rank_le_card_of_range_μ_le`;
+  * `selmerGroup₂_eq_badPrimes` (over a number field) reduces membership to the *finitely many*
+    local conditions at the bad and infinite places, inside the finite group `A(S,2) ⊓ ker N`, so
+    the Selmer group is finite (`finite_selmerGroup₂`);
+  * the local image sizes `#E(K_v)[2] · ‖2‖_v⁻¹` are computed at every place
+    (`card_range_μ_adicCompletion`, `card_range_μ_completion_isReal`,
+    `card_range_μ_completion_isComplex`) — the real case by the sign analysis over `ℝ` of
+    [`Mathlib/RealEtale.lean`](EllipticCurves/Mathlib/RealEtale.lean).
 
-To tailor this template to your specific project, follow these steps:
+  The whole reduction is fully proved; it rests on the formal-group results described next.
 
-1. If you don't have a Python environment, you can install one by following the instructions in the
-[Python installation guide](https://www.python.org/downloads/).
-1. Verify your Python installation by running:
-    ```bash
-    python3 --version
-    ```
-1. Verify your Pip installation by running:
-    ```bash
-    pip3 --version
-    ```
-1. Ensure your terminal is in the project directory by running the following command:
-    ```bash
-    cd path/to/your/project
-    ```
-1.	Execute the customization script by running:
-    ```bash
-    scripts/customize_template.py NewProject
-    ```
-    where `NewProject` must be replaced by the name of your project.
+The goal towards which this machinery is aimed is a formal proof that the Mordell-Weil group of
+`y² = x³ − x + 1` over `ℚ` is isomorphic to `ℤ`, as a show-piece for formalized explicit 2-descent.
 
-The script [`customize_template.py`](scripts/customize_template.py) will automatically rename the
-project folder and update the necessary files and configurations to match the new project name.
+## Formal groups over local fields
 
-## Configure GitHub Pages
+The local input to the 2-descent — the structure of `E(K_v)` and the size of the group of
+everywhere-unramified square classes — comes from the theory of formal groups, developed here in
+full (in the Heights project these statements were `sorry`ed).
 
-To set up GitHub Pages for your repository, follow these steps:
+* [`Mathlib/WeierstrassFormalGroup/`](EllipticCurves/Mathlib/WeierstrassFormalGroup) (seven files)
+  builds the formal group of a Weierstrass curve and its consequences: the fixed-point series
+  `w(t)` and the chord data ([`Chord.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/Chord.lean),
+  [`ThirdPoint.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/ThirdPoint.lean)), the formal
+  group law `WeierstrassCurve.formalGroupLaw`
+  ([`GroupLaw.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/GroupLaw.lean)), the valuation
+  estimates for an integral model
+  ([`Foundations.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/Foundations.lean),
+  [`Eval.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/Eval.lean)), the formal point, the
+  filtration `E_{n+1}(K_v)` and the structure theorem — `E(K_v)` has a finite-index subgroup
+  isomorphic to `(𝒪_v, +)`, and `E₁(K_v)` is torsion-free under the standard ramification condition
+  ([`Filtration.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/Filtration.lean)) — and the
+  point-level reduction homomorphism `redHom : E(K_v) → Ẽ(k_v)`, injective on torsion and
+  order-preserving there
+  ([`Reduction.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/Reduction.lean)).
+* [`Mathlib/AdicFormalGroupLog.lean`](EllipticCurves/Mathlib/AdicFormalGroupLog.lean): the
+  `π^e`-scaled formal logarithm over `𝒪_v`, which has integral coefficients and an integral
+  compositional inverse, giving the isomorphism of a deep filtration step with `(𝒪_v, +)`.
+* [`Mathlib/Chabauty/`](EllipticCurves/Mathlib/Chabauty): a general multivariate formal-group-law
+  kit (vendored from the author's Chabauty–Coleman formalization) — `ChabautyColeman.FormalGroupLaw`
+  and its `𝔪`-points, the formal logarithm/exponential and their `p`-adic estimates, and the
+  logarithm isomorphism, over the multivariate power-series evaluation layer of `MvPSeries.lean`.
+* [`Mathlib/FormalGroup.lean`](EllipticCurves/Mathlib/FormalGroup.lean) packages the two structural
+  consequences the descent needs: the finite-index-subgroup statement above, and its multiplicative
+  (`𝔾ₘ`) analogue `card_selmerGroup_integralClosure` — for odd residue characteristic, the group of
+  everywhere-unramified square classes of a finite separable extension of `K_v` has order `2`
+  (proved via Henselianity of `𝒪_v`, using
+  [`Mathlib/Henselian.lean`](EllipticCurves/Mathlib/Henselian.lean)).
 
-1. Go to the **Settings** tab of your repository.
-2. In the left sidebar, click on the **Pages** section.
-3. In the **Source** dropdown, select `GitHub Actions`.
+## An infinite-order certificate
 
-The workflow [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) builds the Jekyll site in
-[`website`](website), runs the
-[`upstreaming-dashboard-action`](https://github.com/leanprover-community/upstreaming-dashboard-action),
-and deploys the result to GitHub Pages.
+[`InfiniteOrder.lean`](EllipticCurves/InfiniteOrder.lean) turns the reduction map into a certificate
+for a point of `E(K)` to have **infinite order**: since base change `E(K) → E(K_v)` is injective
+(`pointMap_injective`) and reduction is injective on torsion, a nonzero point whose reductions at
+two good primes are torsion of *coprime* orders cannot itself be torsion
+(`not_isOfFinAddOrder_of_coprime_red`, with the single-prime bridge
+`nsmul_eq_zero_of_red_pointMap_nsmul_eq_zero`).
 
-## Repository Layout
+[`InfiniteOrderExample.lean`](EllipticCurves/InfiniteOrderExample.lean) instantiates the input for
+`P = (1, 1)` on `y² = x³ − x + 1`: modulo `3` the reduced point is killed by `7` (`#E(𝔽₃) = 7`) and
+modulo `5` by `8` (`#E(𝔽₅) = 8`), and `gcd(7, 8) = 1`. Because Mathlib's point addition is
+noncomputable, these torsion facts (`nsmul_seven_eq_zero_mod_three`, `nsmul_eight_eq_zero_mod_five`)
+are computed by hand from the explicit group-law formulas rather than by `decide`. Assembling the
+full statement that `(1, 1) ∈ E(ℚ)` has infinite order — which additionally needs the abstract
+residue field of `𝒪_v` identified with `ZMod p` and the `p`-adic integral model — is left as future
+work.
 
-The template repository is organized as follows (listing the main folders and files):
+## Supporting theory intended for Mathlib
 
-- [`.github`](.github) contains GitHub-specific configuration files and workflows.
-    - [`workflows`](.github/workflows) contains GitHub Actions workflow files.
-        - [`build-project.yml`](.github/workflows/build-project.yml) defines the workflow for building
-        the Lean project on pushes, pull requests, and manual triggers. This is a minimalistic build
-        workflow which is not necessary if you decide to generate a blueprint (see instructions below)
-        and can be manually disabled by clicking on the **Actions** tab, selecting **Build Project**
-        in the left sidebar, then clicking the horizontal triple dots (⋯) on the right,
-        and choosing **Disable workflow**.
-        - [`deploy-pages.yml`](.github/workflows/deploy-pages.yml) defines the workflow for building
-        and deploying the GitHub Pages site, including generation of the upstreaming dashboard.
-        - [`create-release.yml`](.github/workflows/create-release.yml): defines the workflow for creating a new Git tag and GitHub release when the `lean-toolchain` file is updated in the `main` branch. Ensure the following settings are configured under **Settings > Actions > General > Workflow permissions**: "Read and write permissions" and "Allow GitHub Actions to create and approve pull requests".
-        - [`update.yml`](.github/workflows/update.yml) is the dependency
-        update workflow to be triggered manually by default. [It's not documented yet, but it will be soon.]
-    - [`dependabot.yml`](.github/dependabot.yml) is the configuration file to automate CI dependency updates.
-- [`.vscode`](.vscode) contains Visual Studio Code configuration files
-    - [`extensions.json`](.vscode/extensions.json) recommends VS Code extensions for the project.
-    - [`settings.json`](.vscode/settings.json) defines the project-specific settings for VS Code.
-- [`Project`](Project) should contain the Lean code files.
-    - [`Mathlib`](Project/Mathlib) should contain `.lean` files with declarations missing from the
-    current version of Mathlib.
-    - [`Example.lean`](Project/Example.lean) is a sample Lean file.
-- [`scripts`](scripts) contains scripts to update Mathlib ensuring that the latest version is
-fetched and integrated into the development environment.
-- [`website`](website) contains the Jekyll files for the GitHub Pages homepage that displays the
-upstreaming dashboard.
-- [`.gitignore`](.gitignore) specifies files and folders to be ignored by Git.
-and environment.
-- [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md) should contain the code of conduct for the project.
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) should provide the guidelines for contributing to the
-project.
-- [`lakefile.toml`](lakefile.toml) is the configuration file for the Lake build system used in
-Lean projects.
-- [`lean-toolchain`](lean-toolchain) specifies the Lean version and toolchain used for the project.
+Beyond the formal-group files above, [`EllipticCurves/Mathlib/`](EllipticCurves/Mathlib) contains:
 
-## Blueprint
+* [`FractionalIdeal.lean`](EllipticCurves/Mathlib/FractionalIdeal.lean): the group of invertible
+  fractional ideals of a Dedekind domain is free abelian on the height one primes
+  (`FractionalIdeal.factorization`); `n`-th roots of `n`-divisible fractional ideals
+  (`exists_pow_eq`).
+* [`SIntegers.lean`](EllipticCurves/Mathlib/SIntegers.lean): the ring `𝒪_S` of `S`-integers of `K`
+  is a Dedekind domain with fraction field `K`; its height one primes are exactly the `v ∉ S`; and
+  its class group is `Cl(R)` modulo the classes of the primes in `S`. (`𝒪_S` is in general *not* a
+  localization of `R`; see the file for a warning.)
+* [`SelmerGroup.lean`](EllipticCurves/Mathlib/SelmerGroup.lean): the fundamental exact sequence
+  `1 → 𝒪_S^× / (𝒪_S^×)ⁿ → K(S, n) → Cl_S(R)[n] → 1` for the Selmer group `K(S, n)`, whence `K(S, n)`
+  is finite when `S` is finite, `Cl(R)` is finite and `R^×` is finitely generated
+  (`finite_selmerGroup`; a `TODO` in Mathlib), together with the version for étale algebras. On the
+  way, Dirichlet's `S`-unit theorem (`𝒪_S^×` finitely generated, of rank `rank R^× + #S`).
+* [`Basic.lean`](EllipticCurves/Mathlib/Basic.lean): general-purpose ingredients, e.g. the group
+  `Units.modPow A n` of units modulo `n`-th powers, the decomposition of an étale algebra
+  `K[X]/(f)` (for `f` squarefree) into a product of field factors, norms on `AdjoinRoot` via
+  resultants (`AdjoinRoot.norm_mk_eq_resultant`), and the primes of an extension lying above a set
+  of primes.
+* [`VariableChange.lean`](EllipticCurves/Mathlib/VariableChange.lean): the computable group
+  isomorphism `(C • W).Point ≃+ W.Point` induced by an admissible change of variables `C` (shared
+  with the FLT project), which transfers Mordell-Weil from the normal form `y² = cubic` to arbitrary
+  models.
+* [`AdicCompletionExtension.lean`](EllipticCurves/Mathlib/AdicCompletionExtension.lean): the
+  extension `K_v →+* L_w` of adic completions along an extension of Dedekind domains with `w ∣ v`,
+  its compatibility with the valuations (up to ramification) and rings of integers (adapted from the
+  FLT project), and the Henselianity of the complete DVR `𝒪_v`.
+* [`RealEtale.lean`](EllipticCurves/Mathlib/RealEtale.lean): the sign decomposition of `ℝ[X]/f` and
+  the square classes of its units as sign patterns at the real roots (used at the real places, and
+  intended to generalize to hyperelliptic descent maps).
+* [`Henselian.lean`](EllipticCurves/Mathlib/Henselian.lean): finite algebras over a Henselian local
+  ring are products of local rings, and finite local ones are again Henselian (vendored from the FLT
+  project).
 
-### 0. Selected Collaborative Projects
+## Layout
 
-- [Fermat's Last Theorem for Exponent 3](https://pitmonticone.github.io/FLT3/) by Riccardo Brasca et al.
-- [Polynomial Freiman-Ruzsa Conjecture](https://github.com/teorth/pfr) by Terence Tao et al.
-- [Fermat's Last Theorem](https://imperialcollegelondon.github.io/FLT/) by Kevin Buzzard et al.
-- [Carleson Operators on Doubling Metric Measure Spaces](http://florisvandoorn.com/carleson/) by Floris van Doorn et al.
-- [Bonn Collaborative Formalization Seminar Series in Analysis](https://github.com/fpvandoorn/BonnAnalysis) by Floris van Doorn et al.
-- [Prime Number Theorem and More](https://github.com/AlexKontorovich/PrimeNumberTheoremAnd) by Alex Kontorovich et al.
-- [Infinity Cosmos](https://github.com/emilyriehl/infinity-cosmos) by Emily Riehl et al.
-- [Analytic Number Theory Exponent Database](https://github.com/teorth/expdb) by Terence Tao et al.
-- [Groupoid Model of Homotopy Type Theory](https://github.com/sinhp/GroupoidModelofHoTTinLean4) by Sina Hazratpour et al.
-- [Equational Theories](https://github.com/teorth/equational_theories) by Terence Tao et al.
-- [Sphere Packing in 8 Dimensions](https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean) by Maryna Viazovska et al.
-
-For more examples of completed and ongoing Lean projects and libraries, please
-see the [Lean Reservoir](https://reservoir.lean-lang.org).
-
-### 1. Install Dependencies
-
-To install the necessary dependencies, follow the instructions in the
-[PyGraphViz installation guide](https://pygraphviz.github.io/documentation/stable/install.html).
-
-### 2. Install LeanBlueprint Package
-
-Assuming you have a properly configured Python environment, install LeanBlueprint by running:
-
-```bash
-pip install leanblueprint
-```
-
-If you have an existing installation of LeanBlueprint, you can upgrade to the latest version by
-running:
-
-```bash
-pip install -U leanblueprint
-```
-
-### 3. Configure Blueprint
-
-To set up the blueprint for your project, run:
-
-```bash
-leanblueprint new
-```
-
-Then, follow the prompts and answer the questions as you like, except for a few specific
-questions which should be answered as indicated below to ensure compatibility with this template.
-
-Respond affirmatively with `y` to the following prompt:
-
-```console
-Proceed with blueprint creation? [y/n]
-```
-
-Respond affirmatively with `y` to the following prompt:
-
-```console
-Modify lakefile and lake-manifest to allow checking declarations exist? [y/n] (y)
-```
-
-Respond negatively with `n` to the following prompt:
-
-```console
-Modify lakefile and lake-manifest to allow building the documentation? [y/n] (y):
-```
-
-If you want to generate a Jekyll-based home page for the project, respond
-affirmatively with `y` to the following prompt:
-
-```console
-Do you want to create a home page for the project, with links to the blueprint, the API documentation and the repository? [y/n]:
-```
-
-Respond affirmatively with `y` to the following prompt:
-
-```console
-Configure continuous integration to compile blueprint? [y/n] (y):
-```
-
-For more details about the LeanBlueprint package and its commands, please refer to its
-[documentation](https://github.com/PatrickMassot/leanblueprint/tree/master#starting-a-blueprint).
-
-After configuring the blueprint, please wait for the GitHub Action workflow to finish.
-You can keep track of the progress in the **Actions** tab of your repository.
-
-## Selected Projects Using this Template
-
-If you have used this template to create your own Lean project and would like to share it with the community, please consider opening a [PR](https://github.com/leanprover-community/LeanProject/pulls) to add your project to this list:
-
-- [Infinity Cosmos](https://github.com/emilyriehl/infinity-cosmos) by Emily Riehl et al.
-- [Analytic Number Theory Exponent Database](https://github.com/teorth/expdb) by Terence Tao et al.
-- [Equational Theories](https://github.com/teorth/equational_theories) by Terence Tao et al.
-- [Groupoid Model of Homotopy Type Theory](https://github.com/sinhp/GroupoidModelofHoTTinLean4) by Sina Hazratpour et al.
-- [Soundness of FRI](https://github.com/BoltonBailey/FRISoundness) by Bolton Bailey et al.
-- [Weil's Converse Theorem](https://github.com/CBirkbeck/WeilConverse) by Chris Birkbeck et al.
-- [Proofs from THE BOOK](https://github.com/mo271/FormalBook) by Moritz Firsching et al.
-- [Automata Theory](https://github.com/shetzl/autth) by Stefan Hetzl et al.
-- [Dirichlet Nonvanishing](https://github.com/CBirkbeck/DirichletNonvanishing) by Chris Birkbeck et al.
-- [Seymour's Decomposition Theorem](https://github.com/Ivan-Sergeyev/seymour) by Ivan Sergeyev et al.
-- [Spectral Theorem](https://github.com/oliver-butterley/SpectralThm) by Oliver Butterley and Yoh Tanimoto.
-- [NeuralNetworks](https://github.com/or4nge19/NeuralNetworks) by Matteo Cipollina.
-- [ABC Exceptions](https://github.com/b-mehta/ABC-Exceptions) by Bhavik Mehta et al.
-- [Sphere Packing in 8 Dimensions](https://github.com/thefundamentaltheor3m/Sphere-Packing-Lean) by Maryna Viazovska et al.
-- [LeanBridge](https://github.com/CBirkbeck/LeanBridge) by Chris Birkbeck et al.
+The Lean source lives under [`EllipticCurves/`](EllipticCurves); the root module
+[`EllipticCurves.lean`](EllipticCurves.lean) imports the five elliptic-curve files. The project is
+built against a pinned version of Mathlib (see [`lakefile.toml`](lakefile.toml) and
+[`lean-toolchain`](lean-toolchain)); run `lake exe cache get` before `lake build`.
