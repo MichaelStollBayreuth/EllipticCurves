@@ -1,6 +1,8 @@
 module
 
 public import EllipticCurves.WeierstrassFormalGroup.Foundations
+public import EllipticCurves.IntegralModel
+public import EllipticCurves.VariableChange
 import all EllipticCurves.WeierstrassFormalGroup.Foundations
 
 @[expose] public section

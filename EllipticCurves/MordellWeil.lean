@@ -1,5 +1,5 @@
 import Mathlib
-import EllipticCurves.Mathlib.VariableChange
+import EllipticCurves.VariableChange
 import EllipticCurves.WeakMordellWeil
 
 /-!
@@ -15,7 +15,7 @@ three versions:
   finiteness statements are taken as hypotheses;
 * `fg_point_of_variableChange`: for an arbitrary `E` over such a `K` with `2` invertible,
   by completing the square and transferring along the isomorphism of point groups from
-  `EllipticCurves.Mathlib.VariableChange`;
+  `EllipticCurves.VariableChange`;
 * `fg_point_of_numberField`: for an arbitrary `E` over a number field, where all hypotheses
   are theorems.
 

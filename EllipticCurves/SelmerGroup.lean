@@ -1,6 +1,7 @@
 import Mathlib
 import EllipticCurves.Mathlib.Basic
 import EllipticCurves.Mathlib.AdicCompletionExtension
+import EllipticCurves.Mathlib.FormalGroup
 import EllipticCurves.WeierstrassFormalGroup.Filtration
 import EllipticCurves.Mathlib.RealEtale
 import EllipticCurves.WeakMordellWeil

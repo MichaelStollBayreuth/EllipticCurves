@@ -2,7 +2,6 @@ module
 
 public import Mathlib
 public import EllipticCurves.Mathlib.Chabauty.FormalGroupLaw
-public import EllipticCurves.Mathlib.FormalGroup
 public import EllipticCurves.Mathlib.AdicFormalGroupLog
 
 /-!

@@ -1,5 +1,6 @@
 import EllipticCurves.InfiniteOrder
 import EllipticCurves.InfiniteOrderExample
+import EllipticCurves.IntegralModel
 import EllipticCurves.Mathlib.AdicCompletionExtension
 import EllipticCurves.Mathlib.AdicFormalGroupLog
 import EllipticCurves.Mathlib.Basic
@@ -24,9 +25,9 @@ import EllipticCurves.Mathlib.Henselian
 import EllipticCurves.Mathlib.RealEtale
 import EllipticCurves.Mathlib.SIntegers
 import EllipticCurves.Mathlib.SelmerGroup
-import EllipticCurves.Mathlib.VariableChange
 import EllipticCurves.MordellWeil
 import EllipticCurves.SelmerGroup
+import EllipticCurves.VariableChange
 import EllipticCurves.WeakMordellWeil
 import EllipticCurves.WeierstrassFormalGroup.Chord
 import EllipticCurves.WeierstrassFormalGroup.Eval

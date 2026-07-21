@@ -30,8 +30,8 @@ finite class group and finitely generated unit group. (These per-factor hypothes
 replaced by the corresponding hypotheses on `R` itself; see the docstring of `fg_point`.) The
 reduction to this normal form (`fg_point_of_variableChange`) completes the square via an admissible
 change of variables, which is possible whenever `2` is invertible in `K`, and uses the induced
-isomorphism of the groups of points from
-[`Mathlib/VariableChange.lean`](EllipticCurves/Mathlib/VariableChange.lean).
+computable isomorphism of point groups `(C • W).Point ≃+ W.Point` from
+[`VariableChange.lean`](EllipticCurves/VariableChange.lean) (shared with the FLT project).
 
 The proof follows the classical route:
 
@@ -107,11 +107,13 @@ full (in the Heights project these statements were `sorry`ed).
   kit (vendored from the author's Chabauty–Coleman formalization) — `ChabautyColeman.FormalGroupLaw`
   and its `𝔪`-points, the formal logarithm/exponential and their `p`-adic estimates, and the
   logarithm isomorphism, over the multivariate power-series evaluation layer of `MvPSeries.lean`.
-* [`Mathlib/FormalGroup.lean`](EllipticCurves/Mathlib/FormalGroup.lean) packages the two structural
-  consequences the descent needs: the finite-index-subgroup statement above, and its multiplicative
-  (`𝔾ₘ`) analogue `card_selmerGroup_integralClosure` — for odd residue characteristic, the group of
-  everywhere-unramified square classes of a finite separable extension of `K_v` has order `2`
-  (proved via Henselianity of `𝒪_v`, using
+* [`IntegralModel.lean`](EllipticCurves/IntegralModel.lean): every Weierstrass curve over `K_v`
+  has an integral model — after an admissible change of variables its coefficients lie in `𝒪_v`
+  (`exists_variableChange_map_eq`) — the input to the finite-index structure theorem above.
+* [`Mathlib/FormalGroup.lean`](EllipticCurves/Mathlib/FormalGroup.lean): the multiplicative (`𝔾ₘ`)
+  analogue of that structure theorem, `card_selmerGroup_integralClosure` — for odd residue
+  characteristic, the group of everywhere-unramified square classes of a finite separable extension
+  of `K_v` has order `2` (proved via Henselianity of `𝒪_v`, using
   [`Mathlib/Henselian.lean`](EllipticCurves/Mathlib/Henselian.lean)).
 
 ## An infinite-order certificate
@@ -154,10 +156,6 @@ Beyond the formal-group files above, [`EllipticCurves/Mathlib/`](EllipticCurves/
   `K[X]/(f)` (for `f` squarefree) into a product of field factors, norms on `AdjoinRoot` via
   resultants (`AdjoinRoot.norm_mk_eq_resultant`), and the primes of an extension lying above a set
   of primes.
-* [`VariableChange.lean`](EllipticCurves/Mathlib/VariableChange.lean): the computable group
-  isomorphism `(C • W).Point ≃+ W.Point` induced by an admissible change of variables `C` (shared
-  with the FLT project), which transfers Mordell-Weil from the normal form `y² = cubic` to arbitrary
-  models.
 * [`AdicCompletionExtension.lean`](EllipticCurves/Mathlib/AdicCompletionExtension.lean): the
   extension `K_v →+* L_w` of adic completions along an extension of Dedekind domains with `w ∣ v`,
   its compatibility with the valuations (up to ramification) and rings of integers (adapted from the
