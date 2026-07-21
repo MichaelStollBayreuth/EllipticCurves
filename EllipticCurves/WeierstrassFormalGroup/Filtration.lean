@@ -1,7 +1,7 @@
 module
 
-public import EllipticCurves.Mathlib.WeierstrassFormalGroup.Foundations
-import all EllipticCurves.Mathlib.WeierstrassFormalGroup.Foundations
+public import EllipticCurves.WeierstrassFormalGroup.Foundations
+import all EllipticCurves.WeierstrassFormalGroup.Foundations
 
 @[expose] public section
 

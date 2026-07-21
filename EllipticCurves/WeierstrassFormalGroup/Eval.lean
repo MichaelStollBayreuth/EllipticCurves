@@ -1,6 +1,6 @@
 module
 
-public import EllipticCurves.Mathlib.WeierstrassFormalGroup.GroupLaw
+public import EllipticCurves.WeierstrassFormalGroup.GroupLaw
 
 @[expose] public section
 

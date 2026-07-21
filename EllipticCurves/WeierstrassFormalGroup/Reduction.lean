@@ -1,8 +1,8 @@
 module
 
-public import EllipticCurves.Mathlib.WeierstrassFormalGroup.Filtration
-import all EllipticCurves.Mathlib.WeierstrassFormalGroup.Filtration
-import all EllipticCurves.Mathlib.WeierstrassFormalGroup.Foundations
+public import EllipticCurves.WeierstrassFormalGroup.Filtration
+import all EllipticCurves.WeierstrassFormalGroup.Filtration
+import all EllipticCurves.WeierstrassFormalGroup.Foundations
 
 @[expose] public section
 

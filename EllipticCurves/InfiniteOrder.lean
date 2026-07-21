@@ -1,5 +1,5 @@
 import Mathlib
-import EllipticCurves.Mathlib.WeierstrassFormalGroup.Reduction
+import EllipticCurves.WeierstrassFormalGroup.Reduction
 import EllipticCurves.SelmerGroup
 
 /-!

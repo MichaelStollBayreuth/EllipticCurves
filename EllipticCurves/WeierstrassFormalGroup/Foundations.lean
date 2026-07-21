@@ -1,7 +1,7 @@
 module
 
-public import EllipticCurves.Mathlib.WeierstrassFormalGroup.Eval
-import all EllipticCurves.Mathlib.WeierstrassFormalGroup.Eval
+public import EllipticCurves.WeierstrassFormalGroup.Eval
+import all EllipticCurves.WeierstrassFormalGroup.Eval
 
 @[expose] public section
 

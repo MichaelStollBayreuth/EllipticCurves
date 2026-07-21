@@ -85,21 +85,21 @@ The local input to the 2-descent — the structure of `E(K_v)` and the size of t
 everywhere-unramified square classes — comes from the theory of formal groups, developed here in
 full (in the Heights project these statements were `sorry`ed).
 
-* [`Mathlib/WeierstrassFormalGroup/`](EllipticCurves/Mathlib/WeierstrassFormalGroup) (seven files)
+* [`WeierstrassFormalGroup/`](EllipticCurves/WeierstrassFormalGroup) (seven files)
   builds the formal group of a Weierstrass curve and its consequences: the fixed-point series
-  `w(t)` and the chord data ([`Chord.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/Chord.lean),
-  [`ThirdPoint.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/ThirdPoint.lean)), the formal
+  `w(t)` and the chord data ([`Chord.lean`](EllipticCurves/WeierstrassFormalGroup/Chord.lean),
+  [`ThirdPoint.lean`](EllipticCurves/WeierstrassFormalGroup/ThirdPoint.lean)), the formal
   group law `WeierstrassCurve.formalGroupLaw`
-  ([`GroupLaw.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/GroupLaw.lean)), the valuation
+  ([`GroupLaw.lean`](EllipticCurves/WeierstrassFormalGroup/GroupLaw.lean)), the valuation
   estimates for an integral model
-  ([`Foundations.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/Foundations.lean),
-  [`Eval.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/Eval.lean)), the formal point, the
+  ([`Foundations.lean`](EllipticCurves/WeierstrassFormalGroup/Foundations.lean),
+  [`Eval.lean`](EllipticCurves/WeierstrassFormalGroup/Eval.lean)), the formal point, the
   filtration `E_{n+1}(K_v)` and the structure theorem — `E(K_v)` has a finite-index subgroup
   isomorphic to `(𝒪_v, +)`, and `E₁(K_v)` is torsion-free under the standard ramification condition
-  ([`Filtration.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/Filtration.lean)) — and the
+  ([`Filtration.lean`](EllipticCurves/WeierstrassFormalGroup/Filtration.lean)) — and the
   point-level reduction homomorphism `redHom : E(K_v) → Ẽ(k_v)`, injective on torsion and
   order-preserving there
-  ([`Reduction.lean`](EllipticCurves/Mathlib/WeierstrassFormalGroup/Reduction.lean)).
+  ([`Reduction.lean`](EllipticCurves/WeierstrassFormalGroup/Reduction.lean)).
 * [`Mathlib/AdicFormalGroupLog.lean`](EllipticCurves/Mathlib/AdicFormalGroupLog.lean): the
   `π^e`-scaled formal logarithm over `𝒪_v`, which has integral coefficients and an integral
   compositional inverse, giving the isomorphism of a deep filtration step with `(𝒪_v, +)`.
@@ -172,6 +172,7 @@ Beyond the formal-group files above, [`EllipticCurves/Mathlib/`](EllipticCurves/
 ## Layout
 
 The Lean source lives under [`EllipticCurves/`](EllipticCurves); the root module
-[`EllipticCurves.lean`](EllipticCurves.lean) imports the five elliptic-curve files. The project is
-built against a pinned version of Mathlib (see [`lakefile.toml`](lakefile.toml) and
-[`lean-toolchain`](lean-toolchain)); run `lake exe cache get` before `lake build`.
+[`EllipticCurves.lean`](EllipticCurves.lean) imports every module in the project (regenerate with
+`lake exe mk_all`). The project is built against a pinned version of Mathlib (see
+[`lakefile.toml`](lakefile.toml) and [`lean-toolchain`](lean-toolchain)); run
+`lake exe cache get` before `lake build`.

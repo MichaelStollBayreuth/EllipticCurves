@@ -1,8 +1,8 @@
 module
 
-public import EllipticCurves.Mathlib.WeierstrassFormalGroup.ThirdPoint
-import all EllipticCurves.Mathlib.WeierstrassFormalGroup.ThirdPoint
-import all EllipticCurves.Mathlib.WeierstrassFormalGroup.Chord
+public import EllipticCurves.WeierstrassFormalGroup.ThirdPoint
+import all EllipticCurves.WeierstrassFormalGroup.ThirdPoint
+import all EllipticCurves.WeierstrassFormalGroup.Chord
 
 /-!
 # The formal group law of a Weierstrass curve

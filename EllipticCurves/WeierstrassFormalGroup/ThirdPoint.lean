@@ -1,7 +1,7 @@
 module
 
-public import EllipticCurves.Mathlib.WeierstrassFormalGroup.Chord
-import all EllipticCurves.Mathlib.WeierstrassFormalGroup.Chord
+public import EllipticCurves.WeierstrassFormalGroup.Chord
+import all EllipticCurves.WeierstrassFormalGroup.Chord
 
 /-!
 # The chord computes the group law, and the third intersection point lies on the chord
@@ -10,7 +10,7 @@ Working over a field (`FieldChord`), the chord/tangent construction on `(t, w(t)
 addition of points; then, over a general coefficient ring, the third intersection point of the
 line through two points lies on the chord (the `OnLine` machinery, via the `Pair` and
 `SingleIota` parameter specializations). This is the geometric input to the associativity of the
-formal group law, assembled in `EllipticCurves.Mathlib.WeierstrassFormalGroup.GroupLaw`.
+formal group law, assembled in `EllipticCurves.WeierstrassFormalGroup.GroupLaw`.
 -/
 
 @[expose] public section
