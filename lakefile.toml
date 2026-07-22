@@ -14,3 +14,14 @@ rev = "v4.32.0"
 [[lean_lib]]
 name = "EllipticCurves"
 globs = ["EllipticCurves.+"]
+
+# Comparator (https://github.com/leanprover/comparator) verification harness. Not part of
+# `defaultTargets`, so a plain `lake build` ignores it (and never builds the deliberate `sorry`
+# in `comparator/Challenge.lean`). See comparator/README.md.
+[[lean_lib]]
+name = "Challenge"
+srcDir = "comparator"
+
+[[lean_lib]]
+name = "Solution"
+srcDir = "comparator"
