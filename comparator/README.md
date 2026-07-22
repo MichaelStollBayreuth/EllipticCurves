@@ -32,11 +32,21 @@ challenge; the two statements are literally identical.
 
 ## Running
 
-Prerequisites (see the Comparator README): a built `comparator` binary, plus `landrun` and
-`lean4export` on `PATH` (or pointed to by `COMPARATOR_LANDRUN` / `COMPARATOR_LEAN4EXPORT`).
+Prerequisites (see the Comparator README): a built `comparator` binary, `landrun` built from its
+`main` branch, and — crucially — a `lean4export` built at **the same Lean version as this project**
+(it loads the project's `.olean`s), i.e. the tag matching `lean-toolchain`. Point Comparator at them
+via `COMPARATOR_LANDRUN` / `COMPARATOR_LEAN4EXPORT`, or put them on `PATH`.
 
-Run from the **repository root** (Comparator uses the current directory as the project and invokes
-`lake build Challenge` / `lake build Solution` there):
+Once the tooling is installed, the wrapper [`scripts/run-comparator.sh`](../scripts/run-comparator.sh)
+builds the library and runs the check (override binary locations with `COMPARATOR_BIN` /
+`COMPARATOR_LEAN4EXPORT` / `COMPARATOR_LANDRUN`):
+
+```bash
+scripts/run-comparator.sh
+```
+
+The manual equivalent, run from the **repository root** (Comparator uses the current directory as the
+project and invokes `lake build Challenge` / `lake build Solution` there):
 
 ```bash
 lake exe cache get                       # trusted Mathlib oleans, optional
@@ -44,7 +54,7 @@ lake build EllipticCurves                # so the Solution build reuses the libr
 lake env /path/to/comparator comparator/fg_point_of_numberField.json
 ```
 
-Exit code `0` means the check passed.
+Exit code `0` (and `Your solution is okay!`) means the check passed.
 
 The `Challenge`/`Solution` libraries are declared in the root `lakefile.toml` but are excluded from
 `defaultTargets`, so a plain `lake build` does not build them and the deliberate `sorry` in
