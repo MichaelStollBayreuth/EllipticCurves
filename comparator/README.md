@@ -37,16 +37,16 @@ Prerequisites (see the Comparator README): a built `comparator` binary, `landrun
 (it loads the project's `.olean`s), i.e. the tag matching `lean-toolchain`. Point Comparator at them
 via `COMPARATOR_LANDRUN` / `COMPARATOR_LEAN4EXPORT`, or put them on `PATH`.
 
-Once the tooling is installed, the wrapper [`scripts/run-comparator.sh`](../scripts/run-comparator.sh)
-builds the library and runs the check (override binary locations with `COMPARATOR_BIN` /
+Once installed, the wrapper [`scripts/run-comparator.sh`](../scripts/run-comparator.sh) builds the
+library and runs the check (override binary locations with `COMPARATOR_BIN` /
 `COMPARATOR_LEAN4EXPORT` / `COMPARATOR_LANDRUN`):
 
 ```bash
 scripts/run-comparator.sh
 ```
 
-The manual equivalent, run from the **repository root** (Comparator uses the current directory as the
-project and invokes `lake build Challenge` / `lake build Solution` there):
+The manual equivalent, run from the **repository root** (Comparator uses the current directory as
+the project and invokes `lake build Challenge` / `lake build Solution` there):
 
 ```bash
 lake exe cache get                       # trusted Mathlib oleans, optional
