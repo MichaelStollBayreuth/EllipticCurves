@@ -18,12 +18,11 @@ This file records the two finite-field torsion facts, `nsmul_seven_eq_zero_mod_t
 
 ## Implementation notes
 
-Mathlib's `WeierstrassCurve.Affine.Point` addition is noncomputable (its `AddCommGroup` instance
-goes through `Classical.choice`, and `slope`/`addX`/`addY` do not reduce in the kernel), so the
-torsion facts cannot be closed `by decide`. Instead each multiple `k • P` is computed by hand from
-the group laws `two_nsmul`/`succ_nsmul`/`add_nsmul` and the explicit `add_of_X_ne`/`add_of_Y_eq`/
-`add_self_of_Y_ne` formulas, with each slope value first cleared of its denominator (`div_eq_iff`)
-so the remaining coordinate identities are division-free and `decide`-able.
+The two torsion facts are closed by `decide +kernel`. Mathlib's `WeierstrassCurve.Affine.Point`
+addition is `noncomputable` (the `AddCommGroup` goes through `Classical.choice`), so plain `decide`
+and `native_decide` fail — but the point operations do reduce in the *kernel*, so `decide +kernel`
+evaluates `n • P = 0` directly. The on-curve points come from `nonsingular_of_equation`: for an
+elliptic curve every equation solution is nonsingular (`equation_iff_nonsingular`).
 
 Turning these into a formal proof that `P ∈ E(ℚ)` has infinite order via the certificate is left as
 future work: it additionally needs the reduction over the abstract residue field
@@ -33,6 +32,14 @@ its good-reduction and ramification data.
 -/
 
 open WeierstrassCurve
+
+/-- For an elliptic curve, every solution of the (affine) Weierstrass equation is nonsingular:
+the forward direction of `equation_iff_nonsingular`, with the equation written out. -/
+lemma WeierstrassCurve.Affine.nonsingular_of_equation {R : Type*} [CommRing R] [Nontrivial R]
+    {W : Affine R} [W.IsElliptic] {x y : R}
+    (h : y ^ 2 + W.a₁ * x * y + W.a₃ * y = x ^ 3 + W.a₂ * x ^ 2 + W.a₄ * x + W.a₆) :
+    W.Nonsingular x y :=
+  W.equation_iff_nonsingular.mp ((W.equation_iff x y).mpr h)
 
 namespace InfiniteOrderExample
 
@@ -45,9 +52,8 @@ def E3 : WeierstrassCurve (ZMod 3) := ⟨0, 0, 0, -1, 1⟩
 
 instance : E3.IsElliptic := by rw [WeierstrassCurve.isElliptic_iff]; decide
 
-theorem ns3 {x y : ZMod 3} (h : y ^ 2 = x ^ 3 - x + 1) : E3.toAffine.Nonsingular x y := by
-  simp_rw [← Affine.equation_iff_nonsingular, Affine.equation_iff, E3]
-  grind
+theorem ns3 {x y : ZMod 3} (h : y ^ 2 = x ^ 3 - x + 1) : E3.toAffine.Nonsingular x y :=
+  E3.toAffine.nonsingular_of_equation (by grind [E3])
 
 /-- The point `(1, 1)` on `E : y² = x³ - x + 1` over `𝔽₃`. -/
 def P3 : E3.toAffine.Point := .some 1 1 (ns3 (by decide))
@@ -64,9 +70,8 @@ def E5 : WeierstrassCurve (ZMod 5) := ⟨0, 0, 0, -1, 1⟩
 
 instance : E5.IsElliptic := by rw [WeierstrassCurve.isElliptic_iff]; decide
 
-theorem ns5 {x y : ZMod 5} (h : y ^ 2 = x ^ 3 - x + 1) : E5.toAffine.Nonsingular x y := by
-  simp_rw [← E5.toAffine.equation_iff_nonsingular, Affine.equation_iff, E5]
-  grind
+theorem ns5 {x y : ZMod 5} (h : y ^ 2 = x ^ 3 - x + 1) : E5.toAffine.Nonsingular x y :=
+  E5.toAffine.nonsingular_of_equation (by grind [E5])
 
 /-- The point `(1, 1)` on `E : y² = x³ - x + 1` over `𝔽₅`. -/
 def P5 : E5.toAffine.Point := .some 1 1 (ns5 (by decide))
