@@ -52,11 +52,8 @@ def E3 : WeierstrassCurve (ZMod 3) := ⟨0, 0, 0, -1, 1⟩
 
 instance : E3.IsElliptic := by rw [WeierstrassCurve.isElliptic_iff]; decide
 
-theorem ns3 {x y : ZMod 3} (h : y ^ 2 = x ^ 3 - x + 1) : E3.toAffine.Nonsingular x y :=
-  E3.toAffine.nonsingular_of_equation (by grind [E3])
-
 /-- The point `(1, 1)` on `E : y² = x³ - x + 1` over `𝔽₃`. -/
-def P3 : E3.toAffine.Point := .some 1 1 (ns3 (by decide))
+def P3 : E3.toAffine.Point := .some 1 1 (E3.toAffine.nonsingular_of_equation (by grind [E3]))
 
 /-- `P = (1, 1)` reduces modulo `3` to a point of order `7` (so `7 • P₃ = 0`); computed as
 `P₃ → 2P₃ = (2,1) → 3P₃ = (0,2) → 4P₃ = (0,1)` and `7 • P₃ = 4P₃ + 3P₃ = 0`. -/
@@ -70,11 +67,8 @@ def E5 : WeierstrassCurve (ZMod 5) := ⟨0, 0, 0, -1, 1⟩
 
 instance : E5.IsElliptic := by rw [WeierstrassCurve.isElliptic_iff]; decide
 
-theorem ns5 {x y : ZMod 5} (h : y ^ 2 = x ^ 3 - x + 1) : E5.toAffine.Nonsingular x y :=
-  E5.toAffine.nonsingular_of_equation (by grind [E5])
-
 /-- The point `(1, 1)` on `E : y² = x³ - x + 1` over `𝔽₅`. -/
-def P5 : E5.toAffine.Point := .some 1 1 (ns5 (by decide))
+def P5 : E5.toAffine.Point := .some 1 1 (E5.toAffine.nonsingular_of_equation (by grind [E5]))
 
 /-- `P = (1, 1)` reduces modulo `5` to a point of order `8` (so `8 • P₅ = 0`); computed as
 `P₅ → 2P₅ = (4,1) → 3P₅ = (0,4) → 4P₅ = (3,0)`, where `4P₅` is `2`-torsion, so
