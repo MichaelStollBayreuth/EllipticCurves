@@ -75,8 +75,8 @@ private lemma coe_negY {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1) (hy : 
 
 include hW in
 /-- `W.negY` of integral coordinates is integral. -/
-private lemma valued_negY_le {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1) (hy : Valued.v y ≤ 1) :
-    Valued.v (W.negY x y) ≤ 1 := by
+private lemma valued_negY_le {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1)
+    (hy : Valued.v y ≤ 1) : Valued.v (W.negY x y) ≤ 1 := by
   rw [coe_negY hW hx hy]; exact valued_coe_le_one _
 
 include hW in
@@ -103,8 +103,8 @@ private lemma coe_addX {x₁ x₂ ℓ : v.adicCompletion K} (h₁ : Valued.v x�
 
 include hW in
 /-- `W.addY` of integral coordinates is the coercion of `W₀.addY`. -/
-private lemma coe_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
-    (hy₁ : Valued.v y₁ ≤ 1) (hℓ : Valued.v ℓ ≤ 1) :
+private lemma coe_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1)
+    (h₂ : Valued.v x₂ ≤ 1) (hy₁ : Valued.v y₁ ≤ 1) (hℓ : Valued.v ℓ ≤ 1) :
     W.addY x₁ x₂ y₁ ℓ = ((W₀.toAffine).addY (⟨x₁, h₁⟩ : v.adicCompletionIntegers K) ⟨x₂, h₂⟩
       ⟨y₁, hy₁⟩ ⟨ℓ, hℓ⟩ : v.adicCompletion K) := by
   conv_lhs => rw [← hW]
@@ -113,8 +113,8 @@ private lemma coe_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.
 
 include hW in
 /-- Reduction commutes with `addX` on integral coordinates. -/
-private lemma redCoord_addX {x₁ x₂ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
-    (hℓ : Valued.v ℓ ≤ 1) (hs : Valued.v (W.addX x₁ x₂ ℓ) ≤ 1) :
+private lemma redCoord_addX {x₁ x₂ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1)
+    (h₂ : Valued.v x₂ ≤ 1) (hℓ : Valued.v ℓ ≤ 1) (hs : Valued.v (W.addX x₁ x₂ ℓ) ≤ 1) :
     IsLocalRing.residue _ ⟨W.addX x₁ x₂ ℓ, hs⟩ = (adicRedCurve W₀).addX
       (IsLocalRing.residue _ ⟨x₁, h₁⟩) (IsLocalRing.residue _ ⟨x₂, h₂⟩)
       (IsLocalRing.residue _ ⟨ℓ, hℓ⟩) := by
@@ -126,8 +126,9 @@ private lemma redCoord_addX {x₁ x₂ ℓ : v.adicCompletion K} (h₁ : Valued.
 
 include hW in
 /-- Reduction commutes with `addY` on integral coordinates. -/
-private lemma redCoord_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
-    (hy₁ : Valued.v y₁ ≤ 1) (hℓ : Valued.v ℓ ≤ 1) (hs : Valued.v (W.addY x₁ x₂ y₁ ℓ) ≤ 1) :
+private lemma redCoord_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1)
+    (h₂ : Valued.v x₂ ≤ 1) (hy₁ : Valued.v y₁ ≤ 1) (hℓ : Valued.v ℓ ≤ 1)
+    (hs : Valued.v (W.addY x₁ x₂ y₁ ℓ) ≤ 1) :
     IsLocalRing.residue _ ⟨W.addY x₁ x₂ y₁ ℓ, hs⟩ = (adicRedCurve W₀).addY
       (IsLocalRing.residue _ ⟨x₁, h₁⟩) (IsLocalRing.residue _ ⟨x₂, h₂⟩)
       (IsLocalRing.residue _ ⟨y₁, hy₁⟩) (IsLocalRing.residue _ ⟨ℓ, hℓ⟩) := by
@@ -184,8 +185,8 @@ private lemma residue_div' {p q : v.adicCompletion K} (hp : Valued.v p ≤ 1) (h
 
 include hW in
 /-- Residue of the finite-difference numerator. -/
-private lemma res_ficoNum {x₁ x₂ y₁ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
-    (hy₁ : Valued.v y₁ ≤ 1)
+private lemma res_ficoNum {x₁ x₂ y₁ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1)
+    (h₂ : Valued.v x₂ ≤ 1) (hy₁ : Valued.v y₁ ≤ 1)
     (hN : Valued.v (x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁) ≤ 1) :
     res (⟨x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁, hN⟩ :
         v.adicCompletionIntegers K)
@@ -358,8 +359,8 @@ variable [W.IsElliptic] [DecidableEq (v.adicCompletion K)] [CharZero K]
 include hW in
 /-- If the tangent slope at an integral point whose reduction is `2`-torsion is large
 (`≥ exp 1`), the point's double lies in the kernel of reduction. -/
-private lemma add_self_mem_filtration_of_slope {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
-    (hx₀ : Valued.v x₀ ≤ 1) (hψ : y₀ ≠ W.negY x₀ y₀)
+private lemma add_self_mem_filtration_of_slope {x₀ y₀ : v.adicCompletion K}
+    (h₀ : W.Nonsingular x₀ y₀) (hx₀ : Valued.v x₀ ≤ 1) (hψ : y₀ ≠ W.negY x₀ y₀)
     (hs : exp (1 : ℤ) ≤ Valued.v (W.slope x₀ x₀ y₀ y₀)) :
     (.some x₀ y₀ h₀ : W.Point) + .some x₀ y₀ h₀ ∈ filtration hW 0 := by
   have ha₁ : Valued.v W.a₁ ≤ 1 := valued_a₁ hW
