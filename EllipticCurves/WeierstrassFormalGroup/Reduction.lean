@@ -189,6 +189,11 @@ private lemma valued_sub_le {a b : v.adicCompletion K} (ha : Valued.v a ≤ 1)
     (hb : Valued.v b ≤ 1) : Valued.v (a - b) ≤ 1 :=
   (Valued.v.map_sub _ _).trans (max_le ha hb)
 
+-- An integral element is not in the kernel-of-reduction range `exp 2 ≤ v x`.
+private lemma not_exp_two_le_of_le_one {a : v.adicCompletion K} (ha : Valued.v a ≤ 1) :
+    ¬ exp (2 : ℤ) ≤ Valued.v a := fun hc ↦
+  absurd (hc.trans ha) (by rw [not_le, ← exp_zero]; exact exp_lt_exp.mpr (by lia))
+
 include hW in
 /-- The finite-difference numerator of integral coordinates is integral. -/
 lemma valued_ficoNum_le {x₁ x₂ y₁ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1)
@@ -222,6 +227,31 @@ lemma valued_eq_one_of_residue_ne {a : v.adicCompletion K} (ha : Valued.v a ≤ 
 lemma ne_zero_of_residue_ne {a : v.adicCompletion K} (ha : Valued.v a ≤ 1)
     (h : res (⟨a, ha⟩ : v.adicCompletionIntegers K) ≠ 0) : a ≠ 0 := by
   rintro rfl; exact h (map_zero _)
+
+include hW in
+-- The chord/tangent denominator `y₁ - negY x₂ y₂` has nonzero residue when the reduced points
+-- are not opposite with equal `x`-residues.
+private lemma residue_sub_negY_ne_zero {x₂ y₁ y₂ : v.adicCompletion K} (hx₂ : Valued.v x₂ ≤ 1)
+    (hy₁ : Valued.v y₁ ≤ 1) (hy₂ : Valued.v y₂ ≤ 1)
+    (hYne : res (⟨y₁, hy₁⟩ : v.adicCompletionIntegers K)
+      ≠ (adicRedCurve W₀).negY (res ⟨x₂, hx₂⟩) (res ⟨y₂, hy₂⟩)) :
+    res (⟨y₁ - W.negY x₂ y₂, valued_sub_le hy₁ (valued_negY_le hW hx₂ hy₂)⟩ :
+      v.adicCompletionIntegers K) ≠ 0 := by
+  rw [res_sub hy₁ (valued_negY_le hW hx₂ hy₂) _, redCoord_negY hW hx₂ hy₂ _]
+  exact sub_ne_zero.mpr hYne
+
+include hW in
+-- Points whose reductions are not opposite are themselves not opposite.
+private lemma not_eq_and_eq_negY {x₁ x₂ y₁ y₂ : v.adicCompletion K} (hx₁ : Valued.v x₁ ≤ 1)
+    (hx₂ : Valued.v x₂ ≤ 1) (hy₁ : Valued.v y₁ ≤ 1) (hy₂ : Valued.v y₂ ≤ 1)
+    (hne : ¬ (res (⟨x₁, hx₁⟩ : v.adicCompletionIntegers K) = res ⟨x₂, hx₂⟩ ∧
+      res ⟨y₁, hy₁⟩ = (adicRedCurve W₀).negY (res ⟨x₂, hx₂⟩) (res ⟨y₂, hy₂⟩))) :
+    ¬ (x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := by
+  intro ⟨ex, ey⟩
+  refine hne ⟨congrArg (IsLocalRing.residue _) (Subtype.ext ex), ?_⟩
+  rw [show (⟨y₁, hy₁⟩ : v.adicCompletionIntegers K)
+      = ⟨W.negY x₂ y₂, valued_negY_le hW hx₂ hy₂⟩ from Subtype.ext ey,
+    redCoord_negY hW hx₂ hy₂ _]
 
 section
 
@@ -260,22 +290,15 @@ lemma red_slope {x₁ x₂ y₁ y₂ : v.adicCompletion K} (hx₁ : Valued.v x�
   · -- tangent: `x₁, x₂` reduce equal; the reduced slope is the tangent form
     have hYne : res (⟨y₁, hy₁⟩ : v.adicCompletionIntegers K)
         ≠ (adicRedCurve W₀).negY (res ⟨x₂, hx₂⟩) (res ⟨y₂, hy₂⟩) := fun h ↦ hne ⟨hXeq, h⟩
-    have hnegYint : Valued.v (W.negY x₂ y₂) ≤ 1 := valued_negY_le hW hx₂ hy₂
-    have hDint : Valued.v (y₁ - W.negY x₂ y₂) ≤ 1 := valued_sub_le hy₁ hnegYint
-    have hDu : res (⟨y₁ - W.negY x₂ y₂, hDint⟩ : v.adicCompletionIntegers K) ≠ 0 := by
-      rw [res_sub hy₁ hnegYint hDint, redCoord_negY hW hx₂ hy₂ hnegYint]
-      exact sub_ne_zero.mpr hYne
-    have hD0 : y₁ - W.negY x₂ y₂ ≠ 0 := ne_zero_of_residue_ne hDint hDu
-    have hNint : Valued.v
-        (x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁) ≤ 1 :=
-      valued_ficoNum_le hW hx₁ hx₂ hy₁
+    have hDu := residue_sub_negY_ne_zero hW hx₂ hy₁ hy₂ hYne
+    have hD0 : y₁ - W.negY x₂ y₂ ≠ 0 := ne_zero_of_residue_ne _ hDu
     have hYeq : res (⟨y₁, hy₁⟩ : v.adicCompletionIntegers K) = res ⟨y₂, hy₂⟩ :=
       ((adicRedCurve W₀).Y_eq_of_X_eq (Equation.map _ (equation_integral hW hc₁ hx₁ hy₁))
         (Equation.map _ (equation_integral hW hc₂ hx₂ hy₂)) hXeq).resolve_right hYne
     rw [show (⟨W.slope x₁ x₂ y₁ y₂, hℓ⟩ : v.adicCompletionIntegers K)
         = ⟨_, W.slope_eq_div hc₁ hc₂ hD0 ▸ hℓ⟩ from Subtype.ext (W.slope_eq_div hc₁ hc₂ hD0),
-      residue_div' hNint hDint hDu, res_ficoNum hW hx₁ hx₂ hy₁,
-      res_sub hy₁ hnegYint hDint, redCoord_negY hW hx₂ hy₂ hnegYint,
+      residue_div' (valued_ficoNum_le hW hx₁ hx₂ hy₁) _ hDu, res_ficoNum hW hx₁ hx₂ hy₁,
+      res_sub hy₁ (valued_negY_le hW hx₂ hy₂) _, redCoord_negY hW hx₂ hy₂ _,
       (adicRedCurve W₀).slope_of_Y_ne hXeq hYne, ← hXeq, ← hYeq]
     ring
   · -- secant: `x₁, x₂` reduce distinct, so `x₁ - x₂` is a unit
@@ -299,23 +322,13 @@ lemma valued_slope_le {x₁ x₂ y₁ y₂ : v.adicCompletion K} (hx₁ : Valued
       res ⟨y₁, hy₁⟩ = (adicRedCurve W₀).negY (res ⟨x₂, hx₂⟩) (res ⟨y₂, hy₂⟩))) :
     Valued.v (W.slope x₁ x₂ y₁ y₂) ≤ 1 := by
   by_cases hXeq : res (⟨x₁, hx₁⟩ : v.adicCompletionIntegers K) = res ⟨x₂, hx₂⟩
-  · have hYne : res (⟨y₁, hy₁⟩ : v.adicCompletionIntegers K)
-        ≠ (adicRedCurve W₀).negY (res ⟨x₂, hx₂⟩) (res ⟨y₂, hy₂⟩) := fun h ↦ hne ⟨hXeq, h⟩
-    have hnegYint : Valued.v (W.negY x₂ y₂) ≤ 1 := valued_negY_le hW hx₂ hy₂
-    have hDint : Valued.v (y₁ - W.negY x₂ y₂) ≤ 1 := valued_sub_le hy₁ hnegYint
-    have hDu : res (⟨y₁ - W.negY x₂ y₂, hDint⟩ : v.adicCompletionIntegers K) ≠ 0 := by
-      rw [res_sub hy₁ hnegYint hDint, redCoord_negY hW hx₂ hy₂ hnegYint]
-      exact sub_ne_zero.mpr hYne
-    have hD0 : y₁ - W.negY x₂ y₂ ≠ 0 := ne_zero_of_residue_ne hDint hDu
-    have hNint : Valued.v
-        (x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁) ≤ 1 :=
-      valued_ficoNum_le hW hx₁ hx₂ hy₁
-    rwa [slope_eq_div hc₁ hc₂ hD0, map_div₀,
+  · have hDu := residue_sub_negY_ne_zero hW hx₂ hy₁ hy₂ (fun h ↦ hne ⟨hXeq, h⟩)
+    rw [slope_eq_div hc₁ hc₂ (ne_zero_of_residue_ne _ hDu), map_div₀,
       valued_coe_isUnit ((residue_ne_zero_iff_isUnit _).mp hDu), div_one]
+    exact valued_ficoNum_le hW hx₁ hx₂ hy₁
   · have hxx : x₁ ≠ x₂ := fun h ↦ hXeq (congrArg (IsLocalRing.residue _) (Subtype.ext h))
-    have hden : Valued.v (x₁ - x₂) ≤ 1 := valued_sub_le hx₁ hx₂
-    have hdenu : res (⟨x₁ - x₂, hden⟩ : v.adicCompletionIntegers K) ≠ 0 := by
-      rw [res_sub hx₁ hx₂ hden]; exact sub_ne_zero.mpr hXeq
+    have hdenu : res (⟨x₁ - x₂, valued_sub_le hx₁ hx₂⟩ : v.adicCompletionIntegers K) ≠ 0 := by
+      rw [res_sub hx₁ hx₂ _]; exact sub_ne_zero.mpr hXeq
     rw [W.slope_of_X_ne hxx, map_div₀,
       valued_coe_isUnit ((residue_ne_zero_iff_isUnit _).mp hdenu), div_one]
     exact valued_sub_le hy₁ hy₂
@@ -410,24 +423,18 @@ lemma adicRed_add_of_reduced_ne_neg {x₁ x₂ y₁ y₂ : v.adicCompletion K}
       res ⟨y₁, hy₁⟩ = (adicRedCurve W₀).negY (res ⟨x₂, hx₂⟩) (res ⟨y₂, hy₂⟩)) := fun ⟨e1, e2⟩ ↦
     hne (by rw [adicRed_some_of_not_mem hW hP, adicRed_some_of_not_mem hW hQ, Point.neg_some,
       Point.some.injEq]; exact ⟨e1, e2⟩)
-  have hnegYint : Valued.v (W.negY x₂ y₂) ≤ 1 := valued_negY_le hW hx₂ hy₂
-  have hxy : ¬ (x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := by
-    intro ⟨ex, ey⟩
-    refine hne_res ⟨congrArg (IsLocalRing.residue _) (Subtype.ext ex), ?_⟩
-    rw [show (⟨y₁, hy₁⟩ : v.adicCompletionIntegers K) = ⟨W.negY x₂ y₂, hnegYint⟩ from
-      Subtype.ext ey, redCoord_negY hW hx₂ hy₂ hnegYint]
+  have hxy : ¬ (x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := not_eq_and_eq_negY hW hx₁ hx₂ hy₁ hy₂ hne_res
   have hℓ : Valued.v (W.slope x₁ x₂ y₁ y₂) ≤ 1 :=
     valued_slope_le hW hx₁ hx₂ hy₁ hy₂ h₁.left h₂.left hne_res
   have haXint : Valued.v (W.addX x₁ x₂ (W.slope x₁ x₂ y₁ y₂)) ≤ 1 := by
     rw [coe_addX hW hx₁ hx₂ hℓ]; exact valued_coe_le_one _
   have haYint : Valued.v (W.addY x₁ x₂ y₁ (W.slope x₁ x₂ y₁ y₂)) ≤ 1 := by
     rw [coe_addY hW hx₁ hx₂ hy₁ hℓ]; exact valued_coe_le_one _
-  have hgate : ¬ exp (2 : ℤ) ≤ Valued.v (W.addX x₁ x₂ (W.slope x₁ x₂ y₁ y₂)) := fun hc ↦
-    absurd (le_trans hc haXint) (by rw [not_le, ← exp_zero]; exact exp_lt_exp.mpr (by lia))
   have hsum : (.some x₁ y₁ h₁ : W.Point) + .some x₂ y₂ h₂
       = .some (W.addX x₁ x₂ (W.slope x₁ x₂ y₁ y₂)) (W.addY x₁ x₂ y₁ (W.slope x₁ x₂ y₁ y₂))
         (nonsingular_add h₁ h₂ hxy) := Point.add_some hxy
   have hslope := red_slope hW hx₁ hx₂ hy₁ hy₂ h₁.left h₂.left hℓ hne_res
+  have hgate := not_exp_two_le_of_le_one haXint
   refine ⟨by rw [hsum, some_mem_filtration]; exact hgate, ?_⟩
   rw [hsum, adicRed_some_of_not_mem hW hgate, adicRed_some_of_not_mem hW hP,
     adicRed_some_of_not_mem hW hQ, Point.add_some hne_res, Point.some.injEq]
@@ -445,12 +452,14 @@ lemma unit_deriv {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y�
       Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) = 1 := by
   have hnegYint : Valued.v (W.negY x₀ y₀) ≤ 1 := valued_negY_le hW hx₀ hy₀
   have hψint : Valued.v (y₀ - W.negY x₀ y₀) ≤ 1 := valued_sub_le hy₀ hnegYint
+  -- the integral model of the `x`-derivative `φ = a₁ y - (3 x² + 2 a₂ x + a₄)` at the point
+  set φ₀ : v.adicCompletionIntegers K :=
+    ⟨W.a₁, valued_a₁ hW⟩ * ⟨y₀, hy₀⟩ - (⟨x₀, hx₀⟩ ^ 2 + ⟨x₀, hx₀⟩ ^ 2 + ⟨x₀, hx₀⟩ ^ 2
+      + (⟨W.a₂, valued_a₂ hW⟩ * ⟨x₀, hx₀⟩ + ⟨W.a₂, valued_a₂ hW⟩ * ⟨x₀, hx₀⟩)
+      + ⟨W.a₄, valued_a₄ hW⟩) with hφ₀
   have hφint : Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) ≤ 1 := by
-    rw [show W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)
-        = ((⟨W.a₁, valued_a₁ hW⟩ * ⟨y₀, hy₀⟩ - (⟨x₀, hx₀⟩ ^ 2 + ⟨x₀, hx₀⟩ ^ 2 + ⟨x₀, hx₀⟩ ^ 2
-            + (⟨W.a₂, valued_a₂ hW⟩ * ⟨x₀, hx₀⟩ + ⟨W.a₂, valued_a₂ hW⟩ * ⟨x₀, hx₀⟩)
-            + ⟨W.a₄, valued_a₄ hW⟩) : v.adicCompletionIntegers K) : v.adicCompletion K)
-        from by push_cast; ring]
+    rw [show W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄) = (φ₀ : v.adicCompletion K)
+      from by rw [hφ₀]; push_cast; ring]
     exact valued_coe_le_one _
   have hresψ : res (⟨y₀ - W.negY x₀ y₀, hψint⟩ : v.adicCompletionIntegers K)
       = res ⟨y₀, hy₀⟩ - (adicRedCurve W₀).negY (res ⟨x₀, hx₀⟩) (res ⟨y₀, hy₀⟩) := by
@@ -462,9 +471,7 @@ lemma unit_deriv {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y�
           + (adicRedCurve W₀).a₄) := by
     rw [← res_a₁ hW, ← res_a₂ hW, ← res_a₄ hW,
       show (⟨W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄), hφint⟩ : v.adicCompletionIntegers K)
-        = ⟨W.a₁, valued_a₁ hW⟩ * ⟨y₀, hy₀⟩ - (⟨x₀, hx₀⟩ ^ 2 + ⟨x₀, hx₀⟩ ^ 2 + ⟨x₀, hx₀⟩ ^ 2
-            + (⟨W.a₂, valued_a₂ hW⟩ * ⟨x₀, hx₀⟩ + ⟨W.a₂, valued_a₂ hW⟩ * ⟨x₀, hx₀⟩)
-            + ⟨W.a₄, valued_a₄ hW⟩) from Subtype.ext (by push_cast; ring)]
+        = φ₀ from Subtype.ext (by rw [hφ₀]; push_cast; ring), hφ₀]
     simp only [map_sub, map_add, map_mul, map_pow]
     ring
   rcases nonsingular_deriv_disj (adicRed_nonsingular hW h₀.left hx₀ hy₀) with hφ | hψ
@@ -515,6 +522,63 @@ lemma sub_mem_filtration_of_eq {x y x₀ y₀ : v.adicCompletion K} (h : W.Nonsi
 
 omit [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
 include hW in
+-- The `2`-torsion escape: if the tangent denominator `ψ = y₀ - negY x₀ y₀` at an integral point
+-- is small (the point reduces to `2`-torsion) but nonzero, the point's double lies in the kernel
+-- of reduction.
+private lemma add_self_mem_filtration_of_sub_negY_small {x₀ y₀ : v.adicCompletion K}
+    (h₀ : W.Nonsingular x₀ y₀) (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1)
+    (hψsmall : Valued.v (y₀ - W.negY x₀ y₀) ≤ exp (-1 : ℤ)) (hψ0 : y₀ - W.negY x₀ y₀ ≠ 0) :
+    (.some x₀ y₀ h₀ : W.Point) + .some x₀ y₀ h₀ ∈ filtration hW 0 := by
+  have hφ1 : Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) = 1 := by
+    rcases unit_deriv hW h₀ hx₀ hy₀ with hψ1 | hφ1
+    · exact absurd hψsmall (by rw [hψ1, ← exp_zero, exp_le_exp]; lia)
+    · exact hφ1
+  have hψne : y₀ ≠ W.negY x₀ y₀ := fun hc ↦ hψ0 (sub_eq_zero.mpr hc)
+  refine add_self_mem_filtration_of_slope hW h₀ hx₀ hψne ?_
+  rw [W.slope_of_Y_ne rfl hψne, map_div₀]
+  obtain ⟨dψ, hdψ⟩ : ∃ dψ : ℤ, Valued.v (y₀ - W.negY x₀ y₀) = exp dψ :=
+    ⟨_, (exp_log (by simpa using hψ0)).symm⟩
+  have hnumφ : Valued.v (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄ - W.a₁ * y₀) = 1 := by
+    rw [show 3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄ - W.a₁ * y₀
+        = -(W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) by ring, Valuation.map_neg, hφ1]
+  have hdψ' : dψ ≤ -1 := by rwa [hdψ, exp_le_exp] at hψsmall
+  rw [hnumφ, hdψ, ← exp_zero, ← exp_sub, exp_le_exp]
+  lia
+
+omit [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
+include hW in
+-- The secant case of `exists_level_one_sub_mem`: congruent points with distinct `x`-coordinates
+-- differ by a kernel-of-reduction element, since the secant slope is large.
+private lemma sub_mem_filtration_of_close_of_X_ne {x₀ y₀ : v.adicCompletion K}
+    (h₀ : W.Nonsingular x₀ y₀) (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1)
+    {x y : v.adicCompletion K} (h : W.Nonsingular x y) (hxx : x ≠ x₀)
+    (hx : Valued.v (x - x₀) ≤ exp (-1 : ℤ)) (hy : Valued.v (y - y₀) ≤ exp (-1 : ℤ)) :
+    (.some x y h : W.Point) - .some x₀ y₀ h₀ ∈ filtration hW 0 := by
+  refine sub_mem_filtration_of_slope h₀ h hxx hx₀ (valued_le_one_of_sub hx hx₀) ?_
+  rcases unit_deriv hW h₀ hx₀ hy₀ with hψ1 | hφ1
+  · -- `ψ` a unit: the numerator `y - negY x₀ y₀` is a unit
+    have hnum : Valued.v (y - W.negY x₀ y₀) = 1 := by
+      rw [show y - W.negY x₀ y₀ = (y₀ - W.negY x₀ y₀) + (y - y₀) by ring,
+        Valuation.map_add_eq_of_lt_left, hψ1]
+      refine lt_of_le_of_lt hy ?_
+      rw [hψ1, ← exp_zero, exp_lt_exp]; lia
+    obtain ⟨dx, hdx⟩ : ∃ dx : ℤ, Valued.v (x - x₀) = exp dx :=
+      ⟨_, (exp_log (by simpa using sub_ne_zero.mpr hxx)).symm⟩
+    have hdx' : dx ≤ -1 := by rwa [hdx, exp_le_exp] at hx
+    rw [map_div₀, hnum, hdx, ← exp_zero, ← exp_sub, exp_le_exp]
+    lia
+  · -- `φ` a unit: use the finite-difference identity for the numerator
+    have hid : (y - W.negY x₀ y₀) * (y - y₀) = (x - x₀) *
+        (x ^ 2 + x * x₀ + x₀ ^ 2 + W.a₂ * (x + x₀) + W.a₄ - W.a₁ * y) := by
+      rw [Affine.negY]
+      linear_combination (W.equation_iff x y).mp h.left - (W.equation_iff x₀ y₀).mp h₀.left
+    have hval := congrArg Valued.v hid
+    rw [map_mul, map_mul, valued_num_of_two_torsion hW hx₀ (hφ1.trans exp_zero.symm)
+      (by norm_num) hx hy] at hval
+    exact exp_one_le_valued_slope hxx (by norm_num) hy hval
+
+omit [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
+include hW in
 /-- Two integral points whose coordinates are congruent modulo `𝔪` (differ by elements of
 valuation `≤ exp (-1)`) differ by a kernel-of-reduction element. -/
 lemma exists_level_one_sub_mem {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
@@ -522,7 +586,6 @@ lemma exists_level_one_sub_mem {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsin
     (h : W.Nonsingular x y) (hx : Valued.v (x - x₀) ≤ exp (-1 : ℤ))
     (hy : Valued.v (y - y₀) ≤ exp (-1 : ℤ)) :
     (.some x y h : W.Point) - .some x₀ y₀ h₀ ∈ filtration hW 0 := by
-  have hxI : Valued.v x ≤ 1 := valued_le_one_of_sub hx hx₀
   rcases eq_or_ne x x₀ with heq | hxx
   · -- `x = x₀`: the coordinates agree, so compare the `y`-coordinates
     subst x
@@ -534,51 +597,13 @@ lemma exists_level_one_sub_mem {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsin
       · refine sub_mem_filtration_of_eq hW h h₀ rfl ?_
         rw [hy', ← sub_eq_zero, show W.negY x₀ y₀ - y₀ = -(y₀ - W.negY x₀ y₀) by ring,
           hψ0, neg_zero]
-      · -- `Q` reduces to a `2`-torsion point (`φ` a unit) without being `2`-torsion, and
-        -- `P = -Q`, so `P - Q = -(Q + Q)` lies in the kernel of reduction
-        have hφ1 : Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) = 1 := by
-          rcases unit_deriv hW h₀ hx₀ hy₀ with hψ1 | hφ1
-          · exact absurd hψsmall (by rw [hψ1, ← exp_zero, exp_le_exp]; lia)
-          · exact hφ1
-        have hψne : y₀ ≠ W.negY x₀ y₀ := fun hc ↦ hψ0 (sub_eq_zero.mpr hc)
+      · -- `Q` reduces to `2`-torsion and `P = -Q`, so `P - Q = -(Q + Q)` is in the kernel
         have hP : (.some x₀ y h : W.Point) = -.some x₀ y₀ h₀ := by
           rw [Point.neg_some]; subst hy'; rfl
         rw [hP, show -(.some x₀ y₀ h₀ : W.Point) - .some x₀ y₀ h₀
             = -(.some x₀ y₀ h₀ + .some x₀ y₀ h₀) by abel]
-        refine neg_mem (add_self_mem_filtration_of_slope hW h₀ hx₀ hψne ?_)
-        rw [W.slope_of_Y_ne rfl hψne, map_div₀]
-        obtain ⟨dψ, hdψ⟩ : ∃ dψ : ℤ, Valued.v (y₀ - W.negY x₀ y₀) = exp dψ :=
-          ⟨_, (exp_log (by simpa using hψ0)).symm⟩
-        have hnumφ : Valued.v (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄ - W.a₁ * y₀) = 1 := by
-          rw [show 3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄ - W.a₁ * y₀
-              = -(W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) by ring,
-            Valuation.map_neg, hφ1]
-        rw [hnumφ, hdψ, ← exp_zero, ← exp_sub, exp_le_exp]
-        have hdψ' : dψ ≤ -1 := by rwa [hdψ, exp_le_exp] at hψsmall
-        lia
-  · -- `x ≠ x₀`: the secant slope through the two points is large
-    refine sub_mem_filtration_of_slope h₀ h hxx hx₀ hxI ?_
-    rcases unit_deriv hW h₀ hx₀ hy₀ with hψ1 | hφ1
-    · -- `ψ` a unit: the numerator `y - negY x₀ y₀` is a unit
-      have hnum : Valued.v (y - W.negY x₀ y₀) = 1 := by
-        rw [show y - W.negY x₀ y₀ = (y₀ - W.negY x₀ y₀) + (y - y₀) by ring,
-          Valuation.map_add_eq_of_lt_left, hψ1]
-        refine lt_of_le_of_lt hy ?_
-        rw [hψ1, ← exp_zero, exp_lt_exp]; lia
-      obtain ⟨dx, hdx⟩ : ∃ dx : ℤ, Valued.v (x - x₀) = exp dx :=
-        ⟨_, (exp_log (by simpa using sub_ne_zero.mpr hxx)).symm⟩
-      rw [map_div₀, hnum, hdx, ← exp_zero, ← exp_sub, exp_le_exp]
-      have hdx' : dx ≤ -1 := by rwa [hdx, exp_le_exp] at hx
-      lia
-    · -- `φ` a unit: use the finite-difference identity for the numerator
-      have hid : (y - W.negY x₀ y₀) * (y - y₀) = (x - x₀) *
-          (x ^ 2 + x * x₀ + x₀ ^ 2 + W.a₂ * (x + x₀) + W.a₄ - W.a₁ * y) := by
-        rw [Affine.negY]
-        linear_combination (W.equation_iff x y).mp h.left - (W.equation_iff x₀ y₀).mp h₀.left
-      have hval := congrArg Valued.v hid
-      rw [map_mul, map_mul, valued_num_of_two_torsion hW hx₀ (hφ1.trans exp_zero.symm)
-        (by norm_num) hx hy] at hval
-      exact exp_one_le_valued_slope hxx (by norm_num) hy hval
+        exact neg_mem (add_self_mem_filtration_of_sub_negY_small hW h₀ hx₀ hy₀ hψsmall hψ0)
+  · exact sub_mem_filtration_of_close_of_X_ne hW h₀ hx₀ hy₀ h hxx hx hy
 
 omit [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
 include hW in
