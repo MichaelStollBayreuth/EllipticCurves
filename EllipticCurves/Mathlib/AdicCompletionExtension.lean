@@ -177,6 +177,18 @@ noncomputable def residueFieldEquivAdicCompletionIntegers :
       from rfl, Valuation.map_sub_swap]
     exact ha
 
+/-- `residueFieldEquivAdicCompletionIntegers` sends the class of `a : R` to the residue of the
+image of `a` in `𝒪_v`. -/
+@[simp] lemma residueFieldEquivAdicCompletionIntegers_mk (a : R) :
+    v.residueFieldEquivAdicCompletionIntegers (K := K) (Ideal.Quotient.mk v.asIdeal a)
+      = IsLocalRing.residue (v.adicCompletionIntegers K)
+          (algebraMap R (v.adicCompletionIntegers K) a) := by
+  change Ideal.quotientMap (IsLocalRing.maximalIdeal _)
+    (algebraMap R (v.adicCompletionIntegers K))
+    (le_of_eq (v.comap_maximalIdeal_adicCompletionIntegers (K := K)).symm)
+    (Ideal.Quotient.mk v.asIdeal a) = _
+  exact Ideal.quotientMap_mk
+
 /-- At a place of odd residue characteristic, the ring of integers of the completion has a
 unit that is not a square in the completion: any lift of a non-square of the residue
 field. -/
@@ -253,6 +265,14 @@ theorem mem_maximalIdeal_pow_iff {x : v.adicCompletionIntegers K} {n : ℕ} :
   have hint := Valuation.valuationSubring.integers (v := (Valued.v : Valuation
     (v.adicCompletion K) ℤᵐ⁰))
   exact ⟨fun h ↦ (hint.le_of_dvd h).trans hπn.le, fun h ↦ hint.dvd_of_le (h.trans_eq hπn.symm)⟩
+
+/-- An element of `R` lies in `v ^ n` exactly when its image in `𝒪_v` lies in `𝔪 ^ n`:
+the completion of a Dedekind domain at a place is absolutely unramified. -/
+theorem algebraMap_mem_maximalIdeal_pow_iff {r : R} {n : ℕ} :
+    algebraMap R (v.adicCompletionIntegers K) r
+        ∈ IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n ↔ r ∈ v.asIdeal ^ n := by
+  rw [mem_maximalIdeal_pow_iff, algebraMap_adicCompletionIntegers_apply,
+    valuedAdicCompletion_eq_valuation', valuation_of_algebraMap, intValuation_le_pow_iff_mem]
 
 instance isTopologicalRing_adicCompletionIntegers :
     IsTopologicalRing (v.adicCompletionIntegers K) :=

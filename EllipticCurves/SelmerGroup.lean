@@ -208,6 +208,11 @@ lemma pointMap_some {x y : K} (h : W.Nonsingular x y) :
     Point.map_some]
   rfl
 
+/-- The base change of points along a field extension `K → L` is injective. -/
+lemma pointMap_injective : Function.Injective (W.pointMap L) := by
+  rw [pointMap]
+  exact (Point.map_injective _).comp (Point.congr _).injective
+
 end PointMap
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]

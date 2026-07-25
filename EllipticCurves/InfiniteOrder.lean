@@ -20,7 +20,6 @@ nonzero point at two good primes are torsion of coprime orders, the point cannot
 
 ## Main statements
 
-* `WeierstrassCurve.Affine.pointMap_injective`: base change of points along `K → L` is injective.
 * `WeierstrassCurve.Affine.nsmul_eq_zero_of_red_pointMap_nsmul_eq_zero`: the single-prime bridge —
   if the reduction of a torsion point is `m`-torsion, so is the point.
 * `WeierstrassCurve.Affine.not_isOfFinAddOrder_of_coprime_red`: the two-prime infinite-order
@@ -28,10 +27,10 @@ nonzero point at two good primes are torsion of coprime orders, the point cannot
 
 ## Implementation notes
 
-The base change `pointMap` and the reduction map `red` take `DecidableEq` instances on `K`, on the
-completions `K_v` and on the residue fields; these are carried as instance arguments and discharged
-with `classical` at a concrete use site (the completion and residue fields have no computable
-equality).
+The base change `pointMap` and the reduction map `adicRed` take `DecidableEq` instances on `K`,
+on the completions `K_v` and on the residue fields; these are carried as instance arguments and
+discharged with `classical` at a concrete use site (the completion and residue fields have no
+computable equality).
 -/
 
 open Function IsDedekindDomain IsDedekindDomain.HeightOneSpectrum IsLocalRing
@@ -45,12 +44,6 @@ private theorem eq_zero_of_nsmul_eq_zero_of_coprime {A : Type*} [AddMonoid A] {P
 namespace WeierstrassCurve.Affine
 
 variable {K : Type*} [Field K] [DecidableEq K] (E : Affine K)
-
-/-- The base change of points along a field extension `K → L` is injective. -/
-lemma pointMap_injective (L : Type*) [Field L] [DecidableEq L] [Algebra K L] :
-    Injective (E.pointMap L) := by
-  rw [pointMap]
-  exact (Point.map_injective _).comp (Point.congr _).injective
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
   [CharZero K] [E.IsElliptic]
@@ -71,9 +64,9 @@ lemma nsmul_eq_zero_of_red_pointMap_nsmul_eq_zero {p : ℕ} (hp : p.Prime)
     (hpram : (p : v.adicCompletionIntegers K) ∉
       maximalIdeal (v.adicCompletionIntegers K) ^ (p - 1))
     {P : E.Point} (hP : IsOfFinAddOrder P) {m : ℕ}
-    (h : m • red hW (E.pointMap (v.adicCompletion K) P) = 0) : m • P = 0 := by
+    (h : m • adicRed hW (E.pointMap (v.adicCompletion K) P) = 0) : m • P = 0 := by
   apply pointMap_injective E (v.adicCompletion K)
-  rw [map_nsmul, nsmul_eq_zero_of_red_nsmul_eq_zero hW hp hpmem hpram
+  rw [map_nsmul, nsmul_eq_zero_of_adicRed_nsmul_eq_zero hW hp hpmem hpram
     (AddMonoidHom.isOfFinAddOrder _ hP) h, map_zero]
 
 end OnePrime
@@ -101,8 +94,8 @@ theorem not_isOfFinAddOrder_of_coprime_red {v w : HeightOneSpectrum R}
     (hqram : (q : w.adicCompletionIntegers K) ∉
       maximalIdeal (w.adicCompletionIntegers K) ^ (q - 1))
     {m n : ℕ} (hmn : Nat.Coprime m n)
-    (hv : m • red hWᵥ (E.pointMap (v.adicCompletion K) P) = 0)
-    (hw : n • red hWw (E.pointMap (w.adicCompletion K) P) = 0) :
+    (hv : m • adicRed hWᵥ (E.pointMap (v.adicCompletion K) P) = 0)
+    (hw : n • adicRed hWw (E.pointMap (w.adicCompletion K) P) = 0) :
     ¬ IsOfFinAddOrder P := fun hfin ↦ hP <|
   eq_zero_of_nsmul_eq_zero_of_coprime hmn
     (nsmul_eq_zero_of_red_pointMap_nsmul_eq_zero E hWᵥ hp hpmem hpram hfin hv)
