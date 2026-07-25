@@ -50,7 +50,7 @@ lemma equation_integral {x y : v.adicCompletion K} (h : W.Equation x y)
 
 include hW in
 /-- `W.negY` of integral coordinates is the coercion of `W₀.negY`. -/
-lemma coe_negY {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1) (hy : Valued.v y ≤ 1) :
+private lemma coe_negY {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1) (hy : Valued.v y ≤ 1) :
     W.negY x y = ((W₀.toAffine).negY (⟨x, hx⟩ : v.adicCompletionIntegers K) ⟨y, hy⟩ :
       v.adicCompletion K) := by
   conv_lhs => rw [← hW]
@@ -59,13 +59,13 @@ lemma coe_negY {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1) (hy : Valued.v
 
 include hW in
 /-- `W.negY` of integral coordinates is integral. -/
-lemma valued_negY_le {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1) (hy : Valued.v y ≤ 1) :
+private lemma valued_negY_le {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1) (hy : Valued.v y ≤ 1) :
     Valued.v (W.negY x y) ≤ 1 := by
   rw [coe_negY hW hx hy]; exact valued_coe_le_one _
 
 include hW in
 /-- Reduction commutes with `negY` on integral coordinates. -/
-lemma redCoord_negY {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1) (hy : Valued.v y ≤ 1)
+private lemma redCoord_negY {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1) (hy : Valued.v y ≤ 1)
     (hn : Valued.v (W.negY x y) ≤ 1) :
     IsLocalRing.residue _ ⟨W.negY x y, hn⟩
       = (adicRedCurve W₀).negY (IsLocalRing.residue _ ⟨x, hx⟩) (IsLocalRing.residue _ ⟨y, hy⟩) := by
@@ -77,7 +77,7 @@ lemma redCoord_negY {x y : v.adicCompletion K} (hx : Valued.v x ≤ 1) (hy : Val
 
 include hW in
 /-- `W.addX` of integral coordinates is the coercion of `W₀.addX`. -/
-lemma coe_addX {x₁ x₂ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
+private lemma coe_addX {x₁ x₂ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
     (hℓ : Valued.v ℓ ≤ 1) :
     W.addX x₁ x₂ ℓ = ((W₀.toAffine).addX (⟨x₁, h₁⟩ : v.adicCompletionIntegers K) ⟨x₂, h₂⟩ ⟨ℓ, hℓ⟩ :
       v.adicCompletion K) := by
@@ -87,7 +87,7 @@ lemma coe_addX {x₁ x₂ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1)
 
 include hW in
 /-- `W.addY` of integral coordinates is the coercion of `W₀.addY`. -/
-lemma coe_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
+private lemma coe_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
     (hy₁ : Valued.v y₁ ≤ 1) (hℓ : Valued.v ℓ ≤ 1) :
     W.addY x₁ x₂ y₁ ℓ = ((W₀.toAffine).addY (⟨x₁, h₁⟩ : v.adicCompletionIntegers K) ⟨x₂, h₂⟩
       ⟨y₁, hy₁⟩ ⟨ℓ, hℓ⟩ : v.adicCompletion K) := by
@@ -97,7 +97,7 @@ lemma coe_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ �
 
 include hW in
 /-- Reduction commutes with `addX` on integral coordinates. -/
-lemma redCoord_addX {x₁ x₂ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
+private lemma redCoord_addX {x₁ x₂ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
     (hℓ : Valued.v ℓ ≤ 1) (hs : Valued.v (W.addX x₁ x₂ ℓ) ≤ 1) :
     IsLocalRing.residue _ ⟨W.addX x₁ x₂ ℓ, hs⟩ = (adicRedCurve W₀).addX
       (IsLocalRing.residue _ ⟨x₁, h₁⟩) (IsLocalRing.residue _ ⟨x₂, h₂⟩)
@@ -110,7 +110,7 @@ lemma redCoord_addX {x₁ x₂ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ �
 
 include hW in
 /-- Reduction commutes with `addY` on integral coordinates. -/
-lemma redCoord_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
+private lemma redCoord_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
     (hy₁ : Valued.v y₁ ≤ 1) (hℓ : Valued.v ℓ ≤ 1) (hs : Valued.v (W.addY x₁ x₂ y₁ ℓ) ≤ 1) :
     IsLocalRing.residue _ ⟨W.addY x₁ x₂ y₁ ℓ, hs⟩ = (adicRedCurve W₀).addY
       (IsLocalRing.residue _ ⟨x₁, h₁⟩) (IsLocalRing.residue _ ⟨x₂, h₂⟩)
@@ -123,38 +123,38 @@ lemma redCoord_addY {x₁ x₂ y₁ ℓ : v.adicCompletion K} (h₁ : Valued.v x
     ⟨x₁, h₁⟩ ⟨y₁, hy₁⟩ ⟨x₂, h₂⟩ ⟨ℓ, hℓ⟩).symm
 
 include hW in
-lemma res_a₁ : IsLocalRing.residue _ ⟨W.a₁, valued_a₁ hW⟩ = (adicRedCurve W₀).a₁ := by
+private lemma res_a₁ : IsLocalRing.residue _ ⟨W.a₁, valued_a₁ hW⟩ = (adicRedCurve W₀).a₁ := by
   rw [show (⟨W.a₁, valued_a₁ hW⟩ : v.adicCompletionIntegers K) = W₀.a₁ from
     Subtype.ext (coe_a₁ hW).symm]
   exact (W₀.map_a₁ (IsLocalRing.residue (v.adicCompletionIntegers K))).symm
 
 include hW in
-lemma res_a₂ : IsLocalRing.residue _ ⟨W.a₂, valued_a₂ hW⟩ = (adicRedCurve W₀).a₂ := by
+private lemma res_a₂ : IsLocalRing.residue _ ⟨W.a₂, valued_a₂ hW⟩ = (adicRedCurve W₀).a₂ := by
   rw [show (⟨W.a₂, valued_a₂ hW⟩ : v.adicCompletionIntegers K) = W₀.a₂ from
     Subtype.ext (coe_a₂ hW).symm]
   exact (W₀.map_a₂ (IsLocalRing.residue (v.adicCompletionIntegers K))).symm
 
 include hW in
-lemma res_a₃ : IsLocalRing.residue _ ⟨W.a₃, valued_a₃ hW⟩ = (adicRedCurve W₀).a₃ := by
+private lemma res_a₃ : IsLocalRing.residue _ ⟨W.a₃, valued_a₃ hW⟩ = (adicRedCurve W₀).a₃ := by
   rw [show (⟨W.a₃, valued_a₃ hW⟩ : v.adicCompletionIntegers K) = W₀.a₃ from
     Subtype.ext (coe_a₃ hW).symm]
   exact (W₀.map_a₃ (IsLocalRing.residue (v.adicCompletionIntegers K))).symm
 
 include hW in
-lemma res_a₄ : IsLocalRing.residue _ ⟨W.a₄, valued_a₄ hW⟩ = (adicRedCurve W₀).a₄ := by
+private lemma res_a₄ : IsLocalRing.residue _ ⟨W.a₄, valued_a₄ hW⟩ = (adicRedCurve W₀).a₄ := by
   rw [show (⟨W.a₄, valued_a₄ hW⟩ : v.adicCompletionIntegers K) = W₀.a₄ from
     Subtype.ext (coe_a₄ hW).symm]
   exact (W₀.map_a₄ (IsLocalRing.residue (v.adicCompletionIntegers K))).symm
 
 /-- Residue of a difference of integral elements. -/
-lemma res_sub {a b : v.adicCompletion K} (ha : Valued.v a ≤ 1) (hb : Valued.v b ≤ 1)
+private lemma res_sub {a b : v.adicCompletion K} (ha : Valued.v a ≤ 1) (hb : Valued.v b ≤ 1)
     (hab : Valued.v (a - b) ≤ 1) :
     res (⟨a - b, hab⟩ : v.adicCompletionIntegers K) = res ⟨a, ha⟩ - res ⟨b, hb⟩ := by
   rw [show (⟨a - b, hab⟩ : v.adicCompletionIntegers K) = ⟨a, ha⟩ - ⟨b, hb⟩ from
     Subtype.ext (by push_cast; ring), map_sub]
 
 /-- Reduction commutes with division by a residue-unit denominator (field-element form). -/
-lemma residue_div' {p q : v.adicCompletion K} (hp : Valued.v p ≤ 1) (hq : Valued.v q ≤ 1)
+private lemma residue_div' {p q : v.adicCompletion K} (hp : Valued.v p ≤ 1) (hq : Valued.v q ≤ 1)
     (hqu : res (⟨q, hq⟩ : v.adicCompletionIntegers K) ≠ 0) (hpq : Valued.v (p / q) ≤ 1) :
     res (⟨p / q, hpq⟩ : v.adicCompletionIntegers K) = res ⟨p, hp⟩ / res ⟨q, hq⟩ := by
   have hq0 : (q : v.adicCompletion K) ≠ 0 := fun h ↦ hqu <| by
@@ -168,7 +168,7 @@ lemma residue_div' {p q : v.adicCompletion K} (hp : Valued.v p ≤ 1) (hq : Valu
 
 include hW in
 /-- Residue of the finite-difference numerator. -/
-lemma res_ficoNum {x₁ x₂ y₁ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
+private lemma res_ficoNum {x₁ x₂ y₁ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1) (h₂ : Valued.v x₂ ≤ 1)
     (hy₁ : Valued.v y₁ ≤ 1)
     (hN : Valued.v (x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁) ≤ 1) :
     res (⟨x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁, hN⟩ :
@@ -196,7 +196,7 @@ private lemma not_exp_two_le_of_le_one {a : v.adicCompletion K} (ha : Valued.v a
 
 include hW in
 /-- The finite-difference numerator of integral coordinates is integral. -/
-lemma valued_ficoNum_le {x₁ x₂ y₁ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1)
+private lemma valued_ficoNum_le {x₁ x₂ y₁ : v.adicCompletion K} (h₁ : Valued.v x₁ ≤ 1)
     (h₂ : Valued.v x₂ ≤ 1) (hy₁ : Valued.v y₁ ≤ 1) :
     Valued.v (x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁) ≤ 1 := by
   rw [show x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁
@@ -218,13 +218,13 @@ lemma nonsingular_deriv_disj {F : Type*} [Field F] {E' : Affine F} {a b : F}
     linear_combination hc
 
 /-- `v x = 1` for an `x ≤ 1` whose reduction is a unit (avoids the subtype-coe unification). -/
-lemma valued_eq_one_of_residue_ne {a : v.adicCompletion K} (ha : Valued.v a ≤ 1)
+private lemma valued_eq_one_of_residue_ne {a : v.adicCompletion K} (ha : Valued.v a ≤ 1)
     (h : res (⟨a, ha⟩ : v.adicCompletionIntegers K) ≠ 0) : Valued.v a = 1 :=
   valued_coe_isUnit (a := (⟨a, ha⟩ : v.adicCompletionIntegers K))
     ((residue_ne_zero_iff_isUnit (⟨a, ha⟩ : v.adicCompletionIntegers K)).mp h)
 
 /-- An integral element with nonzero reduction is nonzero. -/
-lemma ne_zero_of_residue_ne {a : v.adicCompletion K} (ha : Valued.v a ≤ 1)
+private lemma ne_zero_of_residue_ne {a : v.adicCompletion K} (ha : Valued.v a ≤ 1)
     (h : res (⟨a, ha⟩ : v.adicCompletionIntegers K) ≠ 0) : a ≠ 0 := by
   rintro rfl; exact h (map_zero _)
 
@@ -259,7 +259,7 @@ variable [DecidableEq (v.adicCompletion K)]
 
 /-- On the curve, the chord/tangent slope is the finite-difference quotient
 `N / (y₁ - negY x₂ y₂)`; valid in the honest-tangent case too, where `y₁ = y₂`. -/
-lemma slope_eq_div {x₁ x₂ y₁ y₂ : v.adicCompletion K} (hc₁ : W.Equation x₁ y₁)
+private lemma slope_eq_div {x₁ x₂ y₁ y₂ : v.adicCompletion K} (hc₁ : W.Equation x₁ y₁)
     (hc₂ : W.Equation x₂ y₂) (hD0 : y₁ - W.negY x₂ y₂ ≠ 0) :
     W.slope x₁ x₂ y₁ y₂
       = (x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁)
@@ -342,7 +342,7 @@ variable [W.IsElliptic] [DecidableEq (v.adicCompletion K)] [CharZero K]
 include hW in
 /-- If the tangent slope at an integral point whose reduction is `2`-torsion is large
 (`≥ exp 1`), the point's double lies in the kernel of reduction. -/
-lemma add_self_mem_filtration_of_slope {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
+private lemma add_self_mem_filtration_of_slope {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
     (hx₀ : Valued.v x₀ ≤ 1) (hψ : y₀ ≠ W.negY x₀ y₀)
     (hs : exp (1 : ℤ) ≤ Valued.v (W.slope x₀ x₀ y₀ y₀)) :
     (.some x₀ y₀ h₀ : W.Point) + .some x₀ y₀ h₀ ∈ filtration hW 0 := by
@@ -373,7 +373,7 @@ lemma add_self_mem_filtration_of_slope {x₀ y₀ : v.adicCompletion K} (h₀ : 
 include hW in
 /-- Two integral points with equal coordinates differ by `0`, hence lie in every filtration
 step. -/
-lemma sub_mem_filtration_of_eq {x y x₀ y₀ : v.adicCompletion K} (h : W.Nonsingular x y)
+private lemma sub_mem_filtration_of_eq {x y x₀ y₀ : v.adicCompletion K} (h : W.Nonsingular x y)
     (h₀ : W.Nonsingular x₀ y₀) (hx : x = x₀) (hy : y = y₀) :
     (.some x y h : W.Point) - .some x₀ y₀ h₀ ∈ filtration hW 0 := by
   rw [show (.some x y h : W.Point) = .some x₀ y₀ h₀ by subst hx hy; rfl, sub_self]
@@ -440,7 +440,7 @@ lemma adicRed_neg (P : W.Point) : adicRed hW (-P) = - adicRed hW P := by
 include hW in
 /-- At an integral nonsingular point, one of the two partial derivatives of the Weierstrass
 polynomial reduces to a unit (has valuation `1`). -/
-lemma unit_deriv {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
+private lemma unit_deriv {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
     (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1) :
     Valued.v (y₀ - W.negY x₀ y₀) = 1 ∨
       Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) = 1 := by
@@ -544,7 +544,7 @@ private lemma sub_mem_filtration_of_close_of_X_ne {x₀ y₀ : v.adicCompletion 
 include hW in
 /-- Two integral points whose coordinates are congruent modulo `𝔪` (differ by elements of
 valuation `≤ exp (-1)`) differ by a kernel-of-reduction element. -/
-lemma exists_level_one_sub_mem {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
+private lemma exists_level_one_sub_mem {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
     (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1) {x y : v.adicCompletion K}
     (h : W.Nonsingular x y) (hx : Valued.v (x - x₀) ≤ exp (-1 : ℤ))
     (hy : Valued.v (y - y₀) ≤ exp (-1 : ℤ)) :
@@ -609,7 +609,7 @@ variable [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))]
 include hW in
 /-- **Additivity of `adicRed` on the good, reduced-non-opposite locus.** Two integral points whose
 reductions are not opposite have an integral sum, and `adicRed` respects that sum. -/
-lemma adicRed_add_of_reduced_ne_neg {x₁ x₂ y₁ y₂ : v.adicCompletion K}
+private lemma adicRed_add_of_reduced_ne_neg {x₁ x₂ y₁ y₂ : v.adicCompletion K}
     (h₁ : W.Nonsingular x₁ y₁) (h₂ : W.Nonsingular x₂ y₂)
     (hP : ¬ exp (2 : ℤ) ≤ Valued.v x₁) (hQ : ¬ exp (2 : ℤ) ≤ Valued.v x₂)
     (hne : adicRed hW (.some x₁ y₁ h₁) ≠ - adicRed hW (.some x₂ y₂ h₂)) :
@@ -643,7 +643,7 @@ lemma adicRed_add_of_reduced_ne_neg {x₁ x₂ y₁ y₂ : v.adicCompletion K}
 include hW in
 /-- **Additivity of `adicRed` off the kernel of reduction.** Two points not in `E₁(K_v)`
 have `adicRed (P + Q) = adicRed P + adicRed Q`. -/
-lemma adicRed_add_of_not_mem {P Q : W.Point} (hP : P ∉ filtration hW 0)
+private lemma adicRed_add_of_not_mem {P Q : W.Point} (hP : P ∉ filtration hW 0)
     (hQ : Q ∉ filtration hW 0) : adicRed hW (P + Q) = adicRed hW P + adicRed hW Q := by
   rcases P with _ | ⟨x₁, y₁, h₁⟩
   · exact absurd zero_mem_filtration hP
@@ -658,7 +658,7 @@ lemma adicRed_add_of_not_mem {P Q : W.Point} (hP : P ∉ filtration hW 0)
 
 include hW in
 /-- Adding a kernel-of-reduction point does not change the reduction. -/
-lemma adicRed_add_of_mem_left {P : W.Point} (hP : P ∈ filtration hW 0) (Q : W.Point) :
+private lemma adicRed_add_of_mem_left {P : W.Point} (hP : P ∈ filtration hW 0) (Q : W.Point) :
     adicRed hW (P + Q) = adicRed hW Q := by
   by_cases hQ : Q ∈ filtration hW 0
   · rw [(adicRed_eq_zero_iff hW).mpr (add_mem hP hQ), (adicRed_eq_zero_iff hW).mpr hQ]
