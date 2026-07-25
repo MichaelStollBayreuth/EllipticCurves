@@ -1,8 +1,7 @@
 module
 
 public import Mathlib
-public import EllipticCurves.WeierstrassFormalGroup.Reduction
-public import EllipticCurves.SelmerGroup
+public import EllipticCurves.ReductionAtPrime
 
 @[expose] public section
 
@@ -10,30 +9,21 @@ public import EllipticCurves.SelmerGroup
 # An infinite-order certificate via reduction at two primes
 
 Let `E` be an elliptic curve over the fraction field `K` of a Dedekind domain `R` (e.g. a number
-field). Reduction at a prime `v` of good reduction is injective on the torsion of `E(K_v)`
-provided the residue characteristic `p` is not too ramified (`(p) ∈ 𝔪_v` but `(p) ∉ 𝔪_v ^ (p-1)`,
-which holds for instance when `p` is odd and `v` is unramified). Base change `E(K) → E(K_v)` is
-injective, so the composite reduction `E(K) → Ẽ(k_v)` is injective on torsion.
+field).  Reduction at a prime `v` of good reduction is injective on the torsion of `E(K)`
+provided the residue characteristic `p` is not too ramified (`(p : R) ∈ v.asIdeal` but
+`(p : R) ∉ v.asIdeal ^ (p - 1)`, which holds for instance when `p` is odd and `v` is
+unramified); this is `WeierstrassCurve.Affine.eq_zero_of_isOfFinAddOrder_of_red_eq_zero`.
 
-This yields a certificate for a point of `E(K)` to have **infinite order**: if the reductions of a
-nonzero point at two good primes are torsion of coprime orders, the point cannot be torsion.
+This yields a certificate for a point of `E(K)` to have **infinite order**: if the reductions of
+a nonzero point at two good primes are torsion of coprime orders, the point cannot be torsion.
 
 ## Main statements
 
-* `WeierstrassCurve.Affine.nsmul_eq_zero_of_red_pointMap_nsmul_eq_zero`: the single-prime bridge —
-  if the reduction of a torsion point is `m`-torsion, so is the point.
 * `WeierstrassCurve.Affine.not_isOfFinAddOrder_of_coprime_red`: the two-prime infinite-order
   certificate.
-
-## Implementation notes
-
-The base change `pointMap` and the reduction map `adicRed` take `DecidableEq` instances on `K`,
-on the completions `K_v` and on the residue fields; these are carried as instance arguments and
-discharged with `classical` at a concrete use site (the completion and residue fields have no
-computable equality).
 -/
 
-open Function IsDedekindDomain IsDedekindDomain.HeightOneSpectrum IsLocalRing
+open Function IsDedekindDomain IsDedekindDomain.HeightOneSpectrum
 
 /-- An element of an additive monoid annihilated by two coprime multiples is zero. -/
 private theorem eq_zero_of_nsmul_eq_zero_of_coprime {A : Type*} [AddMonoid A] {P : A} {m n : ℕ}
@@ -43,63 +33,29 @@ private theorem eq_zero_of_nsmul_eq_zero_of_coprime {A : Type*} [AddMonoid A] {P
 
 namespace WeierstrassCurve.Affine
 
-variable {K : Type*} [Field K] [DecidableEq K] (E : Affine K)
+variable {R : Type*} [CommRing R] [IsDedekindDomain R] {K : Type*} [Field K] [Algebra R K]
+  [IsFractionRing R K] [DecidableEq K] [CharZero K] {E : Affine K} [E.IsElliptic]
 
-variable {R : Type*} [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
-  [CharZero K] [E.IsElliptic]
-
-section OnePrime
-
-variable {v : HeightOneSpectrum R} [DecidableEq (v.adicCompletion K)]
-  [DecidableEq (ResidueField (v.adicCompletionIntegers K))]
-  {W₀ : WeierstrassCurve (v.adicCompletionIntegers K)} [W₀.IsElliptic]
-  (hW : W₀.map (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K))
-    = (E ⁄ (v.adicCompletion K)).toAffine)
-
-include hW in
-/-- **Single-prime bridge.** If the reduction at `v` of a torsion point of `E(K)` is `m`-torsion,
-then the point itself is `m`-torsion. Here `W₀` is a good integral model of `E` at `v`. -/
-lemma nsmul_eq_zero_of_red_pointMap_nsmul_eq_zero {p : ℕ} (hp : p.Prime)
-    (hpmem : (p : v.adicCompletionIntegers K) ∈ maximalIdeal (v.adicCompletionIntegers K))
-    (hpram : (p : v.adicCompletionIntegers K) ∉
-      maximalIdeal (v.adicCompletionIntegers K) ^ (p - 1))
-    {P : E.Point} (hP : IsOfFinAddOrder P) {m : ℕ}
-    (h : m • adicRed hW (E.pointMap (v.adicCompletion K) P) = 0) : m • P = 0 := by
-  apply pointMap_injective E (v.adicCompletion K)
-  rw [map_nsmul, nsmul_eq_zero_of_adicRed_nsmul_eq_zero hW hp hpmem hpram
-    (AddMonoidHom.isOfFinAddOrder _ hP) h, map_zero]
-
-end OnePrime
-
-/-- **Two-prime infinite-order certificate.** A nonzero point of `E(K)` whose reductions at two
-good primes `v`, `w` are torsion of coprime orders (`m • red_v P = 0`, `n • red_w P = 0` with
-`m`, `n` coprime) has infinite order. `W₀ᵥ`, `W₀w` are good integral models of `E` at `v`, `w`,
-and `p`, `q` are the (lightly ramified) residue characteristics. -/
+/-- **Two-prime infinite-order certificate.**  A nonzero point of `E(K)` whose reductions at two
+good primes `v`, `w` are torsion of coprime orders (`m • red v hE P = 0`, `n • red w hE' P = 0`
+with `m`, `n` coprime) has infinite order.  Here `W₀`, `W₀'` are integral models of `E` over `R`
+with good reduction at `v`, `w` respectively, and `p`, `q` are the (lightly ramified) residue
+characteristics. -/
 theorem not_isOfFinAddOrder_of_coprime_red {v w : HeightOneSpectrum R}
-    [DecidableEq (v.adicCompletion K)] [DecidableEq (ResidueField (v.adicCompletionIntegers K))]
-    [DecidableEq (w.adicCompletion K)] [DecidableEq (ResidueField (w.adicCompletionIntegers K))]
-    {W₀ᵥ : WeierstrassCurve (v.adicCompletionIntegers K)} [W₀ᵥ.IsElliptic]
-    (hWᵥ : W₀ᵥ.map (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K))
-      = (E ⁄ (v.adicCompletion K)).toAffine)
-    {W₀w : WeierstrassCurve (w.adicCompletionIntegers K)} [W₀w.IsElliptic]
-    (hWw : W₀w.map (algebraMap (w.adicCompletionIntegers K) (w.adicCompletion K))
-      = (E ⁄ (w.adicCompletion K)).toAffine)
+    [DecidableEq (R ⧸ v.asIdeal)] [DecidableEq (R ⧸ w.asIdeal)]
+    {W₀ W₀' : WeierstrassCurve R} [(redCurve v W₀).IsElliptic] [(redCurve w W₀').IsElliptic]
+    (hE : W₀.map (algebraMap R K) = E) (hE' : W₀'.map (algebraMap R K) = E)
     {P : E.Point} (hP : P ≠ 0)
-    {p : ℕ} (hp : p.Prime)
-    (hpmem : (p : v.adicCompletionIntegers K) ∈ maximalIdeal (v.adicCompletionIntegers K))
-    (hpram : (p : v.adicCompletionIntegers K) ∉
-      maximalIdeal (v.adicCompletionIntegers K) ^ (p - 1))
-    {q : ℕ} (hq : q.Prime)
-    (hqmem : (q : w.adicCompletionIntegers K) ∈ maximalIdeal (w.adicCompletionIntegers K))
-    (hqram : (q : w.adicCompletionIntegers K) ∉
-      maximalIdeal (w.adicCompletionIntegers K) ^ (q - 1))
+    {p : ℕ} (hp : p.Prime) (hpmem : (p : R) ∈ v.asIdeal)
+    (hpram : (p : R) ∉ v.asIdeal ^ (p - 1))
+    {q : ℕ} (hq : q.Prime) (hqmem : (q : R) ∈ w.asIdeal)
+    (hqram : (q : R) ∉ w.asIdeal ^ (q - 1))
     {m n : ℕ} (hmn : Nat.Coprime m n)
-    (hv : m • adicRed hWᵥ (E.pointMap (v.adicCompletion K) P) = 0)
-    (hw : n • adicRed hWw (E.pointMap (w.adicCompletion K) P) = 0) :
+    (hv : m • red v hE P = 0) (hw : n • red w hE' P = 0) :
     ¬ IsOfFinAddOrder P := fun hfin ↦ hP <|
   eq_zero_of_nsmul_eq_zero_of_coprime hmn
-    (nsmul_eq_zero_of_red_pointMap_nsmul_eq_zero E hWᵥ hp hpmem hpram hfin hv)
-    (nsmul_eq_zero_of_red_pointMap_nsmul_eq_zero E hWw hq hqmem hqram hfin hw)
+    (nsmul_eq_zero_of_red_nsmul_eq_zero v hE hp hpmem hpram hfin hv)
+    (nsmul_eq_zero_of_red_nsmul_eq_zero w hE' hq hqmem hqram hfin hw)
 
 end WeierstrassCurve.Affine
 

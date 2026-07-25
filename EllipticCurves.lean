@@ -27,6 +27,7 @@ import EllipticCurves.Mathlib.RealEtale
 import EllipticCurves.Mathlib.SIntegers
 import EllipticCurves.Mathlib.SelmerGroup
 import EllipticCurves.MordellWeil
+import EllipticCurves.ReductionAtPrime
 import EllipticCurves.SelmerGroup
 import EllipticCurves.VariableChange
 import EllipticCurves.WeakMordellWeil
