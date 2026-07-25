@@ -11,9 +11,11 @@ name = "mathlib"
 git = "https://github.com/leanprover-community/mathlib4.git"
 rev = "v4.32.0"
 
+# The explicit "EllipticCurves" glob elaborates the root aggregator module itself (the mk_all
+# listing); with only the ".+" submodule glob a broken import line there would go unnoticed.
 [[lean_lib]]
 name = "EllipticCurves"
-globs = ["EllipticCurves.+"]
+globs = ["EllipticCurves", "EllipticCurves.+"]
 
 # Comparator (https://github.com/leanprover/comparator) verification harness. Not part of
 # `defaultTargets`, so a plain `lake build` ignores it (and never builds the deliberate `sorry`
