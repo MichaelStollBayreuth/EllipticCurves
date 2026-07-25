@@ -25,6 +25,12 @@ namespace IsDedekindDomain.HeightOneSpectrum
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] {K : Type*} [Field K] [Algebra R K]
   [IsFractionRing R K] (v : HeightOneSpectrum R)
 
+/- Implementation note (upstreaming): Mathlib deliberately keeps `Ideal.Quotient.field` a *local*
+instance (cf. `RingTheory/DedekindDomain/Different.lean`, `RingTheory/Artinian/Module.lean`),
+since maximality of a general ideal is not inferable.  Here the ideal is `v.asIdeal` for a
+height-one prime `v` of a Dedekind domain, whose maximality is an instance
+(`HeightOneSpectrum.isMaximal`), so the `Field` instance is keyed on `v` and safe to make global;
+be prepared to demote it to a local instance if upstream review prefers that. -/
 noncomputable instance : Field (R ⧸ v.asIdeal) := Ideal.Quotient.field _
 
 noncomputable instance : Algebra R (v.valuation K).integer :=

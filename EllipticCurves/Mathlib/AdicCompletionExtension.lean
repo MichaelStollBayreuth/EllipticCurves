@@ -267,7 +267,7 @@ theorem mem_maximalIdeal_pow_iff {x : v.adicCompletionIntegers K} {n : ℕ} :
   exact ⟨fun h ↦ (hint.le_of_dvd h).trans hπn.le, fun h ↦ hint.dvd_of_le (h.trans_eq hπn.symm)⟩
 
 /-- An element of `R` lies in `v ^ n` exactly when its image in `𝒪_v` lies in `𝔪 ^ n`:
-the completion of a Dedekind domain at a place is absolutely unramified. -/
+passing to the completion changes neither the valuation nor the `v`-adic filtration of `R`. -/
 theorem algebraMap_mem_maximalIdeal_pow_iff {r : R} {n : ℕ} :
     algebraMap R (v.adicCompletionIntegers K) r
         ∈ IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ n ↔ r ∈ v.asIdeal ^ n := by
