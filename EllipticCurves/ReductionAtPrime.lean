@@ -85,6 +85,20 @@ private lemma not_exp_two_le {x : K} (hx : v.valuation K x ≤ 1) :
   exact absurd (hx.trans_lt (lt_of_lt_of_le (by rw [← exp_zero]; exact exp_lt_exp.mpr (by lia))
     hc)) (lt_irrefl _)
 
+/-- The ramification hypotheses on the residue characteristic transfer to the completion. -/
+private lemma natCast_mem_maximalIdeal_pow_iff {p k : ℕ} :
+    (p : v.adicCompletionIntegers K) ∈ maximalIdeal (v.adicCompletionIntegers K) ^ k ↔
+      (p : R) ∈ v.asIdeal ^ k := by
+  rw [show ((p : ℕ) : v.adicCompletionIntegers K)
+      = algebraMap R (v.adicCompletionIntegers K) (p : R) from (map_natCast _ p).symm,
+    algebraMap_mem_maximalIdeal_pow_iff]
+
+private lemma natCast_mem_maximalIdeal {p : ℕ} (hpmem : (p : R) ∈ v.asIdeal) :
+    (p : v.adicCompletionIntegers K) ∈ maximalIdeal (v.adicCompletionIntegers K) := by
+  have h1 := (natCast_mem_maximalIdeal_pow_iff (K := K) v (p := p) (k := 1)).mpr
+    (by rwa [pow_one])
+  rwa [pow_one] at h1
+
 include hE in
 /-- The `y`-coordinate of a point of `E(K)` whose `x`-coordinate is `v`-integral is itself
 `v`-integral. -/
@@ -136,6 +150,8 @@ lemma nonsingular_residueHom [(redCurve v W₀).IsElliptic] {x y : K} (hxy : E.E
     (redCurve v W₀).Nonsingular (residueHom v ⟨x, hx⟩) (residueHom v ⟨y, hy⟩) :=
   (redCurve v W₀).equation_iff_nonsingular.mp (equation_residueHom v hE hxy hx hy)
 
+section
+
 variable [(redCurve v W₀).IsElliptic]
 
 include hE in
@@ -168,6 +184,8 @@ include hE in
 lemma red_some_of_not_le {x y : K} {h : E.Nonsingular x y} (hx : ¬ v.valuation K x ≤ 1) :
     red v hE (.some x y h) = 0 :=
   dif_neg hx
+
+end
 
 /-! ### Transport from the completion
 
@@ -203,7 +221,6 @@ private noncomputable def residueFieldAlgHom :
   { (v.residueFieldEquivAdicCompletionIntegers (K := K)).toRingHom with
     commutes' := fun r ↦ v.residueFieldEquivAdicCompletionIntegers_mk r }
 
-omit [(redCurve v W₀).IsElliptic] in
 /-- The reduced curve over `R ⧸ v.asIdeal`, base changed to `𝒪_v ⧸ 𝔪_v`, is the reduction of the
 base-changed integral model. -/
 private lemma baseChange_redCurve :
@@ -215,23 +232,6 @@ private lemma baseChange_redCurve :
   rw [map_map]
   rfl
 
-/-- Good reduction transfers to the base-changed integral model over `𝒪_v`. -/
-private local instance isElliptic_map_adicCompletionIntegers :
-    (W₀.map (algebraMap R (v.adicCompletionIntegers K))).IsElliptic := by
-  have hΔ : Ideal.Quotient.mk v.asIdeal W₀.Δ ≠ 0 := by
-    have h1 : IsUnit ((W₀.map (algebraMap R (R ⧸ v.asIdeal))).Δ) := (redCurve v W₀).isUnit_Δ
-    rw [map_Δ] at h1
-    exact h1.ne_zero
-  rw [isElliptic_iff, map_Δ]
-  refine (residue_ne_zero_iff_isUnit _).mp fun h0 ↦ ?_
-  exact hΔ ((v.residueFieldEquivAdicCompletionIntegers (K := K)).injective
-    (by rw [v.residueFieldEquivAdicCompletionIntegers_mk, h0, map_zero]; rfl))
-
-private lemma isElliptic_baseChange_adicCompletion [E.IsElliptic] :
-    (((E ⁄ (v.adicCompletion K)) : WeierstrassCurve _).toAffine).IsElliptic :=
-  inferInstanceAs ((E.map (algebraMap K (v.adicCompletion K))).IsElliptic)
-
-omit [(redCurve v W₀).IsElliptic] in
 /-- The residue field isomorphism intertwines the two residue maps: `residueHom v` over `K` and
 the residue map of `𝒪_v` on the image of a `v`-integral element in the completion. -/
 private lemma residueFieldAlgHom_residueHom {x : K} (hx : v.valuation K x ≤ 1)
@@ -259,6 +259,8 @@ private lemma residueFieldAlgHom_residueHom {x : K} (hx : v.valuation K x ≤ 1)
         rw [map_sub]
     _ = v.valuation K (algebraMap R K a - x) := v.valuedAdicCompletion_eq_valuation' _
 
+section
+
 variable [DecidableEq (R ⧸ v.asIdeal)]
 
 /-- The transport of points of the reduced curve along the residue field isomorphism. -/
@@ -269,7 +271,6 @@ private noncomputable def resPointHom
   (Point.congr (baseChange_redCurve v)).toAddMonoidHom.comp
     (Point.map (W' := W₀.toAffine) (residueFieldAlgHom (K := K) v))
 
-omit [(redCurve v W₀).IsElliptic] in
 private lemma resPointHom_injective
     [DecidableEq (ResidueField (v.adicCompletionIntegers K))] :
     Function.Injective (resPointHom (K := K) v (W₀ := W₀)) := fun a b h ↦ by
@@ -280,7 +281,27 @@ private lemma resPointHom_injective
   exact Point.map_injective (residueFieldAlgHom (K := K) v)
     ((Point.congr (baseChange_redCurve v)).injective h')
 
-variable [DecidableEq K]
+end
+
+variable [(redCurve v W₀).IsElliptic]
+
+/-- Good reduction transfers to the base-changed integral model over `𝒪_v`. -/
+private local instance isElliptic_map_adicCompletionIntegers :
+    (W₀.map (algebraMap R (v.adicCompletionIntegers K))).IsElliptic := by
+  have hΔ : Ideal.Quotient.mk v.asIdeal W₀.Δ ≠ 0 := by
+    have h1 : IsUnit ((W₀.map (algebraMap R (R ⧸ v.asIdeal))).Δ) := (redCurve v W₀).isUnit_Δ
+    rw [map_Δ] at h1
+    exact h1.ne_zero
+  rw [isElliptic_iff, map_Δ]
+  refine (residue_ne_zero_iff_isUnit _).mp fun h0 ↦ ?_
+  exact hΔ ((v.residueFieldEquivAdicCompletionIntegers (K := K)).injective
+    (by rw [v.residueFieldEquivAdicCompletionIntegers_mk, h0, map_zero]; rfl))
+
+private lemma isElliptic_baseChange_adicCompletion [E.IsElliptic] :
+    (((E ⁄ (v.adicCompletion K)) : WeierstrassCurve _).toAffine).IsElliptic :=
+  inferInstanceAs ((E.map (algebraMap K (v.adicCompletion K))).IsElliptic)
+
+variable [DecidableEq (R ⧸ v.asIdeal)] [DecidableEq K]
 
 include hE in
 /-- **Compatibility of the two reduction maps**: reducing over `K` and transporting to the
@@ -333,24 +354,6 @@ noncomputable def redHom : E.Point →+ (redCurve v W₀).Point :=
   AddMonoidHom.mk' (red v hE) (red_add v hE)
 
 @[simp] lemma coe_redHom : ⇑(redHom v hE) = red v hE := rfl
-
-omit [DecidableEq K] [DecidableEq (R ⧸ v.asIdeal)] [(redCurve v W₀).IsElliptic]
-  [E.IsElliptic] [CharZero K] in
-/-- The ramification hypotheses on the residue characteristic transfer to the completion. -/
-private lemma natCast_mem_maximalIdeal_pow_iff {p k : ℕ} :
-    (p : v.adicCompletionIntegers K) ∈ maximalIdeal (v.adicCompletionIntegers K) ^ k ↔
-      (p : R) ∈ v.asIdeal ^ k := by
-  rw [show ((p : ℕ) : v.adicCompletionIntegers K)
-      = algebraMap R (v.adicCompletionIntegers K) (p : R) from (map_natCast _ p).symm,
-    algebraMap_mem_maximalIdeal_pow_iff]
-
-omit [DecidableEq K] [DecidableEq (R ⧸ v.asIdeal)] [(redCurve v W₀).IsElliptic]
-  [E.IsElliptic] [CharZero K] in
-private lemma natCast_mem_maximalIdeal {p : ℕ} (hpmem : (p : R) ∈ v.asIdeal) :
-    (p : v.adicCompletionIntegers K) ∈ maximalIdeal (v.adicCompletionIntegers K) := by
-  have h1 := (natCast_mem_maximalIdeal_pow_iff (K := K) v (p := p) (k := 1)).mpr
-    (by rwa [pow_one])
-  rwa [pow_one] at h1
 
 include hE in
 /-- **Reduction is injective on torsion**: a torsion point of `E(K)` reducing to `0` at a prime

@@ -335,6 +335,52 @@ lemma valued_slope_le {x₁ x₂ y₁ y₂ : v.adicCompletion K} (hx₁ : Valued
 
 end
 
+section
+
+variable [W.IsElliptic] [DecidableEq (v.adicCompletion K)] [CharZero K]
+
+include hW in
+/-- If the tangent slope at an integral point whose reduction is `2`-torsion is large
+(`≥ exp 1`), the point's double lies in the kernel of reduction. -/
+lemma add_self_mem_filtration_of_slope {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
+    (hx₀ : Valued.v x₀ ≤ 1) (hψ : y₀ ≠ W.negY x₀ y₀)
+    (hs : exp (1 : ℤ) ≤ Valued.v (W.slope x₀ x₀ y₀ y₀)) :
+    (.some x₀ y₀ h₀ : W.Point) + .some x₀ y₀ h₀ ∈ filtration hW 0 := by
+  have ha₁ : Valued.v W.a₁ ≤ 1 := valued_a₁ hW
+  have ha₂ : Valued.v W.a₂ ≤ 1 := valued_a₂ hW
+  rw [Point.add_some (fun hc ↦ hψ hc.2), some_mem_filtration, Affine.addX]
+  set L : v.adicCompletion K := W.slope x₀ x₀ y₀ y₀ with hL
+  have hL1 : (1 : ℤᵐ⁰) < Valued.v L := lt_of_lt_of_le (by rw [← exp_zero, exp_lt_exp]; lia) hs
+  have hbig : ∀ c : ℤᵐ⁰, c ≤ 1 → c < Valued.v L ^ 2 := fun c hc ↦
+    lt_of_le_of_lt hc (by
+      calc (1 : ℤᵐ⁰) < Valued.v L := hL1
+        _ = Valued.v L ^ 1 := (pow_one _).symm
+        _ < Valued.v L ^ 2 := pow_lt_pow_right₀ hL1 (by lia))
+  have hrest : Valued.v (W.a₁ * L - W.a₂ - x₀ - x₀) < Valued.v L ^ 2 := by
+    refine lt_of_le_of_lt (Valuation.map_sub _ _ _) (max_lt (lt_of_le_of_lt
+      (Valuation.map_sub _ _ _) (max_lt (lt_of_le_of_lt (Valuation.map_sub _ _ _)
+        (max_lt ?_ (hbig _ ha₂))) (hbig _ hx₀))) (hbig _ hx₀))
+    rw [map_mul]
+    calc Valued.v W.a₁ * Valued.v L ≤ 1 * Valued.v L := mul_le_mul' ha₁ le_rfl
+      _ = Valued.v L ^ 1 := by rw [one_mul, pow_one]
+      _ < Valued.v L ^ 2 := pow_lt_pow_right₀ hL1 (by lia)
+  rw [show L ^ 2 + W.a₁ * L - W.a₂ - x₀ - x₀ = L ^ 2 + (W.a₁ * L - W.a₂ - x₀ - x₀) by ring,
+    Valuation.map_add_eq_of_lt_left _ (by rw [map_pow]; exact hrest), map_pow]
+  refine le_trans (le_of_eq ?_) (pow_le_pow_left' hs 2)
+  rw [← exp_nsmul, nsmul_eq_mul]
+  norm_num
+
+include hW in
+/-- Two integral points with equal coordinates differ by `0`, hence lie in every filtration
+step. -/
+lemma sub_mem_filtration_of_eq {x y x₀ y₀ : v.adicCompletion K} (h : W.Nonsingular x y)
+    (h₀ : W.Nonsingular x₀ y₀) (hx : x = x₀) (hy : y = y₀) :
+    (.some x y h : W.Point) - .some x₀ y₀ h₀ ∈ filtration hW 0 := by
+  rw [show (.some x y h : W.Point) = .some x₀ y₀ h₀ by subst hx hy; rfl, sub_self]
+  exact zero_mem _
+
+end
+
 variable [W₀.IsElliptic]
 
 include hW in
@@ -391,6 +437,41 @@ lemma adicRed_neg (P : W.Point) : adicRed hW (-P) = - adicRed hW P := by
           Point.neg_some, Point.some.injEq]
         exact ⟨rfl, redCoord_negY hW _ _ _⟩
 
+include hW in
+/-- At an integral nonsingular point, one of the two partial derivatives of the Weierstrass
+polynomial reduces to a unit (has valuation `1`). -/
+lemma unit_deriv {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
+    (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1) :
+    Valued.v (y₀ - W.negY x₀ y₀) = 1 ∨
+      Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) = 1 := by
+  have hnegYint : Valued.v (W.negY x₀ y₀) ≤ 1 := valued_negY_le hW hx₀ hy₀
+  have hψint : Valued.v (y₀ - W.negY x₀ y₀) ≤ 1 := valued_sub_le hy₀ hnegYint
+  -- the integral model of the `x`-derivative `φ = a₁ y - (3 x² + 2 a₂ x + a₄)` at the point
+  set φ₀ : v.adicCompletionIntegers K :=
+    ⟨W.a₁, valued_a₁ hW⟩ * ⟨y₀, hy₀⟩ - (⟨x₀, hx₀⟩ ^ 2 + ⟨x₀, hx₀⟩ ^ 2 + ⟨x₀, hx₀⟩ ^ 2
+      + (⟨W.a₂, valued_a₂ hW⟩ * ⟨x₀, hx₀⟩ + ⟨W.a₂, valued_a₂ hW⟩ * ⟨x₀, hx₀⟩)
+      + ⟨W.a₄, valued_a₄ hW⟩) with hφ₀
+  have hφint : Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) ≤ 1 := by
+    rw [show W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄) = (φ₀ : v.adicCompletion K)
+      from by rw [hφ₀]; push_cast; ring]
+    exact valued_coe_le_one _
+  have hresψ : res (⟨y₀ - W.negY x₀ y₀, hψint⟩ : v.adicCompletionIntegers K)
+      = res ⟨y₀, hy₀⟩ - (adicRedCurve W₀).negY (res ⟨x₀, hx₀⟩) (res ⟨y₀, hy₀⟩) := by
+    rw [res_sub hy₀ hnegYint hψint, redCoord_negY hW hx₀ hy₀ hnegYint]
+  have hresφ : res (⟨W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄), hφint⟩ :
+        v.adicCompletionIntegers K)
+      = (adicRedCurve W₀).a₁ * res ⟨y₀, hy₀⟩
+        - (3 * res ⟨x₀, hx₀⟩ ^ 2 + 2 * (adicRedCurve W₀).a₂ * res ⟨x₀, hx₀⟩
+          + (adicRedCurve W₀).a₄) := by
+    rw [← res_a₁ hW, ← res_a₂ hW, ← res_a₄ hW,
+      show (⟨W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄), hφint⟩ : v.adicCompletionIntegers K)
+        = φ₀ from Subtype.ext (by rw [hφ₀]; push_cast; ring), hφ₀]
+    simp only [map_sub, map_add, map_mul, map_pow]
+    ring
+  rcases nonsingular_deriv_disj (adicRed_nonsingular hW h₀.left hx₀ hy₀) with hφ | hψ
+  · exact Or.inr (valued_eq_one_of_residue_ne hφint (fun h ↦ hφ (hresφ.symm.trans h)))
+  · exact Or.inl (valued_eq_one_of_residue_ne hψint (fun h ↦ hψ (hresψ.symm.trans h)))
+
 variable [W.IsElliptic] [DecidableEq (v.adicCompletion K)] [CharZero K]
 
 include hW in
@@ -404,6 +485,124 @@ lemma adicRed_eq_zero_iff {P : W.Point} : adicRed hW P = 0 ↔ P ∈ filtration 
       · exact iff_of_true (adicRed_some_of_mem hW hx) (le_trans (exp_le_exp.mpr (by lia)) hx)
       · refine iff_of_false ?_ (fun hc ↦ hx (le_trans (exp_le_exp.mpr (by lia)) hc))
         rw [adicRed_some_of_not_mem hW hx]; exact Point.some_ne_zero _
+
+include hW in
+-- The `2`-torsion escape: if the tangent denominator `ψ = y₀ - negY x₀ y₀` at an integral point
+-- is small (the point reduces to `2`-torsion) but nonzero, the point's double lies in the kernel
+-- of reduction.
+private lemma add_self_mem_filtration_of_sub_negY_small {x₀ y₀ : v.adicCompletion K}
+    (h₀ : W.Nonsingular x₀ y₀) (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1)
+    (hψsmall : Valued.v (y₀ - W.negY x₀ y₀) ≤ exp (-1 : ℤ)) (hψ0 : y₀ - W.negY x₀ y₀ ≠ 0) :
+    (.some x₀ y₀ h₀ : W.Point) + .some x₀ y₀ h₀ ∈ filtration hW 0 := by
+  have hφ1 : Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) = 1 := by
+    rcases unit_deriv hW h₀ hx₀ hy₀ with hψ1 | hφ1
+    · exact absurd hψsmall (by rw [hψ1, ← exp_zero, exp_le_exp]; lia)
+    · exact hφ1
+  have hψne : y₀ ≠ W.negY x₀ y₀ := fun hc ↦ hψ0 (sub_eq_zero.mpr hc)
+  refine add_self_mem_filtration_of_slope hW h₀ hx₀ hψne ?_
+  rw [W.slope_of_Y_ne rfl hψne, map_div₀]
+  obtain ⟨dψ, hdψ⟩ : ∃ dψ : ℤ, Valued.v (y₀ - W.negY x₀ y₀) = exp dψ :=
+    ⟨_, (exp_log (by simpa using hψ0)).symm⟩
+  have hnumφ : Valued.v (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄ - W.a₁ * y₀) = 1 := by
+    rw [show 3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄ - W.a₁ * y₀
+        = -(W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) by ring, Valuation.map_neg, hφ1]
+  have hdψ' : dψ ≤ -1 := by rwa [hdψ, exp_le_exp] at hψsmall
+  rw [hnumφ, hdψ, ← exp_zero, ← exp_sub, exp_le_exp]
+  lia
+
+include hW in
+-- The secant case of `exists_level_one_sub_mem`: congruent points with distinct `x`-coordinates
+-- differ by a kernel-of-reduction element, since the secant slope is large.
+private lemma sub_mem_filtration_of_close_of_X_ne {x₀ y₀ : v.adicCompletion K}
+    (h₀ : W.Nonsingular x₀ y₀) (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1)
+    {x y : v.adicCompletion K} (h : W.Nonsingular x y) (hxx : x ≠ x₀)
+    (hx : Valued.v (x - x₀) ≤ exp (-1 : ℤ)) (hy : Valued.v (y - y₀) ≤ exp (-1 : ℤ)) :
+    (.some x y h : W.Point) - .some x₀ y₀ h₀ ∈ filtration hW 0 := by
+  refine sub_mem_filtration_of_slope h₀ h hxx hx₀ (valued_le_one_of_sub hx hx₀) ?_
+  rcases unit_deriv hW h₀ hx₀ hy₀ with hψ1 | hφ1
+  · -- `ψ` a unit: the numerator `y - negY x₀ y₀` is a unit
+    have hnum : Valued.v (y - W.negY x₀ y₀) = 1 := by
+      rw [show y - W.negY x₀ y₀ = (y₀ - W.negY x₀ y₀) + (y - y₀) by ring,
+        Valuation.map_add_eq_of_lt_left, hψ1]
+      refine lt_of_le_of_lt hy ?_
+      rw [hψ1, ← exp_zero, exp_lt_exp]; lia
+    obtain ⟨dx, hdx⟩ : ∃ dx : ℤ, Valued.v (x - x₀) = exp dx :=
+      ⟨_, (exp_log (by simpa using sub_ne_zero.mpr hxx)).symm⟩
+    have hdx' : dx ≤ -1 := by rwa [hdx, exp_le_exp] at hx
+    rw [map_div₀, hnum, hdx, ← exp_zero, ← exp_sub, exp_le_exp]
+    lia
+  · -- `φ` a unit: use the finite-difference identity for the numerator
+    have hid : (y - W.negY x₀ y₀) * (y - y₀) = (x - x₀) *
+        (x ^ 2 + x * x₀ + x₀ ^ 2 + W.a₂ * (x + x₀) + W.a₄ - W.a₁ * y) := by
+      rw [Affine.negY]
+      linear_combination (W.equation_iff x y).mp h.left - (W.equation_iff x₀ y₀).mp h₀.left
+    have hval := congrArg Valued.v hid
+    rw [map_mul, map_mul, valued_num_of_two_torsion hW hx₀ (hφ1.trans exp_zero.symm)
+      (by norm_num) hx hy] at hval
+    exact exp_one_le_valued_slope hxx (by norm_num) hy hval
+
+include hW in
+/-- Two integral points whose coordinates are congruent modulo `𝔪` (differ by elements of
+valuation `≤ exp (-1)`) differ by a kernel-of-reduction element. -/
+lemma exists_level_one_sub_mem {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
+    (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1) {x y : v.adicCompletion K}
+    (h : W.Nonsingular x y) (hx : Valued.v (x - x₀) ≤ exp (-1 : ℤ))
+    (hy : Valued.v (y - y₀) ≤ exp (-1 : ℤ)) :
+    (.some x y h : W.Point) - .some x₀ y₀ h₀ ∈ filtration hW 0 := by
+  rcases eq_or_ne x x₀ with heq | hxx
+  · -- `x = x₀`: the coordinates agree, so compare the `y`-coordinates
+    subst x
+    rcases W.Y_eq_of_X_eq h.left h₀.left rfl with hy' | hy'
+    · exact sub_mem_filtration_of_eq hW h h₀ rfl hy'
+    · have hψsmall : Valued.v (y₀ - W.negY x₀ y₀) ≤ exp (-1 : ℤ) := by
+        rw [show y₀ - W.negY x₀ y₀ = -(y - y₀) by rw [hy']; ring, Valuation.map_neg]; exact hy
+      rcases eq_or_ne (y₀ - W.negY x₀ y₀) 0 with hψ0 | hψ0
+      · refine sub_mem_filtration_of_eq hW h h₀ rfl ?_
+        rw [hy', ← sub_eq_zero, show W.negY x₀ y₀ - y₀ = -(y₀ - W.negY x₀ y₀) by ring,
+          hψ0, neg_zero]
+      · -- `Q` reduces to `2`-torsion and `P = -Q`, so `P - Q = -(Q + Q)` is in the kernel
+        have hP : (.some x₀ y h : W.Point) = -.some x₀ y₀ h₀ := by
+          rw [Point.neg_some]; subst hy'; rfl
+        rw [hP, show -(.some x₀ y₀ h₀ : W.Point) - .some x₀ y₀ h₀
+            = -(.some x₀ y₀ h₀ + .some x₀ y₀ h₀) by abel]
+        exact neg_mem (add_self_mem_filtration_of_sub_negY_small hW h₀ hx₀ hy₀ hψsmall hψ0)
+  · exact sub_mem_filtration_of_close_of_X_ne hW h₀ hx₀ hy₀ h hxx hx hy
+
+include hW in
+/-- **Congruence criterion**: equal reductions of two points differ by a kernel-of-reduction
+element. -/
+lemma sub_mem_filtration_of_red_eq {P Q : W.Point} (hPQ : adicRed hW P = adicRed hW Q) :
+    P - Q ∈ filtration hW 0 := by
+  by_cases hQ0 : Q ∈ filtration hW 0
+  · exact AddSubgroup.sub_mem _
+      ((adicRed_eq_zero_iff hW).mp (hPQ.trans ((adicRed_eq_zero_iff hW).mpr hQ0))) hQ0
+  · have hP0 : P ∉ filtration hW 0 := fun h ↦ hQ0
+      ((adicRed_eq_zero_iff hW).mp (hPQ.symm.trans ((adicRed_eq_zero_iff hW).mpr h)))
+    rcases P with _ | ⟨x, y, hxy⟩
+    · exact absurd zero_mem_filtration hP0
+    rcases Q with _ | ⟨x₀, y₀, h₀⟩
+    · exact absurd zero_mem_filtration hQ0
+    have hPm : ¬ exp (2 : ℤ) ≤ Valued.v x := fun hc ↦ hP0 (some_mem_filtration.mpr hc)
+    have hQm : ¬ exp (2 : ℤ) ≤ Valued.v x₀ := fun hc ↦ hQ0 (some_mem_filtration.mpr hc)
+    obtain ⟨hxi, hyi⟩ := integral_of_not_mem hW hxy.left hPm
+    obtain ⟨hxi₀, hyi₀⟩ := integral_of_not_mem hW h₀.left hQm
+    rw [adicRed_some_of_not_mem hW hPm, adicRed_some_of_not_mem hW hQm, Point.some.injEq] at hPQ
+    refine exists_level_one_sub_mem hW h₀ hxi₀ hyi₀ hxy ?_ ?_
+    · refine mem_maximalIdeal_iff (x := ⟨x - x₀, valued_sub_le hxi hxi₀⟩) |>.mp
+        (residue_eq_zero_iff _ |>.mp ?_)
+      rw [res_sub hxi hxi₀ (valued_sub_le hxi hxi₀), hPQ.1, sub_self]
+    · refine mem_maximalIdeal_iff (x := ⟨y - y₀, valued_sub_le hyi hyi₀⟩) |>.mp
+        (residue_eq_zero_iff _ |>.mp ?_)
+      rw [res_sub hyi hyi₀ (valued_sub_le hyi hyi₀), hPQ.2, sub_self]
+
+include hW in
+/-- `adicRed` is injective on torsion: a torsion point in the kernel of reduction is zero. -/
+lemma eq_zero_of_isOfFinAddOrder_of_adicRed_eq_zero {p : ℕ} (hp : p.Prime)
+    (hpmem : (p : v.adicCompletionIntegers K) ∈ maximalIdeal (v.adicCompletionIntegers K))
+    (hpram : (p : v.adicCompletionIntegers K) ∉
+      maximalIdeal (v.adicCompletionIntegers K) ^ (p - 1))
+    {P : W.Point} (hP : IsOfFinAddOrder P) (h0 : adicRed hW P = 0) : P = 0 :=
+  eq_zero_of_isOfFinAddOrder_of_mem_filtration hp hpmem hpram ((adicRed_eq_zero_iff hW).mp h0) hP
 
 variable [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))]
 
@@ -440,198 +639,6 @@ lemma adicRed_add_of_reduced_ne_neg {x₁ x₂ y₁ y₂ : v.adicCompletion K}
     adicRed_some_of_not_mem hW hQ, Point.add_some hne_res, Point.some.injEq]
   exact ⟨(redCoord_addX hW hx₁ hx₂ hℓ haXint).trans (by rw [hslope]),
     (redCoord_addY hW hx₁ hx₂ hy₁ hℓ haYint).trans (by rw [hslope])⟩
-
-omit [W.IsElliptic] [DecidableEq (v.adicCompletion K)] [CharZero K]
-  [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
-include hW in
-/-- At an integral nonsingular point, one of the two partial derivatives of the Weierstrass
-polynomial reduces to a unit (has valuation `1`). -/
-lemma unit_deriv {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
-    (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1) :
-    Valued.v (y₀ - W.negY x₀ y₀) = 1 ∨
-      Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) = 1 := by
-  have hnegYint : Valued.v (W.negY x₀ y₀) ≤ 1 := valued_negY_le hW hx₀ hy₀
-  have hψint : Valued.v (y₀ - W.negY x₀ y₀) ≤ 1 := valued_sub_le hy₀ hnegYint
-  -- the integral model of the `x`-derivative `φ = a₁ y - (3 x² + 2 a₂ x + a₄)` at the point
-  set φ₀ : v.adicCompletionIntegers K :=
-    ⟨W.a₁, valued_a₁ hW⟩ * ⟨y₀, hy₀⟩ - (⟨x₀, hx₀⟩ ^ 2 + ⟨x₀, hx₀⟩ ^ 2 + ⟨x₀, hx₀⟩ ^ 2
-      + (⟨W.a₂, valued_a₂ hW⟩ * ⟨x₀, hx₀⟩ + ⟨W.a₂, valued_a₂ hW⟩ * ⟨x₀, hx₀⟩)
-      + ⟨W.a₄, valued_a₄ hW⟩) with hφ₀
-  have hφint : Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) ≤ 1 := by
-    rw [show W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄) = (φ₀ : v.adicCompletion K)
-      from by rw [hφ₀]; push_cast; ring]
-    exact valued_coe_le_one _
-  have hresψ : res (⟨y₀ - W.negY x₀ y₀, hψint⟩ : v.adicCompletionIntegers K)
-      = res ⟨y₀, hy₀⟩ - (adicRedCurve W₀).negY (res ⟨x₀, hx₀⟩) (res ⟨y₀, hy₀⟩) := by
-    rw [res_sub hy₀ hnegYint hψint, redCoord_negY hW hx₀ hy₀ hnegYint]
-  have hresφ : res (⟨W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄), hφint⟩ :
-        v.adicCompletionIntegers K)
-      = (adicRedCurve W₀).a₁ * res ⟨y₀, hy₀⟩
-        - (3 * res ⟨x₀, hx₀⟩ ^ 2 + 2 * (adicRedCurve W₀).a₂ * res ⟨x₀, hx₀⟩
-          + (adicRedCurve W₀).a₄) := by
-    rw [← res_a₁ hW, ← res_a₂ hW, ← res_a₄ hW,
-      show (⟨W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄), hφint⟩ : v.adicCompletionIntegers K)
-        = φ₀ from Subtype.ext (by rw [hφ₀]; push_cast; ring), hφ₀]
-    simp only [map_sub, map_add, map_mul, map_pow]
-    ring
-  rcases nonsingular_deriv_disj (adicRed_nonsingular hW h₀.left hx₀ hy₀) with hφ | hψ
-  · exact Or.inr (valued_eq_one_of_residue_ne hφint (fun h ↦ hφ (hresφ.symm.trans h)))
-  · exact Or.inl (valued_eq_one_of_residue_ne hψint (fun h ↦ hψ (hresψ.symm.trans h)))
-
-omit [W₀.IsElliptic] [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
-include hW in
-/-- If the tangent slope at an integral point whose reduction is `2`-torsion is large
-(`≥ exp 1`), the point's double lies in the kernel of reduction. -/
-lemma add_self_mem_filtration_of_slope {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
-    (hx₀ : Valued.v x₀ ≤ 1) (hψ : y₀ ≠ W.negY x₀ y₀)
-    (hs : exp (1 : ℤ) ≤ Valued.v (W.slope x₀ x₀ y₀ y₀)) :
-    (.some x₀ y₀ h₀ : W.Point) + .some x₀ y₀ h₀ ∈ filtration hW 0 := by
-  have ha₁ : Valued.v W.a₁ ≤ 1 := valued_a₁ hW
-  have ha₂ : Valued.v W.a₂ ≤ 1 := valued_a₂ hW
-  rw [Point.add_some (fun hc ↦ hψ hc.2), some_mem_filtration, Affine.addX]
-  set L : v.adicCompletion K := W.slope x₀ x₀ y₀ y₀ with hL
-  have hL1 : (1 : ℤᵐ⁰) < Valued.v L := lt_of_lt_of_le (by rw [← exp_zero, exp_lt_exp]; lia) hs
-  have hbig : ∀ c : ℤᵐ⁰, c ≤ 1 → c < Valued.v L ^ 2 := fun c hc ↦
-    lt_of_le_of_lt hc (by
-      calc (1 : ℤᵐ⁰) < Valued.v L := hL1
-        _ = Valued.v L ^ 1 := (pow_one _).symm
-        _ < Valued.v L ^ 2 := pow_lt_pow_right₀ hL1 (by lia))
-  have hrest : Valued.v (W.a₁ * L - W.a₂ - x₀ - x₀) < Valued.v L ^ 2 := by
-    refine lt_of_le_of_lt (Valuation.map_sub _ _ _) (max_lt (lt_of_le_of_lt
-      (Valuation.map_sub _ _ _) (max_lt (lt_of_le_of_lt (Valuation.map_sub _ _ _)
-        (max_lt ?_ (hbig _ ha₂))) (hbig _ hx₀))) (hbig _ hx₀))
-    rw [map_mul]
-    calc Valued.v W.a₁ * Valued.v L ≤ 1 * Valued.v L := mul_le_mul' ha₁ le_rfl
-      _ = Valued.v L ^ 1 := by rw [one_mul, pow_one]
-      _ < Valued.v L ^ 2 := pow_lt_pow_right₀ hL1 (by lia)
-  rw [show L ^ 2 + W.a₁ * L - W.a₂ - x₀ - x₀ = L ^ 2 + (W.a₁ * L - W.a₂ - x₀ - x₀) by ring,
-    Valuation.map_add_eq_of_lt_left _ (by rw [map_pow]; exact hrest), map_pow]
-  refine le_trans (le_of_eq ?_) (pow_le_pow_left' hs 2)
-  rw [← exp_nsmul, nsmul_eq_mul]
-  norm_num
-
-omit [W₀.IsElliptic] [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
-include hW in
-/-- Two integral points with equal coordinates differ by `0`, hence lie in every filtration
-step. -/
-lemma sub_mem_filtration_of_eq {x y x₀ y₀ : v.adicCompletion K} (h : W.Nonsingular x y)
-    (h₀ : W.Nonsingular x₀ y₀) (hx : x = x₀) (hy : y = y₀) :
-    (.some x y h : W.Point) - .some x₀ y₀ h₀ ∈ filtration hW 0 := by
-  rw [show (.some x y h : W.Point) = .some x₀ y₀ h₀ by subst hx hy; rfl, sub_self]
-  exact zero_mem _
-
-omit [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
-include hW in
--- The `2`-torsion escape: if the tangent denominator `ψ = y₀ - negY x₀ y₀` at an integral point
--- is small (the point reduces to `2`-torsion) but nonzero, the point's double lies in the kernel
--- of reduction.
-private lemma add_self_mem_filtration_of_sub_negY_small {x₀ y₀ : v.adicCompletion K}
-    (h₀ : W.Nonsingular x₀ y₀) (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1)
-    (hψsmall : Valued.v (y₀ - W.negY x₀ y₀) ≤ exp (-1 : ℤ)) (hψ0 : y₀ - W.negY x₀ y₀ ≠ 0) :
-    (.some x₀ y₀ h₀ : W.Point) + .some x₀ y₀ h₀ ∈ filtration hW 0 := by
-  have hφ1 : Valued.v (W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) = 1 := by
-    rcases unit_deriv hW h₀ hx₀ hy₀ with hψ1 | hφ1
-    · exact absurd hψsmall (by rw [hψ1, ← exp_zero, exp_le_exp]; lia)
-    · exact hφ1
-  have hψne : y₀ ≠ W.negY x₀ y₀ := fun hc ↦ hψ0 (sub_eq_zero.mpr hc)
-  refine add_self_mem_filtration_of_slope hW h₀ hx₀ hψne ?_
-  rw [W.slope_of_Y_ne rfl hψne, map_div₀]
-  obtain ⟨dψ, hdψ⟩ : ∃ dψ : ℤ, Valued.v (y₀ - W.negY x₀ y₀) = exp dψ :=
-    ⟨_, (exp_log (by simpa using hψ0)).symm⟩
-  have hnumφ : Valued.v (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄ - W.a₁ * y₀) = 1 := by
-    rw [show 3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄ - W.a₁ * y₀
-        = -(W.a₁ * y₀ - (3 * x₀ ^ 2 + 2 * W.a₂ * x₀ + W.a₄)) by ring, Valuation.map_neg, hφ1]
-  have hdψ' : dψ ≤ -1 := by rwa [hdψ, exp_le_exp] at hψsmall
-  rw [hnumφ, hdψ, ← exp_zero, ← exp_sub, exp_le_exp]
-  lia
-
-omit [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
-include hW in
--- The secant case of `exists_level_one_sub_mem`: congruent points with distinct `x`-coordinates
--- differ by a kernel-of-reduction element, since the secant slope is large.
-private lemma sub_mem_filtration_of_close_of_X_ne {x₀ y₀ : v.adicCompletion K}
-    (h₀ : W.Nonsingular x₀ y₀) (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1)
-    {x y : v.adicCompletion K} (h : W.Nonsingular x y) (hxx : x ≠ x₀)
-    (hx : Valued.v (x - x₀) ≤ exp (-1 : ℤ)) (hy : Valued.v (y - y₀) ≤ exp (-1 : ℤ)) :
-    (.some x y h : W.Point) - .some x₀ y₀ h₀ ∈ filtration hW 0 := by
-  refine sub_mem_filtration_of_slope h₀ h hxx hx₀ (valued_le_one_of_sub hx hx₀) ?_
-  rcases unit_deriv hW h₀ hx₀ hy₀ with hψ1 | hφ1
-  · -- `ψ` a unit: the numerator `y - negY x₀ y₀` is a unit
-    have hnum : Valued.v (y - W.negY x₀ y₀) = 1 := by
-      rw [show y - W.negY x₀ y₀ = (y₀ - W.negY x₀ y₀) + (y - y₀) by ring,
-        Valuation.map_add_eq_of_lt_left, hψ1]
-      refine lt_of_le_of_lt hy ?_
-      rw [hψ1, ← exp_zero, exp_lt_exp]; lia
-    obtain ⟨dx, hdx⟩ : ∃ dx : ℤ, Valued.v (x - x₀) = exp dx :=
-      ⟨_, (exp_log (by simpa using sub_ne_zero.mpr hxx)).symm⟩
-    have hdx' : dx ≤ -1 := by rwa [hdx, exp_le_exp] at hx
-    rw [map_div₀, hnum, hdx, ← exp_zero, ← exp_sub, exp_le_exp]
-    lia
-  · -- `φ` a unit: use the finite-difference identity for the numerator
-    have hid : (y - W.negY x₀ y₀) * (y - y₀) = (x - x₀) *
-        (x ^ 2 + x * x₀ + x₀ ^ 2 + W.a₂ * (x + x₀) + W.a₄ - W.a₁ * y) := by
-      rw [Affine.negY]
-      linear_combination (W.equation_iff x y).mp h.left - (W.equation_iff x₀ y₀).mp h₀.left
-    have hval := congrArg Valued.v hid
-    rw [map_mul, map_mul, valued_num_of_two_torsion hW hx₀ (hφ1.trans exp_zero.symm)
-      (by norm_num) hx hy] at hval
-    exact exp_one_le_valued_slope hxx (by norm_num) hy hval
-
-omit [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
-include hW in
-/-- Two integral points whose coordinates are congruent modulo `𝔪` (differ by elements of
-valuation `≤ exp (-1)`) differ by a kernel-of-reduction element. -/
-lemma exists_level_one_sub_mem {x₀ y₀ : v.adicCompletion K} (h₀ : W.Nonsingular x₀ y₀)
-    (hx₀ : Valued.v x₀ ≤ 1) (hy₀ : Valued.v y₀ ≤ 1) {x y : v.adicCompletion K}
-    (h : W.Nonsingular x y) (hx : Valued.v (x - x₀) ≤ exp (-1 : ℤ))
-    (hy : Valued.v (y - y₀) ≤ exp (-1 : ℤ)) :
-    (.some x y h : W.Point) - .some x₀ y₀ h₀ ∈ filtration hW 0 := by
-  rcases eq_or_ne x x₀ with heq | hxx
-  · -- `x = x₀`: the coordinates agree, so compare the `y`-coordinates
-    subst x
-    rcases W.Y_eq_of_X_eq h.left h₀.left rfl with hy' | hy'
-    · exact sub_mem_filtration_of_eq hW h h₀ rfl hy'
-    · have hψsmall : Valued.v (y₀ - W.negY x₀ y₀) ≤ exp (-1 : ℤ) := by
-        rw [show y₀ - W.negY x₀ y₀ = -(y - y₀) by rw [hy']; ring, Valuation.map_neg]; exact hy
-      rcases eq_or_ne (y₀ - W.negY x₀ y₀) 0 with hψ0 | hψ0
-      · refine sub_mem_filtration_of_eq hW h h₀ rfl ?_
-        rw [hy', ← sub_eq_zero, show W.negY x₀ y₀ - y₀ = -(y₀ - W.negY x₀ y₀) by ring,
-          hψ0, neg_zero]
-      · -- `Q` reduces to `2`-torsion and `P = -Q`, so `P - Q = -(Q + Q)` is in the kernel
-        have hP : (.some x₀ y h : W.Point) = -.some x₀ y₀ h₀ := by
-          rw [Point.neg_some]; subst hy'; rfl
-        rw [hP, show -(.some x₀ y₀ h₀ : W.Point) - .some x₀ y₀ h₀
-            = -(.some x₀ y₀ h₀ + .some x₀ y₀ h₀) by abel]
-        exact neg_mem (add_self_mem_filtration_of_sub_negY_small hW h₀ hx₀ hy₀ hψsmall hψ0)
-  · exact sub_mem_filtration_of_close_of_X_ne hW h₀ hx₀ hy₀ h hxx hx hy
-
-omit [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
-include hW in
-/-- **Congruence criterion**: equal reductions of two points differ by a kernel-of-reduction
-element. -/
-lemma sub_mem_filtration_of_red_eq {P Q : W.Point} (hPQ : adicRed hW P = adicRed hW Q) :
-    P - Q ∈ filtration hW 0 := by
-  by_cases hQ0 : Q ∈ filtration hW 0
-  · exact AddSubgroup.sub_mem _
-      ((adicRed_eq_zero_iff hW).mp (hPQ.trans ((adicRed_eq_zero_iff hW).mpr hQ0))) hQ0
-  · have hP0 : P ∉ filtration hW 0 := fun h ↦ hQ0
-      ((adicRed_eq_zero_iff hW).mp (hPQ.symm.trans ((adicRed_eq_zero_iff hW).mpr h)))
-    rcases P with _ | ⟨x, y, hxy⟩
-    · exact absurd zero_mem_filtration hP0
-    rcases Q with _ | ⟨x₀, y₀, h₀⟩
-    · exact absurd zero_mem_filtration hQ0
-    have hPm : ¬ exp (2 : ℤ) ≤ Valued.v x := fun hc ↦ hP0 (some_mem_filtration.mpr hc)
-    have hQm : ¬ exp (2 : ℤ) ≤ Valued.v x₀ := fun hc ↦ hQ0 (some_mem_filtration.mpr hc)
-    obtain ⟨hxi, hyi⟩ := integral_of_not_mem hW hxy.left hPm
-    obtain ⟨hxi₀, hyi₀⟩ := integral_of_not_mem hW h₀.left hQm
-    rw [adicRed_some_of_not_mem hW hPm, adicRed_some_of_not_mem hW hQm, Point.some.injEq] at hPQ
-    refine exists_level_one_sub_mem hW h₀ hxi₀ hyi₀ hxy ?_ ?_
-    · refine mem_maximalIdeal_iff (x := ⟨x - x₀, valued_sub_le hxi hxi₀⟩) |>.mp
-        (residue_eq_zero_iff _ |>.mp ?_)
-      rw [res_sub hxi hxi₀ (valued_sub_le hxi hxi₀), hPQ.1, sub_self]
-    · refine mem_maximalIdeal_iff (x := ⟨y - y₀, valued_sub_le hyi hyi₀⟩) |>.mp
-        (residue_eq_zero_iff _ |>.mp ?_)
-      rw [res_sub hyi hyi₀ (valued_sub_le hyi hyi₀), hPQ.2, sub_self]
 
 include hW in
 /-- **Additivity of `adicRed` off the kernel of reduction.** Two points not in `E₁(K_v)`
@@ -676,16 +683,6 @@ noncomputable def adicRedHom : W.Point →+ (adicRedCurve W₀).Point :=
   AddMonoidHom.mk' (adicRed hW) (adicRed_add hW)
 
 @[simp] lemma coe_adicRedHom : ⇑(adicRedHom hW) = adicRed hW := rfl
-
-omit [DecidableEq (IsLocalRing.ResidueField (v.adicCompletionIntegers K))] in
-include hW in
-/-- `adicRed` is injective on torsion: a torsion point in the kernel of reduction is zero. -/
-lemma eq_zero_of_isOfFinAddOrder_of_adicRed_eq_zero {p : ℕ} (hp : p.Prime)
-    (hpmem : (p : v.adicCompletionIntegers K) ∈ maximalIdeal (v.adicCompletionIntegers K))
-    (hpram : (p : v.adicCompletionIntegers K) ∉
-      maximalIdeal (v.adicCompletionIntegers K) ^ (p - 1))
-    {P : W.Point} (hP : IsOfFinAddOrder P) (h0 : adicRed hW P = 0) : P = 0 :=
-  eq_zero_of_isOfFinAddOrder_of_mem_filtration hp hpmem hpram ((adicRed_eq_zero_iff hW).mp h0) hP
 
 include hW in
 /-- If a torsion point's reduction is annihilated by `m`, then so is the point itself. -/
