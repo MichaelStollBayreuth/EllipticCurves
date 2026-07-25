@@ -17,8 +17,7 @@ homomorphism `adicRedHom`; it closes with the injectivity of `adicRed` on torsio
 preservation of the additive order of a torsion point.
 -/
 
-open ChabautyColeman IsLocalRing MvPowerSeries
-open scoped MvPowerSeries.WithPiTopology
+open IsLocalRing
 
 namespace WeierstrassCurve.Affine
 
@@ -147,7 +146,6 @@ lemma res_a₄ : IsLocalRing.residue _ ⟨W.a₄, valued_a₄ hW⟩ = (adicRedCu
     Subtype.ext (coe_a₄ hW).symm]
   exact (W₀.map_a₄ (IsLocalRing.residue (v.adicCompletionIntegers K))).symm
 
-
 /-- Residue of a difference of integral elements. -/
 lemma res_sub {a b : v.adicCompletion K} (ha : Valued.v a ≤ 1) (hb : Valued.v b ≤ 1)
     (hab : Valued.v (a - b) ≤ 1) :
@@ -213,7 +211,6 @@ lemma nonsingular_deriv_disj {F : Type*} [Field F] {E' : Affine F} {a b : F}
   · refine Or.inr fun hc ↦ h2 ?_
     rw [Affine.negY] at hc
     linear_combination hc
-
 
 /-- `v x = 1` for an `x ≤ 1` whose reduction is a unit (avoids the subtype-coe unification). -/
 lemma valued_eq_one_of_residue_ne {a : v.adicCompletion K} (ha : Valued.v a ≤ 1)
@@ -313,9 +310,8 @@ lemma valued_slope_le {x₁ x₂ y₁ y₂ : v.adicCompletion K} (hx₁ : Valued
     have hNint : Valued.v
         (x₁ ^ 2 + x₁ * x₂ + x₂ ^ 2 + W.a₂ * (x₁ + x₂) + W.a₄ - W.a₁ * y₁) ≤ 1 :=
       valued_ficoNum_le hW hx₁ hx₂ hy₁
-    rw [slope_eq_div hc₁ hc₂ hD0, map_div₀,
+    rwa [slope_eq_div hc₁ hc₂ hD0, map_div₀,
       valued_coe_isUnit ((residue_ne_zero_iff_isUnit _).mp hDu), div_one]
-    exact hNint
   · have hxx : x₁ ≠ x₂ := fun h ↦ hXeq (congrArg (IsLocalRing.residue _) (Subtype.ext h))
     have hden : Valued.v (x₁ - x₂) ≤ 1 := valued_sub_le hx₁ hx₂
     have hdenu : res (⟨x₁ - x₂, hden⟩ : v.adicCompletionIntegers K) ≠ 0 := by
@@ -416,7 +412,7 @@ lemma adicRed_add_of_reduced_ne_neg {x₁ x₂ y₁ y₂ : v.adicCompletion K}
       Point.some.injEq]; exact ⟨e1, e2⟩)
   have hnegYint : Valued.v (W.negY x₂ y₂) ≤ 1 := valued_negY_le hW hx₂ hy₂
   have hxy : ¬ (x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := by
-    rintro ⟨ex, ey⟩
+    intro ⟨ex, ey⟩
     refine hne_res ⟨congrArg (IsLocalRing.residue _) (Subtype.ext ex), ?_⟩
     rw [show (⟨y₁, hy₁⟩ : v.adicCompletionIntegers K) = ⟨W.negY x₂ y₂, hnegYint⟩ from
       Subtype.ext ey, redCoord_negY hW hx₂ hy₂ hnegYint]
