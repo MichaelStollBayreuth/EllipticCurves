@@ -219,19 +219,18 @@ variable [W.IsElliptic] [W.IsCharNeTwoNF]
 
 instance : (W⁄L).IsElliptic := inferInstanceAs (W.map (algebraMap K L)).IsElliptic
 
-open scoped Classical in
+variable [DecidableEq L]
+
 /-- The local `2`-descent condition at the extension field `L` of `K` (in the applications,
 `L` is a completion of `K`): the subgroup of square classes in the étale algebra of `W`
 whose image over `L` comes from an `L`-point of the curve. -/
 noncomputable def localCondition : Subgroup W.M :=
   ((μ (W := (W⁄L).toAffine)).range).comap (W.localRes L)
 
-open scoped Classical in
 lemma mem_localCondition_iff {m : W.M} :
     m ∈ W.localCondition L ↔ W.localRes L m ∈ (μ (W := (W⁄L).toAffine)).range :=
   Subgroup.mem_comap
 
-open scoped Classical in
 /-- Over an algebraically closed field extension, the image of the local descent map is
 trivial: every unit of the étale algebra is a square. -/
 theorem card_range_μ_of_isAlgClosed [IsAlgClosed L] :
@@ -248,7 +247,6 @@ theorem card_range_μ_of_isAlgClosed [IsAlgClosed L] :
 
 variable [DecidableEq K]
 
-open scoped Classical in
 /-- The local restriction map is compatible with the `x - T` maps: the square class of
 `x - T` restricts to that of `σ(x) - T`, and likewise for the modified class at a
 `2`-torsion `x`-coordinate. -/
@@ -271,7 +269,6 @@ theorem localRes_μX (x : K) :
     simp only [RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, mapA_mk, Polynomial.map_sub,
       Polynomial.map_C, Polynomial.map_X]
 
-open scoped Classical in
 /-- Naturality of the descent map under base change: restricting square classes after the
 global `μ` is applying the local `μ` after the base change of points. -/
 theorem localRes_comp_μ :
@@ -288,7 +285,6 @@ theorem localRes_comp_μ :
   | some x y hP =>
       rw [μ₀_some, W.pointMap_some L hP, μ₀_some (W := (W⁄L).toAffine), W.localRes_μX L x]
 
-open scoped Classical in
 /-- The image of the global descent map `μ` satisfies the local condition at every extension
 field: this is formal from the naturality `localRes_comp_μ`. -/
 theorem range_μ_le_localCondition : (μ (W := W)).range ≤ W.localCondition L := by
@@ -298,7 +294,6 @@ theorem range_μ_le_localCondition : (μ (W := W)).range ≤ W.localCondition L 
 
 -- Under base change along an isomorphism, the descent image over `L` is the image of the
 -- descent image over `K` under the local restriction of square classes.
-open scoped Classical in
 private lemma range_μ_of_bijective_algebraMap (h : Function.Bijective (algebraMap K L)) :
     (μ (W := (W⁄L).toAffine)).range = Subgroup.map (W.localRes L) (μ (W := W)).range := by
   -- along an isomorphism, base change of points is surjective; the rest is formal from
@@ -315,7 +310,6 @@ private lemma range_μ_of_bijective_algebraMap (h : Function.Bijective (algebraM
   rw [MonoidHom.map_range, localRes_comp_μ, ← MonoidHom.map_range,
     MonoidHom.range_eq_top.mpr hsurj, ← MonoidHom.range_eq_map]
 
-open scoped Classical in
 /-- If the base change is along an isomorphism, then the local descent map has the same
 image size as the global one (via the induced isomorphism of the étale algebras). -/
 theorem card_range_μ_of_bijective_algebraMap (h : Function.Bijective (algebraMap K L)) :
@@ -327,7 +321,7 @@ theorem card_range_μ_of_bijective_algebraMap (h : Function.Bijective (algebraMa
 
 /-- If the base change is along an isomorphism, then the `2`-torsion of the group of points
 has the same size over `L` as over `K` (the roots of `f` correspond). -/
-theorem card_ker_nsmul_two_baseChange [DecidableEq L] (h : Function.Bijective (algebraMap K L)) :
+theorem card_ker_nsmul_two_baseChange (h : Function.Bijective (algebraMap K L)) :
     Nat.card (nsmulAddMonoidHom (α := (W⁄L).toAffine.Point) 2).ker =
       Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker := by
   rw [(W⁄L).toAffine.card_ker_nsmul_two, W.card_ker_nsmul_two]
@@ -564,8 +558,9 @@ lemma mem_selmerGroup₂_iff {m : W.M} :
 /-- The image of the descent map `μ` is contained in the 2-Selmer group. Since
 `ker μ = 2 • E(K)` (`ker_μ_eq`), this identifies `E(K)/2E(K)` with a subgroup of the
 2-Selmer group. -/
-theorem range_μ_le_selmerGroup₂ : (μ (W := W)).range ≤ W.selmerGroup₂ R Loc :=
-  le_inf (le_inf range_μ_le_ker_normM <| le_iInf fun _ ↦ W.range_μ_le_localCondition _) <|
+theorem range_μ_le_selmerGroup₂ : (μ (W := W)).range ≤ W.selmerGroup₂ R Loc := by
+  classical
+  exact le_inf (le_inf range_μ_le_ker_normM <| le_iInf fun _ ↦ W.range_μ_le_localCondition _) <|
     le_iInf fun _ ↦ W.range_μ_le_localCondition _
 
 /-- The size of the image of `μ` in terms of the rank and the rational 2-torsion:
@@ -972,7 +967,6 @@ end Semilocal
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 
 open AdjoinRoot in
-open scoped Classical in
 /-- Semilocal comparison, global to local: an `S`-unramified square class localizes to an
 unramified class at every good finite place.
 
@@ -1010,7 +1004,6 @@ theorem localRes_mem_selmerGroupA {v : HeightOneSpectrum (𝓞 F)} (hv : v ∉ W
   exact hkey
 
 open AdjoinRoot in
-open scoped Classical in
 /-- Semilocal comparison, local to global: a square class that localizes to an unramified
 class at every finite place is `S`-unramified.
 
@@ -1044,7 +1037,6 @@ residue characteristic is odd), at a real place `‖2‖_v⁻¹ = 1/2`, and at a
 local points generates the full local image.
 -/
 
-open scoped Classical in
 -- `#(𝒪_v/2𝒪_v) = (#𝔽_v)^(v(2))`: reduce to `cardQuot` of the corresponding power of the
 -- maximal ideal via the valuation of `2`, and compare the residue fields.
 private lemma index_range_nsmul_two (v : HeightOneSpectrum (𝓞 F)) :
@@ -1076,7 +1068,6 @@ private lemma index_range_nsmul_two (v : HeightOneSpectrum (𝓞 F)) :
         rw [Submodule.cardQuot_apply,
           ← Nat.card_congr (v.residueFieldEquivAdicCompletionIntegers (K := F)).toEquiv]
 
-open scoped Classical in
 /-- The size of the local image at a finite place `v`:
 `#(im μ_v) = #E(F_v)[2] · (#𝔽_v)^(v(2))`. For odd residue characteristic the second factor
 is `1`; the general formula is `#E(F_v)[2] · ‖2‖_v⁻¹`.
@@ -1086,7 +1077,7 @@ that a finite-index subgroup of `E(F_v)` is isomorphic to `(𝒪_v, +)`; the qua
 `#(G/2G) / #G[2]` is insensitive to passing to that subgroup
 (`AddSubgroup.index_range_nsmul_mul_card_ker`), and for `(𝒪_v, +)` it is
 `#(𝒪_v/2𝒪_v) = (#𝔽_v)^(v(2))`. -/
-theorem card_range_μ_adicCompletion (v : HeightOneSpectrum (𝓞 F)) :
+theorem card_range_μ_adicCompletion (v : HeightOneSpectrum (𝓞 F)) [DecidableEq F_[v]] :
     Nat.card (μ (W := 𝕎[v])).range =
       Nat.card (nsmulAddMonoidHom (α := 𝕎[v].Point) 2).ker *
         Nat.card (𝓞 F ⧸ v.asIdeal) ^
@@ -1111,11 +1102,10 @@ theorem card_range_μ_adicCompletion (v : HeightOneSpectrum (𝓞 F)) :
   -- transport `[U : 2U]` to `𝒪_v` and count there
   rw [e.index_range_nsmulAddMonoidHom 2, index_range_nsmul_two v]
 
-open scoped Classical in
 /-- The size of the local image at a finite place of odd residue characteristic:
 `#(im μ_v) = #E(F_v)[2]`. -/
 theorem card_range_μ_adicCompletion_of_two_notMem {v : HeightOneSpectrum (𝓞 F)}
-    (hv : (2 : 𝓞 F) ∉ v.asIdeal) :
+    [DecidableEq F_[v]] (hv : (2 : 𝓞 F) ∉ v.asIdeal) :
     Nat.card (μ (W := 𝕎[v])).range =
       Nat.card (nsmulAddMonoidHom (α := 𝕎[v].Point) 2).ker := by
   have h0 : (Associates.mk v.asIdeal).count
@@ -1128,7 +1118,6 @@ theorem card_range_μ_adicCompletion_of_two_notMem {v : HeightOneSpectrum (𝓞 
 
 -- `NumberField F` is needed by the statement (via `InfinitePlace F`) but erased from the proof
 set_option linter.unusedSectionVars false in
-open scoped Classical in
 /-- The size of the local image at a real place: `#(im μ_v) = #E(ℝ)[2] / 2` (that is, `2` if
 the cubic has three real roots, and `1` otherwise).
 
@@ -1136,7 +1125,8 @@ Proof by transport of the sign analysis over `ℝ` (`two_mul_card_range_μ_real`
 isomorphism `v.Completion ≃+* ℝ`: base change is along an isomorphism, so both the image of
 the descent map (`card_range_μ_of_bijective_algebraMap`) and the `2`-torsion of the group of
 points (`card_ker_nsmul_two_baseChange`) keep their size. -/
-theorem card_range_μ_completion_isReal {v : InfinitePlace F} (hv : v.IsReal) :
+theorem card_range_μ_completion_isReal {v : InfinitePlace F} [DecidableEq v.Completion]
+    (hv : v.IsReal) :
     2 * Nat.card (μ (W := (W⁄v.Completion).toAffine)).range =
       Nat.card (nsmulAddMonoidHom (α := (W⁄v.Completion).toAffine.Point) 2).ker := by
   classical
@@ -1151,10 +1141,10 @@ theorem card_range_μ_completion_isReal {v : InfinitePlace F} (hv : v.IsReal) :
 -- the statement lives with its number-field siblings; `NumberField F` and `DecidableEq F` are
 -- part of the ambient section but the content is the general `card_range_μ_of_isAlgClosed`
 set_option linter.unusedSectionVars false in
-open scoped Classical in
 /-- The local image at a complex place is trivial: over an algebraically closed field, every
 unit of the étale algebra is a square, so the whole group of square classes is trivial. -/
-theorem card_range_μ_completion_isComplex {v : InfinitePlace F} (hv : v.IsComplex) :
+theorem card_range_μ_completion_isComplex {v : InfinitePlace F} [DecidableEq v.Completion]
+    (hv : v.IsComplex) :
     Nat.card (μ (W := (W⁄v.Completion).toAffine)).range = 1 := by
   have halg : IsAlgClosed v.Completion :=
     .of_ringEquiv' (InfinitePlace.Completion.ringEquivComplexOfIsComplex hv).symm
@@ -1164,7 +1154,6 @@ section LocalCount
 
 open AdjoinRoot IsDedekindDomain.HeightOneSpectrum
 
-open scoped Classical
 
 variable (v : HeightOneSpectrum (𝓞 F))
 
@@ -1369,9 +1358,8 @@ end LocalCount
 attribute [local instance] instFintypeFactorsBaseChange
 
 -- Counting at a good finite place: `#(A(∅,2) ⊓ ker N) ≤ 2^(g-1) ≤ #E(F_v)[2] = #(im μ)`.
-open scoped Classical in
 private lemma card_inf_ker_le_card_range_μ {v : HeightOneSpectrum (𝓞 F)}
-    (hv : v ∉ W.badPrimes (𝓞 F)) :
+    [DecidableEq F_[v]] (hv : v ∉ W.badPrimes (𝓞 F)) :
     Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ⊓ (normM (W := 𝕎[v])).ker :
       Subgroup (Units.modPow 𝕎[v].A 2)) ≤ Nat.card (μ (W := 𝕎[v])).range := by
   -- there is at least one factor
@@ -1396,7 +1384,6 @@ private lemma card_inf_ker_le_card_range_μ {v : HeightOneSpectrum (𝓞 F)}
         (W.card_range_μ_adicCompletion_of_two_notMem
           (W.two_notMem_asIdeal_of_notMem_badPrimes hv)).symm
 
-open scoped Classical in
 /-- **The image of the local descent map at a good finite place** consists exactly of the
 unramified square classes with trivial norm. The inclusion `⊇` is the local Hensel input of
 the reduction to the bad places: every unramified class with trivial norm comes from a point.
@@ -1407,7 +1394,7 @@ over `F_v` (`card_selmerGroupA_eq_two_pow`, resting on the `𝔾ₘ`-interface s
 `#(im μ) = #E(F_v)[2] ≥ 2^(g-1)` by counting `2`-torsion points coming from the linear
 factors of `f`. -/
 theorem selmerGroupA_inf_ker_normM_eq_range_μ {v : HeightOneSpectrum (𝓞 F)}
-    (hv : v ∉ W.badPrimes (𝓞 F)) :
+    [DecidableEq F_[v]] (hv : v ∉ W.badPrimes (𝓞 F)) :
     𝕎[v].selmerGroupA 𝒪_[v] ⊓ (normM (W := 𝕎[v])).ker = (μ (W := 𝕎[v])).range := by
   have hle : (μ (W := 𝕎[v])).range ≤
       𝕎[v].selmerGroupA 𝒪_[v] ⊓ (normM (W := 𝕎[v])).ker :=
@@ -1418,12 +1405,11 @@ theorem selmerGroupA_inf_ker_normM_eq_range_μ {v : HeightOneSpectrum (𝓞 F)}
     Finite.of_injective _ (Subgroup.inclusion_injective inf_le_left)
   exact (Subgroup.eq_of_le_of_card_ge hle (W.card_inf_ker_le_card_range_μ hv)).symm
 
-open scoped Classical in
 /-- At a good finite place, the local condition follows from `S`-unramifiedness and the norm
 condition: the image of the local descent map is the group of unramified square classes with
 trivial norm. -/
 theorem inf_le_localCondition_adicCompletion {v : HeightOneSpectrum (𝓞 F)}
-    (hv : v ∉ W.badPrimes (𝓞 F)) :
+    [DecidableEq F_[v]] (hv : v ∉ W.badPrimes (𝓞 F)) :
     W.selmerGroupA (𝓞 F) ⊓ (normM (W := W)).ker ≤ W.localCondition F_[v] := by
   intro m hm
   rw [Subgroup.mem_inf] at hm
