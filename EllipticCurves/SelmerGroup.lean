@@ -118,6 +118,11 @@ lemma baseChange_fCofactor (x : K) :
 lemma baseChange_f : (W⁄L).toAffine.f = W.f.map (algebraMap K L) :=
   W.map_f (algebraMap K L)
 
+lemma baseChange_discr_f : (W⁄L).toAffine.f.discr = algebraMap K L W.f.discr := by
+  change (W.map (algebraMap K L)).toAffine.f.discr = _
+  rw [discr_f, discr_f]
+  simp only [map_a₂, map_a₄, map_a₆, map_sub, map_add, map_mul, map_pow, map_ofNat]
+
 /-- The base-change homomorphism `K[X]/(f) →+* L[X]/(f)` of étale algebras, as an instance of
 `AdjoinRoot.map` (so that its API — `map_of`, `map_root`, `map_comp_map`, `mapRingEquiv` —
 applies directly). -/
@@ -965,6 +970,28 @@ private lemma map_projFactor {p : W.f.Factors} {q : 𝕎[v].f.Factors}
 end Semilocal
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
+
+/-- **Local image at a place with squarefree reduced cubic**: if the coefficients of `W` are
+`v`-integral and `disc f` is a `v`-unit, the local descent image at `v` consists of unramified
+classes, `im μ_v ≤ A_v(∅, 2)`.  Unlike the identification of the local image at a good place,
+this imposes no condition at `2`, so it applies at even places whose reduced cubic is
+squarefree; such places can therefore be dropped from the exceptional set `S` of the global
+upper bound `A(S, 2)`. -/
+theorem range_μ_le_selmerGroupA_empty {v : HeightOneSpectrum (𝓞 F)} [DecidableEq F_[v]]
+    (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1)
+    (ha₆ : v.valuation F W.a₆ ≤ 1) (hd : v.valuation F W.f.discr = 1) :
+    (μ (W := 𝕎[v])).range ≤ 𝕎[v].selmerGroupA 𝒪_[v] ∅ := by
+  have key (z : F) (P : HeightOneSpectrum 𝒪_[v]) :
+      P.valuation F_[v] (algebraMap F F_[v] z) = v.valuation F z :=
+    v.valuation_adicCompletion_algebraMap P z
+  refine 𝕎[v].range_μ_le_selmerGroupA 𝒪_[v] ∅ ?_ ?_ ?_ ?_ <;> intro P _
+  · change P.valuation F_[v] (algebraMap F F_[v] W.a₂) ≤ 1
+    rw [key]; exact ha₂
+  · change P.valuation F_[v] (algebraMap F F_[v] W.a₄) ≤ 1
+    rw [key]; exact ha₄
+  · change P.valuation F_[v] (algebraMap F F_[v] W.a₆) ≤ 1
+    rw [key]; exact ha₆
+  · rw [W.baseChange_discr_f F_[v], key]; exact hd
 
 open AdjoinRoot in
 /-- Semilocal comparison, global to local: an `S`-unramified square class localizes to an
