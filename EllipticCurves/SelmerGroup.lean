@@ -41,7 +41,8 @@ number field case): see `WeierstrassCurve.Affine.selmerGroup₂`. For a number f
   is finite (`finite_selmerGroup₂`). Both directions of the semilocal comparison
   (`localRes_mem_selmerGroupA`, `mem_selmerGroupA_of_forall_localRes`) are proved, via
   contraction of primes along the embeddings of the field factors and their completions;
-  the local statement that at a good place the image of `μ_v` is exactly the group of
+  the local statement that at an effectively good place (odd residue characteristic, integral
+  coefficients, `v(disc f) ≥ exp (-1)`) the image of `μ_v` is exactly the group of
   unramified classes with trivial norm (`selmerGroupA_inf_ker_normM_eq_range_μ`) is proved
   by counting. The
   whole reduction is now fully proved, resting on the formal-group results of
@@ -712,9 +713,9 @@ instance instFiniteQuotientAsIdeal (v : HeightOneSpectrum (𝓞 F)) :
 The passage between the global and the local conditions relates unramifiedness of a square
 class `m` of the étale algebra `A = F[X]/(f)` at the primes of the field factors of `A` above
 a finite place `v` to unramifiedness of the localization of `m` over the valuation ring of
-`F_v`. Here "unramified over the valuation ring" is expressed by `selmerGroupA` of the
-base-changed curve over `𝒪_[v]` — for a good `v` the local set of bad primes is empty, so
-this is precisely the subgroup of square classes with even valuations.
+`F_v`. Here "unramified over the valuation ring" is expressed by `selmerGroupA 𝒪_[v] ∅` of
+the base-changed curve — the subgroup of square classes with even valuations at all primes
+of the rings of integers of the local field factors.
 
 Both directions are proved. Global to local (`localRes_mem_selmerGroupA`): every monic
 irreducible factor `q` of `f` over `F_v` divides the image of a unique factor `p` of `f`
@@ -732,10 +733,12 @@ adic completions from `EllipticCurves.Mathlib.AdicCompletionExtension` (adapted 
 project) — but not the full decomposition `A ⊗ F_v ≅ ∏ (L_p)_w` of the completed étale
 algebra: for parity of valuations, ramification is harmless in both directions.
 
-The remaining local statement — at a good place, the image of `μ_v` is exactly the group of
-unramified square classes with trivial norm (`selmerGroupA_inf_ker_normM_eq_range_μ`) — is
-proved by counting both sides against `#E(F_v)[2]`. All in all, the reduction of the 2-Selmer
-group to the bad places is fully proved.
+The remaining local statement — at an effectively good place (odd residue characteristic,
+integral coefficients, `v(disc f) ≥ exp (-1)`, so in particular at every good place), the
+image of `μ_v` is exactly the group of unramified square classes with trivial norm
+(`selmerGroupA_inf_ker_normM_eq_range_μ`) — is proved by counting both sides against
+`#E(F_v)[2]`. All in all, the reduction of the 2-Selmer group to the bad places is fully
+proved.
 -/
 
 section Semilocal
@@ -976,17 +979,16 @@ private lemma localFactorEmb_projFactor (p : W.f.Factors)
   exact W.aeval_root_adicCompletion v p w g
 
 -- Unfolding of the local unramifiedness condition into per-factor divisibilities.
-private lemma localRes_mem_selmerGroupA_iff (a : W.Aˣ) :
-    W.localRes F_[v] (QuotientGroup.mk a) ∈ 𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) ↔
+private lemma localRes_mem_selmerGroupA_iff (S : Set (HeightOneSpectrum 𝒪_[v])) (a : W.Aˣ) :
+    W.localRes F_[v] (QuotientGroup.mk a) ∈ 𝕎[v].selmerGroupA 𝒪_[v] S ↔
     ∀ (q : 𝕎[v].f.Factors)
       (w' : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)),
-      w' ∉ HeightOneSpectrum.primesAbove 𝒪_[v] (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)
-        (𝕎[v].badPrimes 𝒪_[v]) →
+      w' ∉ HeightOneSpectrum.primesAbove 𝒪_[v] (𝕎[v].ringOfIntegersFactor 𝒪_[v] q) S →
       (2 : ℤ) ∣ Multiplicative.toAdd (w'.valuationOfNeZero
         (Units.map (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q).toMonoidHom
           (Units.map (W.mapA F_[v]).toMonoidHom a))) := by
   rw [localRes_mk]
-  exact 𝕎[v].mem_selmerGroupA_unit_iff 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) _
+  exact 𝕎[v].mem_selmerGroupA_unit_iff 𝒪_[v] S _
 
 -- Transport of the divisibility from the contracted prime of the local factor to `w`.
 private lemma dvd_toAdd_valuationOfNeZero_of_localFactor (p : W.f.Factors)
@@ -1423,21 +1425,22 @@ theorem range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr {v : HeightOneSpe
 end OddPlace
 
 open AdjoinRoot in
-/-- Semilocal comparison, global to local: an `S`-unramified square class localizes to an
-unramified class at every good finite place.
+/-- Semilocal comparison, global to local: an `S`-unramified square class localizes to a fully
+unramified class at every finite place outside `S`.
 
 Each monic irreducible factor `q` of `f` over `F_v` divides the image of a factor `p` of `f`;
 the induced embedding `F[X]/(p) → F_v[X]/(q)` restricts to the rings of integers, the prime
 of the local ring of integers contracts to a prime `w ∣ v`, and the local valuation is the
 `w`-adic one raised to the ramification index, so evenness transfers. -/
-theorem localRes_mem_selmerGroupA {v : HeightOneSpectrum (𝓞 F)} (hv : v ∉ W.badPrimes (𝓞 F))
-    {m : W.M} (hm : m ∈ W.selmerGroupA (𝓞 F) (W.badPrimes (𝓞 F))) :
-    W.localRes F_[v] m ∈ 𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) := by
+theorem localRes_mem_selmerGroupA {v : HeightOneSpectrum (𝓞 F)}
+    {S : Set (HeightOneSpectrum (𝓞 F))} (hv : v ∉ S) {m : W.M}
+    (hm : m ∈ W.selmerGroupA (𝓞 F) S) :
+    W.localRes F_[v] m ∈ 𝕎[v].selmerGroupA 𝒪_[v] ∅ := by
   obtain ⟨a, rfl⟩ := QuotientGroup.mk'_surjective _ m
   simp only [QuotientGroup.mk'_apply] at hm ⊢
   rw [mem_selmerGroupA_unit_iff] at hm
-  rw [W.localRes_mem_selmerGroupA_iff v a]
-  intro q w hw
+  rw [W.localRes_mem_selmerGroupA_iff v ∅ a]
+  intro q w _
   -- find the global factor `p` below the local factor `q`
   obtain ⟨p, hq⟩ := Polynomial.Factors.exists_dvd_map (algebraMap F F_[v])
     W.f_ne_zero q.prime (q.dvd.trans (W.baseChange_f F_[v]).dvd)
@@ -1478,7 +1481,7 @@ theorem mem_selmerGroupA_of_forall_localRes {m : W.M}
   intro p w hw
   have hv : w.below (𝓞 F) ∉ W.badPrimes (𝓞 F) := W.below_notMem_of_notMem_primesAbove (𝓞 F) p hw
   refine W.dvd_toAdd_valuationOfNeZero_of_localFactor (w.below (𝓞 F)) p w a ?_
-  refine (W.localRes_mem_selmerGroupA_iff (w.below (𝓞 F)) a).mp (hm (w.below (𝓞 F))) _ _ ?_
+  refine (W.localRes_mem_selmerGroupA_iff (w.below (𝓞 F)) _ a).mp (hm (w.below (𝓞 F))) _ _ ?_
   rw [HeightOneSpectrum.mem_primesAbove_iff, W.badPrimes_adicCompletionIntegers hv]
   exact Set.notMem_empty _
 
@@ -1714,9 +1717,9 @@ variable {v}
 
 -- The class of a scalar unit of `𝒪_v` is unramified.
 private lemma scalarClass_mem_selmerGroupA (c : 𝒪_[v]ˣ) :
-    W.scalarClass v c ∈ 𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) := by
+    W.scalarClass v c ∈ 𝕎[v].selmerGroupA 𝒪_[v] ∅ := by
   rw [scalarClass, mem_selmerGroupA_unit_iff]
-  intro q w hw
+  intro q w _
   have hdvd := w.dvd_toAdd_valuationOfNeZero (n := 2) (z := 1)
     (u := Units.map (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q).toMonoidHom
       (Units.map (algebraMap F_[v] 𝕎[v].A).toMonoidHom
@@ -1726,23 +1729,20 @@ private lemma scalarClass_mem_selmerGroupA (c : 𝒪_[v]ˣ) :
 
 -- The cardinality of `A(∅, 2)` is the product of the factor contributions.
 private lemma card_selmerGroupA_eq_prod :
-    Nat.card (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v])) =
-      ∏ q : 𝕎[v].f.Factors, Nat.card (𝕎[v].selmerGroupFactor 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) q) := by
-  calc Nat.card (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]))
-      = Nat.card (𝕎[v].selmerGroupPi 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v])) :=
+    Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅) =
+      ∏ q : 𝕎[v].f.Factors, Nat.card (𝕎[v].selmerGroupFactor 𝒪_[v] ∅ q) := by
+  calc Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅)
+      = Nat.card (𝕎[v].selmerGroupPi 𝒪_[v] ∅) :=
         Nat.card_congr (Equiv.subtypeEquiv (AdjoinRoot.modPowEquivPiFactors
           𝕎[v].f_ne_zero 𝕎[v].squarefree_f 2).toEquiv fun _ ↦ Iff.rfl)
-    _ = Nat.card ((q : 𝕎[v].f.Factors) →
-          (𝕎[v].selmerGroupFactor 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) q)) := by
+    _ = Nat.card ((q : 𝕎[v].f.Factors) → (𝕎[v].selmerGroupFactor 𝒪_[v] ∅ q)) := by
         refine Nat.card_congr ((Equiv.subtypeEquivRight fun x ↦ ?_).trans Equiv.subtypePiEquivPi)
         simp [selmerGroupPi, Subgroup.mem_pi]
-    _ = ∏ q : 𝕎[v].f.Factors, Nat.card (𝕎[v].selmerGroupFactor 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) q) :=
-        Nat.card_pi
+    _ = ∏ q : 𝕎[v].f.Factors, Nat.card (𝕎[v].selmerGroupFactor 𝒪_[v] ∅ q) := Nat.card_pi
 
--- Each factor contributes exactly two square classes at a good place.
-private lemma card_selmerGroupFactor (hv : v ∉ W.badPrimes (𝓞 F)) (q : 𝕎[v].f.Factors) :
-    Nat.card (𝕎[v].selmerGroupFactor 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) q) = 2 := by
-  have h2 : (2 : 𝓞 F) ∉ v.asIdeal := W.two_notMem_asIdeal_of_notMem_badPrimes hv
+-- Each factor contributes exactly two square classes at odd residue characteristic.
+private lemma card_selmerGroupFactor (h2 : (2 : 𝓞 F) ∉ v.asIdeal) (q : 𝕎[v].f.Factors) :
+    Nat.card (𝕎[v].selmerGroupFactor 𝒪_[v] ∅ q) = 2 := by
   -- instances for the interface statement
   have hFD : FiniteDimensional F_[v] (AdjoinRoot (q : F_[v][X])) :=
     (AdjoinRoot.powerBasis' q.monic).finite
@@ -1756,43 +1756,40 @@ private lemma card_selmerGroupFactor (hv : v ∉ W.badPrimes (𝓞 F)) (q : 𝕎
       (AdjoinRoot (q : F_[v][X])) :=
     isFractionRing_ringOfIntegersFactor (W := 𝕎[v]) 𝒪_[v] q
   -- identify the factor Selmer group with `L(∅, 2)` and count via the interface statement
-  rw [selmerGroupFactor, W.badPrimes_adicCompletionIntegers hv,
-    IsDedekindDomain.selmerGroupAbove_empty]
+  rw [selmerGroupFactor, IsDedekindDomain.selmerGroupAbove_empty]
   exact HeightOneSpectrum.card_selmerGroup_integralClosure (K := F) v
     (AdjoinRoot (q : F_[v][X])) h2
 
 -- The cardinality of `A(∅, 2)` is `2 ^ g`, for `g` the number of factors of `f` over `F_v`.
-private lemma card_selmerGroupA_eq_two_pow (hv : v ∉ W.badPrimes (𝓞 F)) :
-    Nat.card (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v])) = 2 ^ Nat.card 𝕎[v].f.Factors := by
+private lemma card_selmerGroupA_eq_two_pow (h2 : (2 : 𝓞 F) ∉ v.asIdeal) :
+    Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅) = 2 ^ Nat.card 𝕎[v].f.Factors := by
   rw [W.card_selmerGroupA_eq_prod (v := v),
-    Finset.prod_congr rfl fun q _ ↦ W.card_selmerGroupFactor hv q, Finset.prod_const,
+    Finset.prod_congr rfl fun q _ ↦ W.card_selmerGroupFactor h2 q, Finset.prod_const,
     Finset.card_univ, Nat.card_eq_fintype_card]
 
--- In particular, `A(∅, 2)` is finite at a good place.
-private lemma finite_selmerGroupA_adicCompletionIntegers (hv : v ∉ W.badPrimes (𝓞 F)) :
-    Finite (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v])) := by
+-- In particular, `A(∅, 2)` is finite at odd residue characteristic.
+private lemma finite_selmerGroupA_adicCompletionIntegers (h2 : (2 : 𝓞 F) ∉ v.asIdeal) :
+    Finite (𝕎[v].selmerGroupA 𝒪_[v] ∅) := by
   refine (Nat.card_ne_zero.mp ?_).2
-  rw [W.card_selmerGroupA_eq_two_pow hv]
+  rw [W.card_selmerGroupA_eq_two_pow h2]
   positivity
 
 -- The norm condition cuts `A(∅, 2)` at least in half: the class of a non-square scalar
 -- unit (which exists, `exists_unit_not_isSquare`) is unramified with nontrivial norm.
-private lemma two_mul_card_inf_ker_le (hv : v ∉ W.badPrimes (𝓞 F)) :
-    2 * Nat.card (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) ⊓ (normM (W := 𝕎[v])).ker :
+private lemma two_mul_card_inf_ker_le (h2 : (2 : 𝓞 F) ∉ v.asIdeal) :
+    2 * Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker :
         Subgroup (Units.modPow 𝕎[v].A 2)) ≤
-      Nat.card (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v])) := by
-  have hfinA := W.finite_selmerGroupA_adicCompletionIntegers hv
+      Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅) := by
+  have hfinA := W.finite_selmerGroupA_adicCompletionIntegers h2
   -- the norm homomorphism restricted to `A(∅, 2)`
-  set φ := (normM (W := 𝕎[v])).restrict (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]))
-  have hT : Nat.card (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) ⊓ (normM (W := 𝕎[v])).ker :
+  set φ := (normM (W := 𝕎[v])).restrict (𝕎[v].selmerGroupA 𝒪_[v] ∅)
+  have hT : Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker :
       Subgroup (Units.modPow 𝕎[v].A 2)) = Nat.card φ.ker := by
-    change _ = Nat.card
-      ((normM (W := 𝕎[v])).ker.subgroupOf (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v])))
+    change _ = Nat.card ((normM (W := 𝕎[v])).ker.subgroupOf (𝕎[v].selmerGroupA 𝒪_[v] ∅))
     rw [← Subgroup.inf_subgroupOf_left]
     exact (Nat.card_congr (Subgroup.subgroupOfEquivOfLe inf_le_left).toEquiv).symm
   -- the image of the norm is nontrivial: a non-square scalar witnesses this
-  obtain ⟨c, hc⟩ := v.exists_unit_not_isSquare (K := F)
-    (W.two_notMem_asIdeal_of_notMem_badPrimes hv)
+  obtain ⟨c, hc⟩ := v.exists_unit_not_isSquare (K := F) h2
   have hfinR : Finite φ.range :=
     Finite.of_equiv _ (QuotientGroup.quotientKerEquivRange φ).toEquiv
   have hrange2 : 2 ≤ Nat.card φ.range :=
@@ -1800,32 +1797,34 @@ private lemma two_mul_card_inf_ker_le (hv : v ∉ W.badPrimes (𝓞 F)) :
       ⟨normM (W := 𝕎[v]) (W.scalarClass v c),
         ⟨⟨W.scalarClass v c, W.scalarClass_mem_selmerGroupA (v := v) c⟩, rfl⟩⟩,
       fun h ↦ W.normM_scalarClass_ne_one v hc (Subtype.ext_iff.mp h).symm⟩
-  calc 2 * Nat.card (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) ⊓ (normM (W := 𝕎[v])).ker :
+  calc 2 * Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker :
       Subgroup (Units.modPow 𝕎[v].A 2))
       = 2 * Nat.card φ.ker := by rw [hT]
     _ ≤ Nat.card φ.range * Nat.card φ.ker := Nat.mul_le_mul_right _ hrange2
-    _ = Nat.card (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v])) := by
+    _ = Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅) := by
         rw [mul_comm]; exact φ.card_ker_mul_card_range
 
 end LocalCount
 
 attribute [local instance] instFintypeFactorsBaseChange
 
--- Counting at a good finite place: `#(A(∅,2) ⊓ ker N) ≤ 2^(g-1) ≤ #E(F_v)[2] = #(im μ)`.
+open WithZero
+
+-- Counting at odd residue characteristic: `#(A(∅,2) ⊓ ker N) ≤ 2^(g-1) ≤ #E(F_v)[2] = #(im μ)`.
 private lemma card_inf_ker_le_card_range_μ {v : HeightOneSpectrum (𝓞 F)}
-    [DecidableEq F_[v]] (hv : v ∉ W.badPrimes (𝓞 F)) :
-    Nat.card (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) ⊓ (normM (W := 𝕎[v])).ker :
+    [DecidableEq F_[v]] (h2 : (2 : 𝓞 F) ∉ v.asIdeal) :
+    Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker :
       Subgroup (Units.modPow 𝕎[v].A 2)) ≤ Nat.card (μ (W := 𝕎[v])).range := by
   -- there is at least one factor
   have hg1 : 1 ≤ Nat.card 𝕎[v].f.Factors :=
     Nat.one_le_iff_ne_zero.mpr <| Nat.card_ne_zero.mpr
       ⟨Polynomial.Factors.nonempty <| Polynomial.not_isUnit_of_natDegree_pos _
         (by rw [natDegree_f]; lia), inferInstance⟩
-  have h1 := W.two_mul_card_inf_ker_le hv
-  rw [W.card_selmerGroupA_eq_two_pow hv, show 2 ^ Nat.card 𝕎[v].f.Factors =
+  have h1 := W.two_mul_card_inf_ker_le h2
+  rw [W.card_selmerGroupA_eq_two_pow h2, show 2 ^ Nat.card 𝕎[v].f.Factors =
     2 * 2 ^ (Nat.card 𝕎[v].f.Factors - 1) by
       rw [← pow_succ', Nat.sub_add_cancel hg1]] at h1
-  calc Nat.card (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) ⊓ (normM (W := 𝕎[v])).ker :
+  calc Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker :
       Subgroup (Units.modPow 𝕎[v].A 2))
       ≤ 2 ^ (Nat.card 𝕎[v].f.Factors - 1) := by lia
     _ ≤ Nat.card {q : 𝕎[v].f.Factors // (q : F_[v][X]).natDegree = 1} + 1 :=
@@ -1835,46 +1834,45 @@ private lemma card_inf_ker_le_card_range_μ {v : HeightOneSpectrum (𝓞 F)}
     _ = Nat.card (nsmulAddMonoidHom (α := 𝕎[v].Point) 2).ker :=
         (𝕎[v].card_ker_nsmul_two).symm
     _ = Nat.card (μ (W := 𝕎[v])).range :=
-        (W.card_range_μ_adicCompletion_of_two_notMem
-          (W.two_notMem_asIdeal_of_notMem_badPrimes hv)).symm
+        (W.card_range_μ_adicCompletion_of_two_notMem h2).symm
 
-/-- **The image of the local descent map at a good finite place** consists exactly of the
-unramified square classes with trivial norm. The inclusion `⊇` is the local Hensel input of
-the reduction to the bad places: every unramified class with trivial norm comes from a point.
+/-- **The image of the local descent map at an effectively good finite place** — odd residue
+characteristic, `v`-integral coefficients, and `v(disc f) ≥ exp (-1)`, so in particular at
+every good finite place — consists exactly of the unramified square classes with trivial
+norm. The inclusion `⊇` is the local Hensel input of the reduction to the bad places: every
+unramified class with trivial norm comes from a point.
 
 It is proved by counting: `#(A(∅,2) ⊓ ker N) ≤ #A(∅,2)/2 = 2^(g-1)` for `g` factors of `f`
 over `F_v` (`card_selmerGroupA_eq_two_pow`, resting on the `𝔾ₘ`-interface statement of
 `EllipticCurves.Mathlib.FormalGroup`; the halving is by a non-square scalar class), while
 `#(im μ) = #E(F_v)[2] ≥ 2^(g-1)` by counting `2`-torsion points coming from the linear
 factors of `f`. -/
-theorem selmerGroupA_inf_ker_normM_eq_range_μ {v : HeightOneSpectrum (𝓞 F)}
-    [DecidableEq F_[v]] (hv : v ∉ W.badPrimes (𝓞 F)) :
-    𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) ⊓ (normM (W := 𝕎[v])).ker =
-      (μ (W := 𝕎[v])).range := by
-  have hle : (μ (W := 𝕎[v])).range ≤
-      𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) ⊓ (normM (W := 𝕎[v])).ker :=
-    le_inf (𝕎[v].range_μ_le_selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v])
-      (fun _ hw ↦ 𝕎[v].valuation_a₂_le_one_of_notMem_badPrimes 𝒪_[v] hw)
-      (fun _ hw ↦ 𝕎[v].valuation_a₄_le_one_of_notMem_badPrimes 𝒪_[v] hw)
-      (fun _ hw ↦ 𝕎[v].valuation_a₆_le_one_of_notMem_badPrimes 𝒪_[v] hw)
-      (fun _ hw ↦ 𝕎[v].valuation_discr_eq_one_of_notMem_badPrimes 𝒪_[v] hw))
+theorem selmerGroupA_inf_ker_normM_eq_range_μ {v : HeightOneSpectrum (𝓞 F)} [DecidableEq F_[v]]
+    (h2 : (2 : 𝓞 F) ∉ v.asIdeal) (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1)
+    (ha₆ : v.valuation F W.a₆ ≤ 1) (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) :
+    𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker = (μ (W := 𝕎[v])).range := by
+  have hle : (μ (W := 𝕎[v])).range ≤ 𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker :=
+    le_inf (W.range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr ha₂ ha₄ ha₆ hd)
       range_μ_le_ker_normM
-  have hfinA := W.finite_selmerGroupA_adicCompletionIntegers hv
-  have hfinT : Finite (𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v]) ⊓ (normM (W := 𝕎[v])).ker :
+  have hfinA := W.finite_selmerGroupA_adicCompletionIntegers h2
+  have hfinT : Finite (𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker :
       Subgroup (Units.modPow 𝕎[v].A 2)) :=
     Finite.of_injective _ (Subgroup.inclusion_injective inf_le_left)
-  exact (Subgroup.eq_of_le_of_card_ge hle (W.card_inf_ker_le_card_range_μ hv)).symm
+  exact (Subgroup.eq_of_le_of_card_ge hle (W.card_inf_ker_le_card_range_μ h2)).symm
 
-/-- At a good finite place, the local condition follows from `S`-unramifiedness and the norm
-condition: the image of the local descent map is the group of unramified square classes with
-trivial norm. -/
-theorem inf_le_localCondition_adicCompletion {v : HeightOneSpectrum (𝓞 F)}
-    [DecidableEq F_[v]] (hv : v ∉ W.badPrimes (𝓞 F)) :
-    W.selmerGroupA (𝓞 F) (W.badPrimes (𝓞 F)) ⊓ (normM (W := W)).ker ≤ W.localCondition F_[v] := by
+/-- At an effectively good finite place — odd residue characteristic, `v`-integral
+coefficients, and `v(disc f) ≥ exp (-1)` — the local condition follows from
+`S`-unramifiedness for any `S` avoiding `v`, together with the norm condition: the image of
+the local descent map is the group of unramified square classes with trivial norm. -/
+theorem inf_le_localCondition_adicCompletion {v : HeightOneSpectrum (𝓞 F)} [DecidableEq F_[v]]
+    {S : Set (HeightOneSpectrum (𝓞 F))} (hv : v ∉ S) (h2 : (2 : 𝓞 F) ∉ v.asIdeal)
+    (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1)
+    (ha₆ : v.valuation F W.a₆ ≤ 1) (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) :
+    W.selmerGroupA (𝓞 F) S ⊓ (normM (W := W)).ker ≤ W.localCondition F_[v] := by
   intro m hm
   rw [Subgroup.mem_inf] at hm
   rw [mem_localCondition_iff]
-  apply (W.selmerGroupA_inf_ker_normM_eq_range_μ hv).le
+  apply (W.selmerGroupA_inf_ker_normM_eq_range_μ h2 ha₂ ha₄ ha₆ hd).le
   rw [Subgroup.mem_inf]
   refine ⟨W.localRes_mem_selmerGroupA hv hm.1, ?_⟩
   rw [MonoidHom.mem_ker, W.normM_localRes, MonoidHom.mem_ker.mp hm.2, map_one]
@@ -1904,8 +1902,15 @@ theorem selmerGroup₂_eq_badPrimes :
       ((W.mem_localCondition_iff F_[v]).mp (h2 v))
   · by_cases hv : v ∈ W.badPrimes (𝓞 F)
     · exact h2 ⟨v, hv⟩
-    · exact W.inf_le_localCondition_adicCompletion hv <| Subgroup.mem_inf.mpr
-        ⟨hA, MonoidHom.mem_ker.mpr h1⟩
+    · have hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr := by
+        rw [W.valuation_discr_eq_one_of_notMem_badPrimes (𝓞 F) hv, ← exp_zero]
+        exact exp_le_exp.mpr (by lia)
+      exact W.inf_le_localCondition_adicCompletion hv
+        (W.two_notMem_asIdeal_of_notMem_badPrimes hv)
+        (W.valuation_a₂_le_one_of_notMem_badPrimes (𝓞 F) hv)
+        (W.valuation_a₄_le_one_of_notMem_badPrimes (𝓞 F) hv)
+        (W.valuation_a₆_le_one_of_notMem_badPrimes (𝓞 F) hv) hd <|
+        Subgroup.mem_inf.mpr ⟨hA, MonoidHom.mem_ker.mpr h1⟩
 
 open scoped Classical in
 /-- The 2-Selmer group of an elliptic curve over a number field is finite. -/
