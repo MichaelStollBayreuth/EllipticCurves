@@ -34,13 +34,15 @@ that have nothing to do with elliptic curves and look like candidates for Mathli
 * `isIntegralClosure_int_integralClosure`, `NumberField.finite_classGroup_integralClosure` and
   `NumberField.fg_units_integralClosure`: the class number theorem and the finite generation of
   the unit group for the integral closure of `𝓞 K` in a finite extension of a number field `K`;
-  `NumberField.subsingleton_classGroup_integralClosure` transports triviality of the class
-  group from `𝓞 L`.
-* `AdjoinRoot.discr_powerBasis_eq_discr`, `NumberField.discr_dvd_powerBasis_discr` and
-  `RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le`: the discriminant
-  of the power basis of `K[X]/(f)` is `f.discr`; the field discriminant divides any integral
-  power-basis discriminant; a cubic field with `|discr| ≤ 49` has trivial class group
-  (Minkowski bound).
+  `NumberField.subsingleton_classGroup_integralClosure` and
+  `NumberField.finrank_additive_units_integralClosure` transport triviality of the class
+  group and the unit rank from `𝓞 L`.
+* `AdjoinRoot.discr_powerBasis_eq_discr`, `NumberField.exists_eq_discr_mul_sq`,
+  `RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le` and
+  `RingOfIntegers.finrank_additive_units_of_discr_neg`/`_pos`: the discriminant of the power
+  basis of `K[X]/(f)` is `f.discr`; the field discriminant is any integral power-basis
+  discriminant divided by a square; a cubic field with `|discr| ≤ 49` has trivial class group
+  (Minkowski bound), and the sign of its discriminant determines the unit rank (Dirichlet).
 * `AdjoinRoot.norm_mk_eq_resultant`: for monic `g`, the norm of `AdjoinRoot.mk g p` is the
   resultant of `g` and `p`. This links `Polynomial.resultant` to `Algebra.norm`.
 * `AdjoinRoot.equivPiFactors`: for nonzero squarefree `f`, `K[X]/(f)` is the product of the
@@ -1295,6 +1297,10 @@ instance instFactIrreducible (p : f.Factors) : Fact (Irreducible (p : K[X])) := 
 instance instFiniteDimensional (p : f.Factors) : FiniteDimensional K (AdjoinRoot (p : K[X])) :=
   (powerBasis p.irreducible.ne_zero).finite
 
+instance instNumberField [NumberField K] (p : f.Factors) :
+    NumberField (AdjoinRoot (p : K[X])) :=
+  .of_module_finite K _
+
 lemma minpoly_root_factor (p : f.Factors) : minpoly K (root (p : K[X])) = (p : K[X]) := by
   rw [minpoly_root p.irreducible.ne_zero, p.monic.leadingCoeff, inv_one, map_one, mul_one]
 
@@ -1469,14 +1475,27 @@ theorem NumberField.subsingleton_classGroup_integralClosure (h : IsPrincipalIdea
     IsPrincipalIdealRing.of_surjective e.symm.toRingEquiv.toRingHom e.symm.surjective
   exact Fintype.card_le_one_iff_subsingleton.mp card_classGroup_eq_one.le
 
+/-- The unit group of the integral closure of `𝓞 K` in a finite extension `L` has the same
+rank as that of `𝓞 L` (they are isomorphic). -/
+theorem NumberField.finrank_additive_units_integralClosure :
+    Module.finrank ℤ (Additive (integralClosure (𝓞 K) L)ˣ) =
+      Module.finrank ℤ (Additive (𝓞 L)ˣ) := by
+  have : NumberField L := .of_module_finite K L
+  have e : integralClosure (𝓞 K) L ≃ₐ[𝓞 K] 𝓞 L :=
+    IsIntegralClosure.equiv (𝓞 K) (integralClosure (𝓞 K) L) L (𝓞 L)
+  exact (MulEquiv.toAdditive
+    (Units.mapEquiv e.toRingEquiv.toMulEquiv)).toIntLinearEquiv.finrank_eq
+
 end NumberField
 
 /-!
-### Discriminant divisibility and a class-number criterion for cubic fields
+### Discriminants, class numbers, and unit ranks of cubic fields
 
-The discriminant of a number field divides the discriminant of any power basis with integral
-generator; consequently a cubic field whose power-basis discriminant is at most `49` in
-absolute value has trivial class group, by the Minkowski bound.
+The discriminant of a number field is the discriminant of any power basis with integral
+generator divided by a square; consequently a cubic field whose power-basis discriminant is
+at most `49` in absolute value has trivial class group (by the Minkowski bound), and the sign
+of the power-basis discriminant determines the signature and hence, by Dirichlet's unit
+theorem, the unit rank (`1` if negative, `2` if positive).
 -/
 
 section Discriminant
@@ -1485,11 +1504,12 @@ open NumberField Module
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- The discriminant of a number field `K` divides (the integer giving) the discriminant of
-any power basis of `K` over `ℚ` whose generator is an algebraic integer. -/
-theorem NumberField.discr_dvd_powerBasis_discr (pb : PowerBasis ℚ K)
+/-- The discriminant of any power basis of a number field `K` over `ℚ` with integral
+generator (expressed via an integer `d` mapping to it) is the field discriminant times a
+square. In particular, `discr K` divides `d` and has the same sign. -/
+theorem NumberField.exists_eq_discr_mul_sq (pb : PowerBasis ℚ K)
     (hpb : IsIntegral ℤ pb.gen) {d : ℤ} (hd : Algebra.discr ℚ pb.basis = (d : ℚ)) :
-    discr K ∣ d := by
+    ∃ q : ℤ, d = discr K * q ^ 2 := by
   let b := (integralBasis K).reindex ((integralBasis K).indexEquiv pb.basis)
   have hP (i j : Fin pb.dim) : IsIntegral ℤ (b.toMatrix pb.basis i j) := by
     have hint : IsIntegral ℤ (pb.basis j) := by rw [pb.coe_basis]; exact hpb.pow _
@@ -1503,12 +1523,46 @@ theorem NumberField.discr_dvd_powerBasis_discr (pb : PowerBasis ℚ K)
     rw [Algebra.discr_of_matrix_vecMul]
   have hb : Algebra.discr ℚ ⇑b = (discr K : ℚ) := by
     rw [Basis.coe_reindex, Algebra.discr_reindex, ← coe_discr]
-  refine ⟨q ^ 2, ?_⟩
+  refine ⟨q, ?_⟩
   have h : (d : ℚ) = ((discr K * q ^ 2 : ℤ) : ℚ) := by
     push_cast
     rw [← hd, key, hb, ← hq]
     ring
   exact_mod_cast h
+
+/-- A cubic number field with negative discriminant has unit rank `1`: its signature is
+`(1, 1)`, so Dirichlet's unit theorem gives rank `1 + 1 - 1 = 1`. -/
+theorem RingOfIntegers.finrank_additive_units_of_discr_neg (h3 : finrank ℚ K = 3)
+    (hd : discr K < 0) : finrank ℤ (Additive (𝓞 K)ˣ) = 1 := by
+  have hsign := sign_discr K
+  rw [Int.sign_eq_neg_one_of_neg hd] at hsign
+  have hodd : Odd (InfinitePlace.nrComplexPlaces K) := by
+    by_contra hc
+    rw [(Nat.not_odd_iff_even.mp hc).neg_one_pow] at hsign
+    norm_num at hsign
+  have h2 := InfinitePlace.card_add_two_mul_card_eq_rank K
+  rw [h3] at h2
+  rw [Units.finrank_eq]
+  simp only [Units.rank, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
+  obtain ⟨k, hk⟩ := hodd
+  lia
+
+/-- A cubic number field with positive discriminant has unit rank `2`: it is totally real,
+so Dirichlet's unit theorem gives rank `3 - 1 = 2`. -/
+theorem RingOfIntegers.finrank_additive_units_of_discr_pos (h3 : finrank ℚ K = 3)
+    (hd : 0 < discr K) : finrank ℤ (Additive (𝓞 K)ˣ) = 2 := by
+  have hsign := sign_discr K
+  rw [Int.sign_eq_one_of_pos hd] at hsign
+  have heven : Even (InfinitePlace.nrComplexPlaces K) := by
+    by_contra hc
+    rw [(Nat.not_even_iff_odd.mp hc).neg_one_pow] at hsign
+    norm_num at hsign
+  have h2 := InfinitePlace.card_add_two_mul_card_eq_rank K
+  rw [h3] at h2
+  rw [Units.finrank_eq]
+  simp only [Units.rank, InfinitePlace.card_eq_nrRealPlaces_add_nrComplexPlaces]
+  obtain ⟨k, hk⟩ := heven
+  lia
 
 /-- A cubic number field with `|discr K| ≤ 49` has a principal ring of integers: its Minkowski
 bound is less than `2` for either signature. -/
