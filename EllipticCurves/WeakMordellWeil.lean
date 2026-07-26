@@ -1898,6 +1898,20 @@ theorem finite_selmerGroupA (hS : S.Finite) : Finite (W.selmerGroupA R S) := by
   exact Subgroup.finite_comap_of_injective
     (AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2).injective (W.selmerGroupPi R S)
 
+/-- `A(S,2)` embeds into the product of the `2`-Selmer groups of the field factors, so its
+order is bounded by the product of theirs. -/
+theorem card_selmerGroupA_le_prod [Fintype W.f.Factors] (hS : S.Finite) :
+    Nat.card (W.selmerGroupA R S) ≤ ∏ p : W.f.Factors, Nat.card (W.selmerGroupFactor R S p) := by
+  have (p : W.f.Factors) : Finite (W.selmerGroupFactor R S p) :=
+    W.finite_selmerGroupFactor R S hS p
+  rw [← Nat.card_pi]
+  refine Nat.card_le_card_of_injective
+    (fun m p ↦ ⟨AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2 m.1 p,
+      (W.mem_selmerGroupA_iff R S m.1).mp m.2 p⟩) fun m m' h ↦ ?_
+  refine Subtype.ext
+    ((AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2).injective (funext fun p ↦ ?_))
+  exact Subtype.ext_iff.mp (congrFun h p)
+
 variable [DecidableEq K]
 
 include R in

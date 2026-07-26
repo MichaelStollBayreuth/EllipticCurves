@@ -1912,6 +1912,68 @@ theorem finite_selmerGroup₂
   have := W.finite_selmerGroupA (𝓞 F) (W.discBadPrimes (𝓞 F)) (W.finite_discBadPrimes (𝓞 F))
   exact Finite.of_injective _ (Subgroup.inclusion_injective hle)
 
+open Module in
+open scoped Classical in
+/-- **The Selmer group bound from trivial class groups**: if `discBadPrimes` is empty (e.g. an
+integral model with squarefree `disc f`, `discBadPrimes_eq_empty`), the class group of the ring
+of integers of each field factor of the étale algebra is trivial, and `-1` is not a square in
+`F`, then twice the order of the 2-Selmer group is bounded by `∏ 2 ^ (rank + 1)` over the
+factors, where `rank` is the unit rank of the factor's ring of integers.
+
+The factor `2` on the left comes from the norm condition: the class of `-1` is everywhere
+unramified but has nontrivial norm class, so the kernel of the norm is at most half of the
+unramified classes (`Subgroup.two_mul_card_inf_ker_le`); the right-hand side is
+`#(𝒪ˣ/(𝒪ˣ)²) = 2 ^ (rank + 1)` for each factor (`Units.card_modPow_two`), which bounds the
+factor's everywhere-unramified Selmer group by `IsDedekindDomain.card_selmerGroup_empty_le`
+when the class group is trivial. -/
+theorem two_mul_card_selmerGroup₂_le [Fintype W.f.Factors]
+    [∀ p : W.f.Factors, Subsingleton (ClassGroup (W.ringOfIntegersFactor (𝓞 F) p))]
+    [∀ p : W.f.Factors, Group.FG (W.ringOfIntegersFactor (𝓞 F) p)ˣ]
+    (hd : W.discBadPrimes (𝓞 F) = ∅) (h1 : ¬ IsSquare (-1 : F)) :
+    2 * Nat.card (W.selmerGroup₂ (𝓞 F) (fun v : InfinitePlace F ↦ v.Completion)) ≤
+      ∏ p : W.f.Factors,
+        2 ^ (finrank ℤ (Additive (W.ringOfIntegersFactor (𝓞 F) p)ˣ) + 1) := by
+  have hFC (p : W.f.Factors) : Finite (ClassGroup (W.ringOfIntegersFactor (𝓞 F) p)) :=
+    Finite.of_subsingleton
+  have hfinA : Finite (W.selmerGroupA (𝓞 F) ∅) :=
+    W.finite_selmerGroupA (𝓞 F) ∅ Set.finite_empty
+  have hle : W.selmerGroup₂ (𝓞 F) (fun v : InfinitePlace F ↦ v.Completion) ≤
+      W.selmerGroupA (𝓞 F) ∅ ⊓ (normM (W := W)).ker := by
+    have h := W.selmerGroup₂_le_selmerGroupA_inf_ker
+    rwa [hd] at h
+  have hfin2 : Finite (W.selmerGroupA (𝓞 F) ∅ ⊓ (normM (W := W)).ker : Subgroup W.M) :=
+    Finite.of_injective _ (Subgroup.inclusion_injective inf_le_left)
+  have h5 (p : W.f.Factors) : Nat.card (W.selmerGroupFactor (𝓞 F) ∅ p) ≤
+      2 ^ (finrank ℤ (Additive (W.ringOfIntegersFactor (𝓞 F) p)ˣ) + 1) := by
+    have hchar : CharZero (W.ringOfIntegersFactor (𝓞 F) p) := by
+      have : CharZero (𝕃 p) :=
+        charZero_of_injective_algebraMap (algebraMap F (𝕃 p)).injective
+      exact charZero_of_inj_zero fun n hn ↦ by
+        have h0 := congrArg (algebraMap (W.ringOfIntegersFactor (𝓞 F) p) (𝕃 p)) hn
+        rw [map_natCast, map_zero] at h0
+        exact_mod_cast h0
+    have hSA : W.selmerGroupFactor (𝓞 F) ∅ p =
+        selmerGroup (R := W.ringOfIntegersFactor (𝓞 F) p) (K := 𝕃 p)
+          (S := (∅ : Set (HeightOneSpectrum (W.ringOfIntegersFactor (𝓞 F) p)))) (n := 2) := by
+      change selmerGroup
+        (S := HeightOneSpectrum.primesAbove (𝓞 F) (W.ringOfIntegersFactor (𝓞 F) p) ∅) (n := 2)
+        = _
+      rw [HeightOneSpectrum.primesAbove_empty]
+    rw [hSA, ← Units.card_modPow_two _ (by rw [ringChar.eq_zero]; norm_num)]
+    exact card_selmerGroup_empty_le (𝕃 p) 2
+  calc 2 * Nat.card (W.selmerGroup₂ (𝓞 F) (fun v : InfinitePlace F ↦ v.Completion))
+      ≤ 2 * Nat.card (W.selmerGroupA (𝓞 F) ∅ ⊓ (normM (W := W)).ker : Subgroup W.M) :=
+        Nat.mul_le_mul_left 2
+          (Nat.card_le_card_of_injective _ (Subgroup.inclusion_injective hle))
+    _ ≤ Nat.card (W.selmerGroupA (𝓞 F) ∅) :=
+        Subgroup.two_mul_card_inf_ker_le _ (W.neg_one_mem_selmerGroupA (𝓞 F) ∅)
+          (W.normM_neg_one_ne_one h1)
+    _ ≤ ∏ p : W.f.Factors, Nat.card (W.selmerGroupFactor (𝓞 F) ∅ p) :=
+        W.card_selmerGroupA_le_prod (𝓞 F) ∅ Set.finite_empty
+    _ ≤ ∏ p : W.f.Factors,
+          2 ^ (finrank ℤ (Additive (W.ringOfIntegersFactor (𝓞 F) p)ˣ) + 1) :=
+        Finset.prod_le_prod (fun _ _ ↦ Nat.zero_le _) fun p _ ↦ h5 p
+
 end NumberField
 
 end WeierstrassCurve.Affine
