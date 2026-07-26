@@ -54,6 +54,11 @@ that have nothing to do with elliptic curves and look like candidates for Mathli
   determinants and norms on (dependent) products decompose as products; together with
   `AdjoinRoot.norm_eq_prod_norm_projFactor`, the norm on `K[X]/(f)` as the product of the
   norms on the field factors.
+* General helpers extracted from the rank example: `Squarefree.map` (transport along a
+  `MulEquiv`), `Polynomial.Monic.irreducible_map_fraction_map_of_irreducible_map`
+  (irreducibility over the fraction field via reduction modulo a prime),
+  `Polynomial.Factors.coe_eq`, `AdjoinRoot.isIntegralElem_root_of_map`,
+  `AdjoinRoot.finrank_eq_natDegree`, and the `IsPrincipalIdealRing (𝓞 ℚ)` instance.
 -/
 
 section Group
@@ -112,6 +117,14 @@ lemma IsUnit.exists_pow_eq_unit_iff {a : α} (h : IsUnit a) (n : ℕ) :
   · cases n with
     | zero => exact ⟨1, Units.ext (by simpa using hx)⟩
     | succ _ => exact ⟨(isUnit_pow_succ_iff.mp (hx ▸ h)).unit, Units.ext hx⟩
+
+/-- A multiplicative equivalence preserves squarefreeness. -/
+theorem Squarefree.map {β : Type*} [Monoid β] (e : α ≃* β) {r : α} (h : Squarefree r) :
+    Squarefree (e r) := by
+  intro x ⟨c, hc⟩
+  have hd : e.symm x * e.symm x ∣ r :=
+    ⟨e.symm c, by simpa [mul_assoc] using congrArg e.symm hc⟩
+  simpa using (h _ hd).map e
 
 end Units
 
@@ -994,6 +1007,16 @@ lemma det_sylvesterBlock (hg : g.Monic) (p : R[X]) (hp : p.natDegree ≤ n) :
 
 end Sylvester
 
+/-- To show that a monic polynomial over an integrally closed domain is irreducible over its
+fraction field, it suffices to exhibit an irreducible image under some ring homomorphism to a
+domain, e.g. reduction modulo a prime. -/
+theorem Monic.irreducible_map_fraction_map_of_irreducible_map [IsIntegrallyClosed R]
+    [IsDomain R] {S K : Type*} [CommRing S] [IsDomain S] [Field K] [Algebra R K]
+    [IsFractionRing R K] (hg : g.Monic) (φ : R →+* S) (h : Irreducible (g.map φ)) :
+    Irreducible (g.map (algebraMap R K)) :=
+  (hg.irreducible_iff_irreducible_map_fraction_map (K := K)).mp
+    (hg.irreducible_of_irreducible_map φ _ h)
+
 end Polynomial
 
 open Polynomial LinearMap LinearEquiv
@@ -1083,6 +1106,13 @@ lemma norm_mk_eq_resultant [Nontrivial R] (hg : g.Monic) (p : R[X]) :
     ← det_toMatrix b₁, resultant, ← toMatrix_sylvesterMap' g p le_rfl le_rfl, key,
     Matrix.det_mul, toMatrix_sylvesterMap' g 1 le_rfl (by simp), ← resultant,
     hg.resultant_one_right, one_mul]
+
+/-- The root of `h = g.map φ` in `S[X]/(h)`, for `g` monic over `R`, is integral over `R`
+(along the composite of `φ` with the canonical map). -/
+theorem isIntegralElem_root_of_map {S : Type*} [CommRing S] (φ : R →+* S) {h : S[X]}
+    (hg : g.Monic) (hmap : g.map φ = h) :
+    ((algebraMap S (AdjoinRoot h)).comp φ).IsIntegralElem (root h) :=
+  ⟨g, hg, by rw [← eval₂_map, hmap, ← aeval_def, aeval_eq, mk_self]⟩
 
 section Map
 
@@ -1175,12 +1205,15 @@ lemma irreducible (p : f.Factors) : Irreducible (p : K[X]) := p.2.2.1
 
 lemma dvd (p : f.Factors) : (p : K[X]) ∣ f := p.2.2.2
 
+/-- If `f` itself is monic and irreducible, then its only factor is `f`. -/
+lemma coe_eq (hf : Irreducible f) (hmon : f.Monic) (p : f.Factors) : (p : K[X]) = f :=
+  Polynomial.eq_of_monic_of_associated p.monic hmon (p.irreducible.associated_of_dvd hf p.dvd)
+
 /-- A monic irreducible polynomial has itself as its only monic irreducible factor. -/
 @[reducible]
 def unique (hf : Irreducible f) (hmon : f.Monic) : Unique f.Factors where
   default := ⟨f, hmon, hf, dvd_rfl⟩
-  uniq p := Subtype.ext <| Polynomial.eq_of_monic_of_associated p.monic hmon <|
-    p.irreducible.associated_of_dvd hf p.dvd
+  uniq p := Subtype.ext (coe_eq hf hmon p)
 
 lemma ne_zero (p : f.Factors) : (p : K[X]) ≠ 0 := p.irreducible.ne_zero
 
@@ -1300,6 +1333,10 @@ instance instFiniteDimensional (p : f.Factors) : FiniteDimensional K (AdjoinRoot
 instance instNumberField [NumberField K] (p : f.Factors) :
     NumberField (AdjoinRoot (p : K[X])) :=
   .of_module_finite K _
+
+/-- The dimension of `K[X]/(f)` over `K` is the degree of `f`. -/
+theorem finrank_eq_natDegree (hf : f ≠ 0) : Module.finrank K (AdjoinRoot f) = f.natDegree := by
+  rw [(powerBasis hf).finrank, powerBasis_dim]
 
 lemma minpoly_root_factor (p : f.Factors) : minpoly K (root (p : K[X])) = (p : K[X]) := by
   rw [minpoly_root p.irreducible.ne_zero, p.monic.leadingCoeff, inv_one, map_one, mul_one]
@@ -1429,6 +1466,9 @@ section NumberField
 open NumberField
 
 variable (K L : Type*) [Field K] [Field L] [Algebra K L]
+
+instance Rat.instIsPrincipalIdealRingRingOfIntegers : IsPrincipalIdealRing (𝓞 ℚ) :=
+  .of_surjective (Rat.ringOfIntegersEquiv.symm : ℤ ≃+* 𝓞 ℚ) Rat.ringOfIntegersEquiv.symm.surjective
 
 /-- The integral closure of `𝓞 K` in an extension `L` of `K` is the integral closure of `ℤ`
 in `L`. -/

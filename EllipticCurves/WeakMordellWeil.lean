@@ -137,6 +137,10 @@ lemma derivative_f : derivative W.f = C 3 * X ^ 2 + C (2 * W.a₂) * X + C W.a�
   simp [f, C_ofNat]
   ring
 
+/-- The derivative of the cubic `f` is honestly quadratic when `3 ≠ 0` in `K`. -/
+lemma natDegree_derivative_f (h3 : (3 : K) ≠ 0) : (derivative W.f).natDegree = 2 :=
+  W.derivative_f ▸ natDegree_quadratic h3
+
 lemma separable_f [W.IsElliptic] [W.IsCharNeTwoNF] : W.f.Separable := by
   have hΔ : W.Δ ≠ 0 := W.isUnit_Δ.ne_zero
   rw [separable_def', derivative_f, f]
@@ -365,12 +369,11 @@ lemma mk_derivative_f (g : K[X]) : AdjoinRoot.mk g (derivative W.f) =
 quadratic). -/
 lemma norm_mk_derivative_f (h3 : (3 : K) ≠ 0) :
     Algebra.norm K (AdjoinRoot.mk W.f (derivative W.f)) = -W.f.discr := by
-  have hd : (derivative W.f).natDegree = 2 := W.derivative_f ▸ natDegree_quadratic h3
   have h := Polynomial.resultant_deriv (f := W.f)
     (by rw [← natDegree_pos_iff_degree_pos, natDegree_f]; norm_num)
   rw [natDegree_f, W.monic_f.leadingCoeff, mul_one] at h
   norm_num at h
-  rw [AdjoinRoot.norm_mk_eq_resultant W.monic_f, hd, natDegree_f, h]
+  rw [AdjoinRoot.norm_mk_eq_resultant W.monic_f, W.natDegree_derivative_f h3, natDegree_f, h]
 
 /-- The Chinese Remainder Theorem isomorphism `K[X]⧸f ≃ K × K[X]/cf`, where `cf` is the cofactor
 `f / (X - x)`. -/
@@ -1182,6 +1185,25 @@ lemma discBadPrimes_eq_empty (R : Type*) [CommRing R] [IsDedekindDomain R] [Alge
     simp only [Set.mem_setOf_eq, HeightOneSpectrum.Support, Set.mem_setOf_eq] at hv
   exacts [hv (hd v), absurd hv (not_lt.mpr (ha₂ v)), absurd hv (not_lt.mpr (ha₄ v)),
     absurd hv (not_lt.mpr (ha₆ v))]
+
+/-- `discBadPrimes R = ∅` when the coefficients of `W` are `R`-integral and the discriminant
+of the cubic comes from a squarefree element of `R` (with `R` a principal ideal domain, so
+that squarefreeness gives `δ ∉ v²` for every `v`). -/
+lemma discBadPrimes_eq_empty_of_squarefree (R : Type*) [CommRing R] [IsDedekindDomain R]
+    [Algebra R K] [IsFractionRing R K] [IsPrincipalIdealRing R]
+    (ha₂ : W.a₂ ∈ (algebraMap R K).range) (ha₄ : W.a₄ ∈ (algebraMap R K).range)
+    (ha₆ : W.a₆ ∈ (algebraMap R K).range) {δ : R} (hδ : algebraMap R K δ = W.f.discr)
+    (hsq : Squarefree δ) :
+    W.discBadPrimes R = ∅ := by
+  obtain ⟨a₂, ha₂⟩ := ha₂
+  obtain ⟨a₄, ha₄⟩ := ha₄
+  obtain ⟨a₆, ha₆⟩ := ha₆
+  refine W.discBadPrimes_eq_empty R (fun v ↦ ?_) (fun v ↦ ?_) (fun v ↦ ?_) (fun v ↦ ?_)
+  · rw [← ha₂]; exact v.valuation_le_one a₂
+  · rw [← ha₄]; exact v.valuation_le_one a₄
+  · rw [← ha₆]; exact v.valuation_le_one a₆
+  · rw [← hδ]
+    exact v.exp_neg_one_le_valuation_algebraMap (v.notMem_pow_two_of_squarefree hsq)
 
 section BadPrimes
 

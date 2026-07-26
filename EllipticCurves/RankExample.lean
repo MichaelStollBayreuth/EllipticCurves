@@ -66,10 +66,8 @@ lemma irreducible_f : Irreducible E.f := by
     refine irreducible_of_degree_le_three_of_not_isRoot ?_ fun x ↦ ?_
     · rw [hdeg]; decide
     · fin_cases x <;> simp [IsRoot] <;> decide
-  have hirrZ : Irreducible (X ^ 3 - X + 1 : ℤ[X]) :=
-    hmon.irreducible_of_irreducible_map (Int.castRingHom (ZMod 2)) _ hirr2
   rw [f_eq_map]
-  exact (hmon.irreducible_iff_irreducible_map_fraction_map (K := ℚ)).mp hirrZ
+  exact hmon.irreducible_map_fraction_map_of_irreducible_map (Int.castRingHom (ZMod 2)) hirr2
 
 /-- The discriminant of the cubic is `-23`. -/
 lemma discr_f_E : E.f.discr = -23 := by
@@ -78,35 +76,22 @@ lemma discr_f_E : E.f.discr = -23 := by
 
 /-! ### No unramifiedness restrictions: `discBadPrimes (𝓞 ℚ) = ∅` -/
 
-instance : IsPrincipalIdealRing (𝓞 ℚ) :=
-  .of_surjective (Rat.ringOfIntegersEquiv.symm : ℤ ≃+* 𝓞 ℚ) Rat.ringOfIntegersEquiv.symm.surjective
-
 /-- `-23` is squarefree in the ring of integers of `ℚ`, being squarefree in `ℤ`. -/
 lemma squarefree_neg23 : Squarefree (-23 : 𝓞 ℚ) := by
   have hZ : Squarefree (-23 : ℤ) := Int.squarefree_natAbs.mp <| by
     norm_num
     exact (by norm_num : Nat.Prime 23).squarefree
-  intro x hx
-  have hdvd : Rat.ringOfIntegersEquiv x * Rat.ringOfIntegersEquiv x ∣ (-23 : ℤ) := by
-    rw [← map_mul, show (-23 : ℤ) = Rat.ringOfIntegersEquiv (-23 : 𝓞 ℚ) by
-      rw [map_neg, map_ofNat]]
-    exact map_dvd _ hx
-  have h2 : IsUnit (Rat.ringOfIntegersEquiv.symm (Rat.ringOfIntegersEquiv x)) :=
-    (hZ _ hdvd).map Rat.ringOfIntegersEquiv.symm.toRingHom.toMonoidHom
-  rwa [RingEquiv.symm_apply_apply] at h2
+  have h := hZ.map (Rat.ringOfIntegersEquiv.symm : ℤ ≃+* 𝓞 ℚ).toMulEquiv
+  simpa only [RingEquiv.toMulEquiv_eq_coe, RingEquiv.coe_toMulEquiv, map_neg, map_ofNat] using h
 
-open WithZero in
 /-- No finite place of `ℚ` imposes an unramifiedness restriction on the 2-Selmer group of `E`:
 the coefficients are integers and `disc f = -23` is squarefree. -/
-lemma discBadPrimes_empty : E.discBadPrimes (𝓞 ℚ) = ∅ := by
-  refine E.discBadPrimes_eq_empty (𝓞 ℚ) ?_ ?_ ?_ ?_
-  · exact fun v ↦ by rw [show E.a₂ = 0 from rfl, map_zero]; exact zero_le_one
-  · exact fun v ↦ by rw [show E.a₄ = -1 from rfl, Valuation.map_neg, map_one]
-  · exact fun v ↦ by rw [show E.a₆ = 1 from rfl, map_one]
-  · intro v
-    rw [discr_f_E, show (-23 : ℚ) = algebraMap (𝓞 ℚ) ℚ (-23) by rw [map_neg, map_ofNat]]
-    exact v.exp_neg_one_le_valuation_algebraMap
-      (v.notMem_pow_two_of_squarefree squarefree_neg23)
+lemma discBadPrimes_empty : E.discBadPrimes (𝓞 ℚ) = ∅ :=
+  E.discBadPrimes_eq_empty_of_squarefree (𝓞 ℚ)
+    ⟨0, by rw [map_zero, show E.a₂ = 0 from rfl]⟩
+    ⟨-1, by rw [map_neg, map_one, show E.a₄ = -1 from rfl]⟩
+    ⟨1, by rw [map_one, show E.a₆ = 1 from rfl]⟩
+    (δ := -23) (by rw [map_neg, map_ofNat, discr_f_E]) squarefree_neg23
 
 /-! ### The arithmetic of the cubic field of discriminant `-23`
 
@@ -117,23 +102,20 @@ fact `exists_eq_discr_mul_sq`: the field discriminant times a square is `-23`.
 -/
 
 private lemma coe_factors_eq (p : E.f.Factors) : (p : ℚ[X]) = E.f :=
-  eq_of_monic_of_associated p.monic E.monic_f
-    (p.irreducible.associated_of_dvd irreducible_f p.dvd)
+  Factors.coe_eq irreducible_f E.monic_f p
 
 private lemma isIntegral_root (p : E.f.Factors) :
     IsIntegral ℤ (AdjoinRoot.root (p : ℚ[X])) := by
-  refine ⟨X ^ 3 - X + 1, by monicity!, ?_⟩
-  have h1 : AdjoinRoot.mk (p : ℚ[X]) ((X ^ 3 - X + 1 : ℤ[X]).map (algebraMap ℤ ℚ)) = 0 :=
-    (congrArg (AdjoinRoot.mk _) ((coe_factors_eq p).trans f_eq_map)).symm.trans
-      AdjoinRoot.mk_self
-  simp only [Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X,
-    Polynomial.map_one, map_add, map_sub, map_pow, map_one, AdjoinRoot.mk_X] at h1
-  simpa only [eval₂_add, eval₂_sub, eval₂_pow, eval₂_X, eval₂_one] using h1
+  obtain ⟨g, hg, he⟩ := AdjoinRoot.isIntegralElem_root_of_map (algebraMap ℤ ℚ)
+    (by monicity! : (X ^ 3 - X + 1 : ℤ[X]).Monic)
+    (f_eq_map.symm.trans (coe_factors_eq p).symm)
+  exact ⟨g, hg, by
+    rwa [RingHom.ext_int (algebraMap ℤ (AdjoinRoot (p : ℚ[X])))
+      ((algebraMap ℚ _).comp (algebraMap ℤ ℚ))]⟩
 
 private lemma finrank_adjoinRoot (p : E.f.Factors) :
     Module.finrank ℚ (AdjoinRoot (p : ℚ[X])) = 3 := by
-  rw [(AdjoinRoot.powerBasis p.ne_zero).finrank, AdjoinRoot.powerBasis_dim, coe_factors_eq p,
-    natDegree_f]
+  rw [AdjoinRoot.finrank_eq_natDegree p.ne_zero, coe_factors_eq p, natDegree_f]
 
 /-- The discriminant of the cubic field `ℚ[x]/(x³ - x + 1)` times a square is `-23` (in fact
 the discriminant *is* `-23`, but divisibility and sign are all that is needed). -/
@@ -141,8 +123,8 @@ lemma exists_eq_discr_mul_sq (p : E.f.Factors) :
     ∃ q : ℤ, -23 = NumberField.discr (AdjoinRoot (p : ℚ[X])) * q ^ 2 := by
   have := AdjoinRoot.isSeparable_of_separable E.separable_f p
   have hder : (derivative (p : ℚ[X])).natDegree = (p : ℚ[X]).natDegree - 1 := by
-    rw [coe_factors_eq p, natDegree_f, E.derivative_f]
-    exact natDegree_quadratic (by norm_num)
+    rw [coe_factors_eq p, natDegree_f]
+    exact E.natDegree_derivative_f (by norm_num)
   have hdisc := AdjoinRoot.discr_powerBasis_eq_discr (K := ℚ) p.monic hder
   rw [congrArg Polynomial.discr (coe_factors_eq p), discr_f_E] at hdisc
   exact NumberField.exists_eq_discr_mul_sq (AdjoinRoot.powerBasis p.ne_zero)

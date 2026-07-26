@@ -110,7 +110,8 @@ sign forces signature `(1, 1)`, giving unit rank `1` by Dirichlet's unit theorem
 (`RingOfIntegers.finrank_additive_units_of_discr_neg`). The whole chain is thus `sorry`-free.
 The reduction to these inputs runs
 via general building blocks: `x³ − x + 1` is irreducible (by reduction
-mod `2`) with squarefree discriminant, `discBadPrimes (𝓞 ℚ) = ∅` (`discBadPrimes_eq_empty` +
+mod `2`) with squarefree discriminant, `discBadPrimes (𝓞 ℚ) = ∅`
+(`discBadPrimes_eq_empty_of_squarefree` +
 `notMem_pow_two_of_squarefree`), a trivial class group makes each factor's everywhere-unramified
 Selmer group a quotient of the unit square classes
 (`IsDedekindDomain.card_selmerGroup_empty_le`), whose order is `2^(rank+1)`
