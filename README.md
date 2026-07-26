@@ -96,9 +96,13 @@ For this curve the discriminant of the cubic is `−23`, which is squarefree, so
 classes (`A(∅,2) ⊓ ker N`) of the cubic field of discriminant `−23` — a group of order `2`, since
 that field has class number `1` and unit rank `1`. This computation is carried out in
 [`RankExample.lean`](EllipticCurves/RankExample.lean): `#Sel₂(E/ℚ) ≤ 2`
-(`card_selmerGroup₂_le_two`) and hence, using the torsion-freeness of `E(ℚ)`,
-`rank E(ℚ) ≤ 1` (`finrank_point_le_one`) — modulo exactly two `sorry`ed inputs from the
-arithmetic of the cubic field, its trivial class group and its unit rank `1`. The reduction
+(`card_selmerGroup₂_le_two`), hence, using the torsion-freeness of `E(ℚ)`, `rank E(ℚ) ≤ 1`
+(`finrank_point_le_one`), and hence — `E(ℚ)` being finitely generated, torsion-free, and
+containing the point `(1, 1)` — the **show-piece result `E(ℚ) ≅ ℤ`**
+(`nonempty_point_addEquiv_int`, via the generic
+`AddCommGroup.nonempty_addEquiv_int_of_finrank_le_one`). All this is modulo exactly two
+`sorry`ed inputs from the arithmetic of the cubic field, its trivial class group and its unit
+rank `1`. The reduction
 itself is fully proved, via general building blocks: `x³ − x + 1` is irreducible (by reduction
 mod `2`) with squarefree discriminant, `discBadPrimes (𝓞 ℚ) = ∅` (`discBadPrimes_eq_empty` +
 `notMem_pow_two_of_squarefree`), a trivial class group makes each factor's everywhere-unramified

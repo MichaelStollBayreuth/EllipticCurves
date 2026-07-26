@@ -459,6 +459,20 @@ theorem Units.card_modPow_two (R : Type*) [CommRing R] [IsDomain R] [Group.FG R�
   rw [Units.modPow, CommGroup.card_modPow Rˣ two_ne_zero, Units.card_ker_powMonoidHom_two R h2,
     pow_succ]
 
+open Module in
+/-- A nontrivial finitely generated torsion-free commutative group of rank at most `1` is
+infinite cyclic: it is free (over the PID `ℤ`) of rank exactly `1`. -/
+theorem AddCommGroup.nonempty_addEquiv_int_of_finrank_le_one {G : Type*} [AddCommGroup G]
+    [AddGroup.FG G] [IsAddTorsionFree G] [Nontrivial G] (h : Module.finrank ℤ G ≤ 1) :
+    Nonempty (G ≃+ ℤ) := by
+  have hfin : Module.Finite ℤ G := Module.Finite.iff_addGroup_fg.mpr ‹_›
+  have h1 : Module.finrank ℤ G = 1 := le_antisymm h Module.finrank_pos
+  have hcard : Fintype.card (Module.Free.ChooseBasisIndex ℤ G) = 1 := by
+    rw [← Module.finrank_eq_card_chooseBasisIndex, h1]
+  obtain ⟨u⟩ := Fintype.card_eq_one_iff_nonempty_unique.mp hcard
+  exact ⟨((Module.Free.chooseBasis ℤ G).equiv (Basis.singleton Unit ℤ)
+    (Equiv.equivPUnit _)).toAddEquiv⟩
+
 namespace IsDedekindDomain
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] (K : Type*) [Field K] [Algebra R K]

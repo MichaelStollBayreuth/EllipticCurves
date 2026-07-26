@@ -8,15 +8,16 @@ public import EllipticCurves.SelmerGroup
 @[expose] public section
 
 /-!
-# Example: the 2-Selmer group of `y² = x³ - x + 1` has order at most `2`, so the rank is `1`
+# Example: the Mordell-Weil group of `y² = x³ - x + 1` over `ℚ` is infinite cyclic
 
 For the elliptic curve `E : y² = x³ - x + 1` over `ℚ`, the cubic `f = x³ - x + 1` is
 irreducible with squarefree discriminant `-23`, so `W.discBadPrimes (𝓞 ℚ) = ∅` and the general
 bound `WeierstrassCurve.Affine.two_mul_card_selmerGroup₂_le` applies: granted that the cubic
 field `ℚ[x]/(f)` (of discriminant `-23`) has trivial class group and unit rank `1`, the
 2-Selmer group of `E` has order at most `(2 ^ (1 + 1))/2 = 2`.  Since `E(ℚ)` is torsion-free
-(`InfiniteOrderExample`), the rank bound `2 ^ rank ≤ #Sel₂` gives `rank E(ℚ) ≤ 1` — and the
-point `(1, 1)` of infinite order will pin down `rank E(ℚ) = 1`.
+(`InfiniteOrderExample`), the rank bound `2 ^ rank ≤ #Sel₂` gives `rank E(ℚ) ≤ 1`; being
+finitely generated (Mordell-Weil), torsion-free, and nontrivial (it contains `P = (1, 1)`),
+the Mordell-Weil group is free of rank exactly one: `E(ℚ) ≅ ℤ`.
 
 ## Main statements
 
@@ -30,6 +31,8 @@ point `(1, 1)` of infinite order will pin down `rank E(ℚ) = 1`.
 * `InfiniteOrderExample.card_selmerGroup₂_le_two`: the 2-Selmer group of `E` has order at
   most `2`.
 * `InfiniteOrderExample.finrank_point_le_one`: the rank of `E(ℚ)` is at most `1`.
+* `InfiniteOrderExample.nonempty_point_addEquiv_int`: **`E(ℚ) ≅ ℤ`** — combining the rank
+  bound with the Mordell-Weil theorem, torsion-freeness, and the point `(1, 1)`.
 -/
 
 open WeierstrassCurve WeierstrassCurve.Affine Polynomial IsDedekindDomain NumberField
@@ -78,7 +81,9 @@ instance : IsPrincipalIdealRing (𝓞 ℚ) :=
 
 /-- `-23` is squarefree in the ring of integers of `ℚ`, being squarefree in `ℤ`. -/
 lemma squarefree_neg23 : Squarefree (-23 : 𝓞 ℚ) := by
-  have hZ : Squarefree (-23 : ℤ) := Int.squarefree_natAbs.mp (by norm_num; exact (Nat.prime_iff.mp (by norm_num)).irreducible.squarefree)
+  have hZ : Squarefree (-23 : ℤ) := Int.squarefree_natAbs.mp <| by
+    norm_num
+    exact (by norm_num : Nat.Prime 23).squarefree
   intro x hx
   have hdvd : Rat.ringOfIntegersEquiv x * Rat.ringOfIntegersEquiv x ∣ (-23 : ℤ) := by
     rw [← map_mul, show (-23 : ℤ) = Rat.ringOfIntegersEquiv (-23 : 𝓞 ℚ) by
@@ -161,6 +166,15 @@ theorem finrank_point_le_one : Module.finrank ℤ E.Point ≤ 1 := by
   rw [AddMonoidHom.ker_nsmulAddMonoidHom two_ne_zero, AddSubgroup.card_bot, mul_one] at h
   have h2 := h.trans card_selmerGroup₂_le_two
   exact (Nat.pow_le_pow_iff_right one_lt_two).mp (h2.trans_eq (pow_one 2).symm)
+
+/-- **The Mordell-Weil group of `y² = x³ - x + 1` over `ℚ` is infinite cyclic** (granted the
+two sorried inputs on the cubic field of discriminant `-23`): `E(ℚ)` is finitely generated
+(the Mordell-Weil theorem), torsion-free, nontrivial (it contains `P = (1, 1)`), and of rank
+at most `1`, hence free of rank exactly `1`. -/
+theorem nonempty_point_addEquiv_int : Nonempty (E.Point ≃+ ℤ) := by
+  have : AddGroup.FG E.Point := fg_point_of_numberField
+  have : Nontrivial E.Point := nontrivial_of_ne P 0 (Point.some_ne_zero _)
+  exact AddCommGroup.nonempty_addEquiv_int_of_finrank_le_one finrank_point_le_one
 
 end InfiniteOrderExample
 
