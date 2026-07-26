@@ -37,10 +37,13 @@ curves, lives in `EllipticCurves.Mathlib.Basic`.
    Note that this step is *not* needed for the finiteness result (Steps 6 and 7 do not use
    it); it is included because the norm condition cuts down the Selmer group in explicit
    computations.
-6. Show that `im μ ⊆ A(S,2)`, where `S` is the set of "bad" primes, i.e., primes dividing `2`
-   or the (numerator of the) discriminant of `E` or the denominator of `a` or `b`.
+6. Show that `im μ ⊆ A(S,2)` for a suitable finite set `S` of "bad" primes.
    => done, as `range_μ_le_selmerGroupA` at the end of the file, for `E` over the fraction field
-   of a Dedekind domain.
+   of a Dedekind domain and for *any* `S` outside which the coefficients of the cubic are
+   integral and `disc f` is a unit. Such sets are provided by `badPrimes` (primes dividing `2`
+   or `Δ`, or occurring in a coefficient denominator); the refined sets `discBadPrimes` and
+   `badPrimes₂` defined alongside it feed the sharpened Selmer-group bound of
+   `EllipticCurves.SelmerGroup`.
 7. Show that `A(S,2)` is finite, and conclude that `E(K)/2E(K)` is finite.
    => done, as `finite_index_range_nsmulAddMonoidHom_two` at the end of the file. The
    finiteness of the `2`-Selmer group of each field factor is

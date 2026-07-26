@@ -53,8 +53,9 @@ The proof follows the classical route:
   [`WeakMordellWeil.lean`](EllipticCurves/WeakMordellWeil.lean), proved over fraction fields of
   Dedekind domains (with the finiteness hypotheses above) via the `x − T` descent map: `E(K)/2E(K)`
   embeds into the group `Aˣ/(Aˣ)²` of square classes of the étale algebra `A = K[X]/(f)` for the
-  cubic `f` with `y² = f(x)`, with image contained in the 2-Selmer group `A(S, 2)` for the finite
-  set `S` of bad primes, and the latter group is finite
+  cubic `f` with `y² = f(x)`, with image contained in the 2-Selmer group `A(S, 2)` for any finite
+  set `S` outside which the coefficients of `f` are integral and its discriminant is a unit
+  (`range_μ_le_selmerGroupA`), and the latter group is finite
   (`IsDedekindDomain.finite_selmerGroup`). The image also lies in the kernel of the norm map, which
   is not needed for finiteness but cuts the group down in explicit computations
   (`AdjoinRoot.norm_mk_eq_resultant`).
@@ -66,9 +67,21 @@ The proof follows the classical route:
   * `range_μ_le_selmerGroup₂` together with `ker μ = 2E(K)` bounds `E(K)/2E(K)` by the Selmer group;
   * `card_range_μ` gives `#(im μ) = 2^(rank E(K)) · #E(K)[2]`, whence the rank bound
     `pow_rank_le_card_of_range_μ_le`;
-  * `selmerGroup₂_eq_badPrimes` (over a number field) reduces membership to the *finitely many*
-    local conditions at the bad and infinite places, inside the finite group `A(S,2) ⊓ ker N`, so
-    the Selmer group is finite (`finite_selmerGroup₂`);
+  * `selmerGroup₂_le_selmerGroupA_inf_ker` and `selmerGroup₂_eq_badPrimes₂` (over a number
+    field) reduce membership to the *finitely many* local conditions at the bad and infinite
+    places, inside the finite group `A(S,2) ⊓ ker N`, so the Selmer group is finite
+    (`finite_selmerGroup₂`). Here `S = discBadPrimes` is sharper than the naïve set of bad
+    primes: it contains only the places where `disc f` vanishes to order at least `2` or a
+    coefficient of `f` has a pole. This rests on two refinements of the local analysis: at a
+    finite place with integral coefficients where `disc f` vanishes to order at most `1`, the
+    local descent image consists of unramified classes — in *any* residue characteristic, so
+    with no condition at `2` (`range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr`) — and
+    when moreover the residue characteristic is odd, it is *exactly* the group of unramified
+    classes with trivial norm (`selmerGroupA_inf_ker_normM_eq_range_μ`, proved by counting
+    both sides), so such places are effectively good and their local conditions disappear
+    from the description (only the even places of `badPrimes₂` retain a condition beyond
+    unramifiedness, because of the extra factor `(#𝔽_v)^(v(2))` in the local counting
+    formula);
   * the local image sizes `#E(K_v)[2] · ‖2‖_v⁻¹` are computed at every place
     (`card_range_μ_adicCompletion`, `card_range_μ_completion_isReal`,
     `card_range_μ_completion_isComplex`) — the real case by the sign analysis over `ℝ` of
@@ -78,6 +91,11 @@ The proof follows the classical route:
 
 The goal towards which this machinery is aimed is a formal proof that the Mordell-Weil group of
 `y² = x³ − x + 1` over `ℚ` is isomorphic to `ℤ`, as a show-piece for formalized explicit 2-descent.
+For this curve the discriminant of the cubic is `−23`, which is squarefree, so `discBadPrimes` is
+*empty* and the 2-Selmer group is contained in the kernel of the norm on the unramified square
+classes (`A(∅,2) ⊓ ker N`) of the cubic field of discriminant `−23` — a group of order `2`, since
+that field has class number `1` and unit rank `1`. Carrying out this computation formally is the
+next step.
 
 ## Formal groups over local fields
 
@@ -114,7 +132,10 @@ full (in the Heights project these statements were `sorry`ed).
   analogue of that structure theorem, `card_selmerGroup_integralClosure` — for odd residue
   characteristic, the group of everywhere-unramified square classes of a finite separable extension
   of `K_v` has order `2` (proved via Henselianity of `𝒪_v`, using
-  [`Mathlib/Henselian.lean`](EllipticCurves/Mathlib/Henselian.lean)).
+  [`Mathlib/Henselian.lean`](EllipticCurves/Mathlib/Henselian.lean)); also the valuation of the
+  norm from such an extension, `v(N(z)) = w(z)^f` with `f` the inertia degree
+  (`valued_norm_eq_pow_inertiaDeg`), which powers the norm-parity argument behind the
+  effectively-good-place sharpening above.
 
 ## An infinite-order certificate
 
@@ -154,8 +175,10 @@ Beyond the formal-group files above, [`EllipticCurves/Mathlib/`](EllipticCurves/
 * [`Basic.lean`](EllipticCurves/Mathlib/Basic.lean): general-purpose ingredients, e.g. the group
   `Units.modPow A n` of units modulo `n`-th powers, the decomposition of an étale algebra
   `K[X]/(f)` (for `f` squarefree) into a product of field factors, norms on `AdjoinRoot` via
-  resultants (`AdjoinRoot.norm_mk_eq_resultant`), and the primes of an extension lying above a set
-  of primes.
+  resultants (`AdjoinRoot.norm_mk_eq_resultant`) and as products over the field factors
+  (`AdjoinRoot.norm_eq_prod_norm_projFactor`, via a dependent-family version of
+  `Algebra.norm_pi`), the discriminant of a polynomial with a split-off root
+  (`Polynomial.discr_X_sub_C_mul`), and the primes of an extension lying above a set of primes.
 * [`AdicCompletionExtension.lean`](EllipticCurves/Mathlib/AdicCompletionExtension.lean): the
   extension `K_v →+* L_w` of adic completions along an extension of Dedekind domains with `w ∣ v`,
   its compatibility with the valuations (up to ramification) and rings of integers (adapted from the
