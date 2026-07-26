@@ -22,7 +22,7 @@ point `(1, 1)` of infinite order will pin down `rank E(ℚ) = 1`.
 
 * `InfiniteOrderExample.irreducible_f`: `x³ - x + 1` is irreducible over `ℚ` (via reduction
   modulo `2`).
-* `InfiniteOrderExample.discBadPrimes_eq_empty`: no finite place imposes an unramifiedness
+* `InfiniteOrderExample.discBadPrimes_empty`: no finite place imposes an unramifiedness
   restriction beyond the norm condition.
 * `InfiniteOrderExample.subsingleton_classGroup`, `.finrank_additive_units`: the two inputs
   from the arithmetic of the cubic field of discriminant `-23` — trivial class group and unit
