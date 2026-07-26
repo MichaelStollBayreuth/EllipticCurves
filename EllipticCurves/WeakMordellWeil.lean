@@ -112,6 +112,21 @@ lemma f_ne_zero : W.f ≠ 0 := W.monic_f.ne_zero
 lemma degree_lt_degree_f {p : K[X]} (hp : p.natDegree ≤ 2) : p.degree < W.f.degree :=
   degree_lt_degree <| by rw [natDegree_f]; lia
 
+lemma degree_f : W.f.degree = 3 := by
+  rw [degree_eq_natDegree W.f_ne_zero, natDegree_f]; rfl
+
+/-- The discriminant of the cubic `f`, in terms of the coefficients of `W`. -/
+lemma discr_f : W.f.discr = W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a₂ ^ 3 * W.a₆
+    - 27 * W.a₆ ^ 2 + 18 * W.a₂ * W.a₄ * W.a₆ := by
+  rw [Polynomial.discr_of_degree_eq_three W.degree_f]
+  simp only [f, coeff_add, coeff_C_mul, coeff_X_pow, coeff_C, coeff_X]
+  norm_num
+
+/-- In char ≠ 2 normal form, `Δ = 16 · disc f`; in particular the two agree up to a unit away
+from `2`, but *not* at even places, where `disc f` is the finer invariant. -/
+lemma Δ_eq_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
+  rw [Δ_of_isCharNeTwoNF W, W.discr_f]; ring
+
 lemma separable_f [W.IsElliptic] [W.IsCharNeTwoNF] : W.f.Separable := by
   have hΔ : W.Δ ≠ 0 := W.isUnit_Δ.ne_zero
   rw [f, separable_def',
@@ -1140,6 +1155,25 @@ lemma root_cubic_eq_zero (p : W.f.Factors) :
   have hz : AdjoinRoot.mk (p : K[X]) W.f = 0 :=
     AdjoinRoot.mk_eq_zero.mpr p.dvd
   simpa [f, AdjoinRoot.algebraMap_eq] using hz
+
+/-- The Bézout identity behind `separable_f` at the level of `disc f`, evaluated at `θ`:
+`f′(θ)` times an explicit quadratic in `θ` with integral coefficients equals `disc f`.
+(The classical identity with `Δ` on the right is `16` times this one; this version stays
+useful at even places.) -/
+lemma deriv_root_mul_eq_discr_f (p : W.f.Factors) :
+    (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄)
+        * ((2 * ι p W.a₂ ^ 2 - 6 * ι p W.a₄) * θ p ^ 2
+          + (2 * ι p W.a₂ ^ 3 - 7 * ι p W.a₂ * ι p W.a₄ + 9 * ι p W.a₆) * θ p
+          + (ι p W.a₂ ^ 2 * ι p W.a₄ - 4 * ι p W.a₄ ^ 2 + 3 * ι p W.a₂ * ι p W.a₆)) =
+      ι p W.f.discr := by
+  have hd : ι p W.f.discr = ι p W.a₂ ^ 2 * ι p W.a₄ ^ 2 - 4 * ι p W.a₄ ^ 3
+      - 4 * ι p W.a₂ ^ 3 * ι p W.a₆ - 27 * ι p W.a₆ ^ 2
+      + 18 * ι p W.a₂ * ι p W.a₄ * ι p W.a₆ := by
+    rw [W.discr_f]
+    simp only [map_sub, map_add, map_mul, map_pow, map_ofNat]
+  rw [hd]
+  linear_combination (-(18 * ι p W.a₄ - 6 * ι p W.a₂ ^ 2) * θ p
+    - (15 * ι p W.a₂ * ι p W.a₄ - 4 * ι p W.a₂ ^ 3 - 27 * ι p W.a₆)) * W.root_cubic_eq_zero p
 
 /-- The cofactor `f / (X - x)`, computed in the field factor `K[X]/(p)`. -/
 lemma mk_fCofactor_eq (p : W.f.Factors) (x : K) :
