@@ -31,9 +31,14 @@ square-class lemmas it rests on (Mathlib-upstreaming candidates).
   bijective over a DVR), the principal units of `B` are squares by Hensel's lemma applied to
   `X² - u` (`IsSquare.of_sub_one_mem_maximalIdeal`), so `Bˣ/(Bˣ)² ≅ kˣ/(kˣ)²`, which has order
   `2` for a finite field of odd characteristic.
+
+* `IsDedekindDomain.HeightOneSpectrum.valued_norm_eq_pow_inertiaDeg`: for nonzero `z` in a
+  finite separable extension `L` of `K_v` (with `K` of characteristic `0`),
+  `v(N_{L/K_v} z) = w(z) ^ f`, where `w` is the height-one prime of the integral closure of
+  `𝒪_v` in `L` and `f` its inertia degree over `v`.
 -/
 
-open IsDedekindDomain Polynomial
+open IsDedekindDomain Polynomial WithZero
 
 /-!
 ### Square classes of units of a Henselian local ring
@@ -185,7 +190,8 @@ end Henselian
 
 Since `𝒪_v` is Henselian, its integral closure `B` in a finite separable extension `L` of
 `K_v` is a Henselian discrete valuation ring with finite residue field. The lemmas below
-record this; the section culminates in the count `#L(∅, 2) = 2`.
+record this; the section proves the norm-valuation compatibility
+`valued_norm_eq_pow_inertiaDeg` and culminates in the count `#L(∅, 2) = 2`.
 -/
 
 namespace IsDedekindDomain.HeightOneSpectrum
@@ -223,6 +229,18 @@ instance module_finite_integralClosure :
     Module.Finite (v.adicCompletionIntegers K)
       (integralClosure (v.adicCompletionIntegers K) L) :=
   IsIntegralClosure.finite (v.adicCompletionIntegers K) (v.adicCompletion K) L _
+
+/-- The integral closure of `𝒪_v` in a finite separable extension of `K_v` is torsion-free
+over `𝒪_v`, as `𝒪_v` embeds into it. -/
+instance isTorsionFree_integralClosure :
+    Module.IsTorsionFree (v.adicCompletionIntegers K)
+      (integralClosure (v.adicCompletionIntegers K) L) := by
+  rw [Module.isTorsionFree_iff_algebraMap_injective]
+  have hinj : Function.Injective (algebraMap (v.adicCompletionIntegers K) L) := by
+    rw [IsScalarTower.algebraMap_eq (v.adicCompletionIntegers K) (v.adicCompletion K) L]
+    exact (algebraMap (v.adicCompletion K) L).injective.comp
+      (FaithfulSMul.algebraMap_injective _ _)
+  exact fun a b hab ↦ hinj (congrArg Subtype.val hab)
 
 /-- The integral closure of `𝒪_v` in a finite separable extension of `K_v` is a local ring:
 a finite algebra over the Henselian local ring `𝒪_v` is a product of local rings, and a
@@ -296,8 +314,82 @@ instance isDiscreteValuationRing_integralClosure :
     (R := integralClosure (v.adicCompletionIntegers K) L) hnf).out 2 0).mp
     (inferInstance : IsDedekindDomain (integralClosure (v.adicCompletionIntegers K) L))
 
+/-- Any nonzero element of a discrete valuation ring generates a power of the maximal ideal,
+and its valuation at the unique height-one prime is `exp` of minus that exponent. -/
+private lemma exists_intValuation_eq_exp_neg {A : Type*} [CommRing A] [IsDomain A]
+    [IsDiscreteValuationRing A] {r : A} (hr : r ≠ 0) :
+    ∃ n : ℕ, (IsDiscreteValuationRing.maximalIdeal A).intValuation r = exp (-(n : ℤ)) ∧
+      Ideal.span {r} = IsLocalRing.maximalIdeal A ^ n := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible A
+  obtain ⟨n, u, rfl⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hr hπ
+  have hπ1 : (IsDiscreteValuationRing.maximalIdeal A).intValuation π = exp (-1) :=
+    (IsDiscreteValuationRing.maximalIdeal A).intValuation_singleton hπ.ne_zero
+      hπ.maximalIdeal_eq
+  have hu : (IsDiscreteValuationRing.maximalIdeal A).intValuation u = 1 := by
+    simp [IsDiscreteValuationRing.maximalIdeal]
+  refine ⟨n, ?_, ?_⟩
+  · rw [map_mul, map_pow, hu, hπ1, one_mul, ← exp_nsmul]
+    simp
+  · rw [Ideal.span_singleton_eq_span_singleton.mpr (associated_unit_mul_left _ _ u.isUnit),
+      ← Ideal.span_singleton_pow, hπ.maximalIdeal_eq]
+
+-- if `K` has characteristic zero, then so does the fraction field of `𝒪_v`
+private lemma charZero_fractionRing [CharZero K] :
+    CharZero (FractionRing (v.adicCompletionIntegers K)) :=
+  have : CharZero (v.adicCompletion K) :=
+    charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
+  have : CharZero (v.adicCompletionIntegers K) :=
+    (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)).charZero
+  charZero_of_injective_algebraMap (IsFractionRing.injective (v.adicCompletionIntegers K) _)
+
+private lemma valued_norm_algebraMap [CharZero K]
+    (w : HeightOneSpectrum (integralClosure (v.adicCompletionIntegers K) L))
+    {r : integralClosure (v.adicCompletionIntegers K) L} (hr : r ≠ 0) :
+    Valued.v (Algebra.norm (v.adicCompletion K)
+        (algebraMap (integralClosure (v.adicCompletionIntegers K) L) L r)) =
+      w.intValuation r ^ w.asIdeal.inertiaDeg (v.adicCompletionIntegers K) := by
+  obtain rfl := w.eq_maximalIdeal
+  have := charZero_fractionRing (K := K) v
+  have : (IsLocalRing.maximalIdeal (integralClosure (v.adicCompletionIntegers K) L)).LiesOver
+      (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)) :=
+    ⟨(IsLocalRing.eq_maximalIdeal inferInstance).symm⟩
+  obtain ⟨n, hval, hspan⟩ := exists_intValuation_eq_exp_neg hr
+  have hrel : Ideal.span {Algebra.intNorm (v.adicCompletionIntegers K)
+      (integralClosure (v.adicCompletionIntegers K) L) r} =
+      IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^
+        ((IsLocalRing.maximalIdeal (integralClosure (v.adicCompletionIntegers K) L)).inertiaDeg
+          (v.adicCompletionIntegers K) * n) := by
+    rw [← Ideal.relNorm_singleton, hspan, map_pow,
+      Ideal.relNorm_eq_pow_of_isMaximal _ (IsLocalRing.maximalIdeal _), ← pow_mul]
+  rw [← Algebra.algebraMap_intNorm (A := v.adicCompletionIntegers K) (L := L),
+    valued_of_span_singleton_eq_maximalIdeal_pow v hrel, hval, ← exp_nsmul]
+  simp [mul_comm]
+
+variable [IsFractionRing (integralClosure (v.adicCompletionIntegers K) L) L]
+
+/-- **Valuation of the norm** over the completion: for nonzero `z` in a finite separable
+extension `L` of `K_v` and `w` the (unique) height-one prime of the integral closure `𝒪_L`
+of `𝒪_v` in `L`, `v(N_{L/K_v} z) = w(z) ^ f`, where `f` is the inertia degree of `w`
+over `v`. -/
+theorem valued_norm_eq_pow_inertiaDeg [CharZero K]
+    (w : HeightOneSpectrum (integralClosure (v.adicCompletionIntegers K) L)) {z : L}
+    (hz : z ≠ 0) :
+    Valued.v (Algebra.norm (v.adicCompletion K) z) =
+      w.valuation L z ^ w.asIdeal.inertiaDeg (v.adicCompletionIntegers K) := by
+  obtain ⟨r, s, hs, rfl⟩ :=
+    IsFractionRing.div_surjective (A := integralClosure (v.adicCompletionIntegers K) L) z
+  have hs0 : s ≠ 0 := nonZeroDivisors.ne_zero hs
+  have hsL : algebraMap (integralClosure (v.adicCompletionIntegers K) L) L s ≠ 0 :=
+    (map_ne_zero_iff _ (IsFractionRing.injective _ L)).mpr hs0
+  have hr0 : r ≠ 0 := by
+    rintro rfl
+    simp at hz
+  rw [map_div₀ (w.valuation L), valuation_of_algebraMap, valuation_of_algebraMap, div_pow,
+    eq_div_iff (pow_ne_zero _ (w.intValuation_ne_zero s hs0)),
+    ← valued_norm_algebraMap v L w hr0, ← valued_norm_algebraMap v L w hs0,
+    ← map_mul, ← map_mul, div_mul_cancel₀ _ hsL]
+
 variable [Finite (R ⧸ v.asIdeal)]
-  [IsFractionRing (integralClosure (v.adicCompletionIntegers K) L) L]
 
 /-- For a finite separable extension `L` of the completion `K_v` at a place of odd residue
 characteristic, the group of square classes of `L` that have even valuation at every prime

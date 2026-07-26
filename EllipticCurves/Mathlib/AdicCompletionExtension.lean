@@ -115,6 +115,24 @@ theorem span_singleton_eq_maximalIdeal_pow {x : v.adicCompletionIntegers K} {e :
   rw [Ideal.span_singleton_eq_span_singleton.mpr (associated_unit_mul_left _ _ u.isUnit),
     ← Ideal.span_singleton_pow, hπ.maximalIdeal_eq]
 
+/-- Conversely, a generator of the `e`-th power of the maximal ideal of the ring of integers
+of a completion has valuation `exp (-e)`. -/
+theorem valued_of_span_singleton_eq_maximalIdeal_pow {x : v.adicCompletionIntegers K} {e : ℕ}
+    (hx : Ideal.span {x} = IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^ e) :
+    Valued.v (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) x) =
+      exp (-(e : ℤ)) := by
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible (v.adicCompletionIntegers K)
+  have hπe : Valued.v (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) (π ^ e)) =
+      exp (-(e : ℤ)) := by
+    rw [map_pow, map_pow, v.valued_irreducible_adicCompletionIntegers hπ, ← exp_nsmul]
+    simp
+  obtain ⟨u, hu⟩ := Ideal.span_singleton_eq_span_singleton.mp
+    (hx.trans (span_singleton_eq_maximalIdeal_pow v hπe).symm)
+  have hu1 : Valued.v (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)
+      (u : v.adicCompletionIntegers K)) = 1 :=
+    (Valuation.valuationSubring.integers (v := Valued.v)).valuation_unit u
+  rwa [← hu, map_mul, map_mul, hu1, mul_one] at hπe
+
 /-- Any element of the ring of integers of the completion is congruent to an element of `R`
 modulo the maximal ideal. -/
 theorem exists_valued_sub_lt_one (x : v.adicCompletionIntegers K) :
