@@ -94,8 +94,18 @@ The goal towards which this machinery is aimed is a formal proof that the Mordel
 For this curve the discriminant of the cubic is `−23`, which is squarefree, so `discBadPrimes` is
 *empty* and the 2-Selmer group is contained in the kernel of the norm on the unramified square
 classes (`A(∅,2) ⊓ ker N`) of the cubic field of discriminant `−23` — a group of order `2`, since
-that field has class number `1` and unit rank `1`. Carrying out this computation formally is the
-next step.
+that field has class number `1` and unit rank `1`. This computation is carried out in
+[`RankExample.lean`](EllipticCurves/RankExample.lean): `#Sel₂(E/ℚ) ≤ 2`
+(`card_selmerGroup₂_le_two`) and hence, using the torsion-freeness of `E(ℚ)`,
+`rank E(ℚ) ≤ 1` (`finrank_point_le_one`) — modulo exactly two `sorry`ed inputs from the
+arithmetic of the cubic field, its trivial class group and its unit rank `1`. The reduction
+itself is fully proved, via general building blocks: `x³ − x + 1` is irreducible (by reduction
+mod `2`) with squarefree discriminant, `discBadPrimes (𝓞 ℚ) = ∅` (`discBadPrimes_eq_empty` +
+`notMem_pow_two_of_squarefree`), a trivial class group makes each factor's everywhere-unramified
+Selmer group a quotient of the unit square classes
+(`IsDedekindDomain.card_selmerGroup_empty_le`), whose order is `2^(rank+1)`
+(`Units.card_modPow_two`), and the norm condition halves the bound because the class of `−1` is
+everywhere unramified with nonsquare norm (`two_mul_card_selmerGroup₂_le`).
 
 ## Formal groups over local fields
 
