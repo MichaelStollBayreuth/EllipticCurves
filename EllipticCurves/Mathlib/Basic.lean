@@ -39,6 +39,12 @@ that have nothing to do with elliptic curves and look like candidates for Mathli
 * `AdjoinRoot.equivPiFactors`: for nonzero squarefree `f`, `K[X]/(f)` is the product of the
   fields `K[X]/(p)` over the monic irreducible factors `p` of `f`, and the induced
   `AdjoinRoot.modPowEquivPiFactors` on `n`-th power classes of units.
+* `Polynomial.discr_X_sub_C_mul`: splitting off a linear factor multiplies the discriminant
+  by the square of the evaluation, `((X - C x) * g).discr = g.discr * g.eval x ^ 2`.
+* `Matrix.det_blockDiagonal'`, `LinearMap.det_pi'`, `Algebra.norm_prod`, `Algebra.norm_pi`:
+  determinants and norms on (dependent) products decompose as products; together with
+  `AdjoinRoot.norm_eq_prod_norm_projFactor`, the norm on `K[X]/(f)` as the product of the
+  norms on the field factors.
 -/
 
 section Group
@@ -290,6 +296,51 @@ lemma linearIndependent_of_diagonal {ι A : Type*} [CommRing A] [NoZeroDivisors 
       (fun hni ↦ absurd hi hni),
     Pi.smul_apply, smul_eq_mul] at h
   exact (mul_eq_zero.mp h).resolve_right (hd i)
+
+/-- The determinant of a block diagonal matrix with (possibly) non-uniform block sizes is the
+product of the determinants of the blocks. Dependent version of `Matrix.det_blockDiagonal`. -/
+theorem Matrix.det_blockDiagonal' {ι : Type*} [Fintype ι] [DecidableEq ι] {η : ι → Type*}
+    [(i : ι) → Fintype (η i)] [(i : ι) → DecidableEq (η i)] {R : Type*} [CommRing R]
+    (M : (i : ι) → Matrix (η i) (η i) R) :
+    (Matrix.blockDiagonal' M).det = ∏ i, (M i).det := by
+  let : LinearOrder ι := LinearOrder.lift' _ (Fintype.equivFin ι).injective
+  have hbt : (blockDiagonal' M).BlockTriangular Sigma.fst := by
+    intro x y h
+    obtain ⟨k, i⟩ := x
+    obtain ⟨k', j⟩ := y
+    exact blockDiagonal'_apply_ne _ _ _ h.ne'
+  rw [hbt.det_fintype]
+  refine Finset.prod_congr rfl fun k _ ↦ ?_
+  let e : {x : Σ i, η i // x.fst = k} ≃ η k :=
+    { toFun := fun x ↦ x.2 ▸ x.1.2
+      invFun := fun j ↦ ⟨⟨k, j⟩, rfl⟩
+      left_inv := fun ⟨⟨k', j⟩, h⟩ ↦ by subst h; rfl
+      right_inv := fun j ↦ rfl }
+  rw [← Matrix.det_reindex_self e]
+  congr 1
+  ext j j'
+  simp [e, Matrix.toSquareBlock_def]
+
+/-- The determinant of a component-wise endomorphism of a finite product of finite free modules
+is the product of the determinants of the components. Dependent version of `LinearMap.det_pi`. -/
+theorem LinearMap.det_pi' {R : Type*} [CommRing R] {ι : Type*} [Fintype ι] {S : ι → Type*}
+    [(i : ι) → AddCommGroup (S i)] [(i : ι) → Module R (S i)]
+    [(i : ι) → Module.Free R (S i)] [(i : ι) → Module.Finite R (S i)]
+    (f : (i : ι) → S i →ₗ[R] S i) :
+    (LinearMap.pi fun i ↦ (f i).comp (LinearMap.proj i)).det = ∏ i, (f i).det := by
+  classical
+  let b (i : ι) := Module.Free.chooseBasis R (S i)
+  rw [← LinearMap.det_toMatrix (Pi.basis b)]
+  have h : LinearMap.toMatrix (Pi.basis b) (Pi.basis b)
+        (LinearMap.pi fun i ↦ (f i).comp (LinearMap.proj i))
+      = Matrix.blockDiagonal' fun i ↦ LinearMap.toMatrix (b i) (b i) (f i) := by
+    ext ⟨i₁, i₂⟩ ⟨j₁, j₂⟩
+    rcases eq_or_ne i₁ j₁ with rfl | hne
+    · simp [LinearMap.toMatrix_apply']
+    · simp [LinearMap.toMatrix_apply', Matrix.blockDiagonal'_apply_ne _ _ _ hne,
+        Pi.single_eq_of_ne hne]
+  rw [h, Matrix.det_blockDiagonal']
+  simp [LinearMap.det_toMatrix]
 
 end LinearAlgebra
 
@@ -626,6 +677,83 @@ lemma Monic.resultant_one_right (hg : g.Monic) (n : ℕ) :
   · simp
   rw [← C_1, resultant_C_zero_right, one_pow, mul_one, hg.coeff_natDegree, one_pow]
 
+/-- For monic `g`, the resultant does not depend on the size parameter used for the second
+argument, as long as it is at least its degree. -/
+lemma Monic.resultant_congr_right (hg : g.Monic) {p : R[X]} {n₁ n₂ : ℕ}
+    (h₁ : p.natDegree ≤ n₁) (h₂ : n₁ ≤ n₂) :
+    g.resultant p g.natDegree n₂ = g.resultant p g.natDegree n₁ := by
+  rw [← Nat.add_sub_cancel' h₂, resultant_add_right_deg _ _ _ _ _ h₁, hg.coeff_natDegree,
+    one_pow, one_mul]
+
+private lemma succ_mul_div_two {n : ℕ} (hn : 0 < n) : (n + 1) * n / 2 = n * (n - 1) / 2 + n := by
+  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
+  obtain ⟨k, hk⟩ := Nat.even_mul_succ_self m
+  rw [mul_comm m] at hk
+  simp only [Nat.succ_eq_add_one, Nat.add_sub_cancel]
+  rw [show (m + 1 + 1) * (m + 1) = (m + 1) * m + 2 * (m + 1) by ring, hk]
+  lia
+
+private lemma resultant_X_sub_C_add_mul_derivative (hdeg : 0 < g.natDegree) (x : R) :
+    (X - C x).resultant (g + (X - C x) * derivative g) 1 g.natDegree = g.eval x := by
+  have hd' : (derivative g).natDegree + 1 ≤ g.natDegree := by
+    have := natDegree_derivative_le g; lia
+  rw [resultant_add_mul_right _ _ _ _ _ hd' (natDegree_X_sub_C_le x),
+    resultant_X_sub_C_left _ _ _ le_rfl]
+
+private lemma resultant_add_mul_derivative [Nontrivial R] (hg : g.Monic)
+    (hdeg : 0 < g.natDegree) (x : R) :
+    g.resultant (g + (X - C x) * derivative g) g.natDegree g.natDegree =
+      (-1) ^ g.natDegree * g.eval x *
+        g.resultant (derivative g) g.natDegree (g.natDegree - 1) := by
+  have hd' : (derivative g).natDegree + 1 ≤ g.natDegree := by
+    have := natDegree_derivative_le g; lia
+  rw [show g + (X - C x) * derivative g = (X - C x) * derivative g + g * 1 by ring,
+    resultant_add_mul_right _ _ _ _ _ (by simp) le_rfl,
+    hg.resultant_congr_right natDegree_mul_le (by rw [natDegree_X_sub_C]; lia),
+    resultant_mul_right g (X - C x) (derivative g) g.natDegree le_rfl, natDegree_X_sub_C,
+    resultant_X_sub_C_right _ _ _ le_rfl,
+    ← hg.resultant_congr_right (n₂ := g.natDegree - 1) le_rfl (natDegree_derivative_le g)]
+
+/-- The discriminant of `(X - C x) * g` for monic `g` of positive degree is
+`g.discr * g.eval x ^ 2`. -/
+theorem discr_X_sub_C_mul (hg : g.Monic) (hdeg : 0 < g.natDegree) (x : R) :
+    ((X - C x) * g).discr = g.discr * g.eval x ^ 2 := by
+  nontriviality R
+  have hmon : ((X - C x) * g).Monic := (monic_X_sub_C x).mul hg
+  have hN : ((X - C x) * g).natDegree = g.natDegree + 1 := by
+    rw [(monic_X_sub_C x).natDegree_mul hg, natDegree_X_sub_C, add_comm]
+  have hder : derivative ((X - C x) * g) = g + (X - C x) * derivative g := by
+    rw [derivative_mul, derivative_sub, derivative_X, derivative_C, sub_zero, one_mul]
+  have hDle : (g + (X - C x) * derivative g).natDegree ≤ g.natDegree :=
+    (natDegree_add_le _ _).trans (max_le le_rfl (natDegree_mul_le.trans
+      (by rw [natDegree_X_sub_C]; have := natDegree_derivative_le g; lia)))
+  -- compare the splitting of `Res((X - C x) * g, ((X - C x) * g)')` along the product with
+  -- its expression through the discriminant
+  have hsplit := resultant_mul_left (X - C x) g (g + (X - C x) * derivative g) g.natDegree hDle
+  rw [natDegree_X_sub_C, add_comm 1 g.natDegree] at hsplit
+  have hres := resultant_deriv (f := (X - C x) * g)
+    (by rw [← natDegree_pos_iff_degree_pos, hN]; lia)
+  rw [hN, hder, hmon.leadingCoeff, mul_one, Nat.add_sub_cancel, succ_mul_div_two hdeg,
+    pow_add] at hres
+  have hres2 := resultant_deriv (f := g) (natDegree_pos_iff_degree_pos.mp hdeg)
+  rw [hg.leadingCoeff, mul_one] at hres2
+  have hmain := hres.symm.trans hsplit
+  rw [resultant_X_sub_C_add_mul_derivative hdeg x, resultant_add_mul_derivative hg hdeg x,
+    hres2] at hmain
+  -- now peel off the signs, which cancel
+  have hpow (k : ℕ) : ((-1 : R) ^ k) * ((-1) ^ k) = 1 := by
+    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
+  set s : R := (-1) ^ (g.natDegree * (g.natDegree - 1) / 2)
+  set t : R := (-1) ^ g.natDegree
+  have hs : s * s = 1 := hpow _
+  have ht : t * t = 1 := hpow _
+  calc ((X - C x) * g).discr
+      = s * t * (s * t * ((X - C x) * g).discr) := by
+        rw [← mul_assoc, mul_mul_mul_comm, hs, ht, one_mul, one_mul]
+    _ = s * t * (g.eval x * (t * g.eval x * (s * g.discr))) := by rw [hmain]
+    _ = s * s * (t * t) * (g.discr * g.eval x ^ 2) := by ring
+    _ = g.discr * g.eval x ^ 2 := by rw [hs, ht, one_mul, one_mul]
+
 lemma mem_degreeLT_natDegree_iff {q : R[X]} (hg : g ≠ 0) :
     q ∈ degreeLT R g.natDegree ↔ q.degree < g.degree := by
   rw [mem_degreeLT, degree_eq_natDegree hg]
@@ -954,6 +1082,29 @@ lemma AdjoinRoot.map_comp_algebraMap {R : Type*} [CommRing R] [IsDedekindDomain 
       (AdjoinRoot q), AdjoinRoot.algebraMap_eq]
   rfl
 
+/-! ### The norm on a product algebra -/
+
+/-- The `R`-norm on a product algebra is the product of the norms. -/
+theorem Algebra.norm_prod {R A B : Type*} [CommRing R] [CommRing A] [CommRing B] [Algebra R A]
+    [Algebra R B] [Module.Free R A] [Module.Finite R A] [Module.Free R B] [Module.Finite R B]
+    (x : A × B) : Algebra.norm R x = Algebra.norm R x.1 * Algebra.norm R x.2 := by
+  have h : Algebra.lmul R (A × B) x = ((Algebra.lmul R A x.1).prodMap (Algebra.lmul R B x.2)) := by
+    ext <;> simp
+  rw [Algebra.norm_apply, Algebra.norm_apply, Algebra.norm_apply, h, LinearMap.det_prodMap]
+
+/-- The `R`-norm on a finite product of `R`-algebras is the product of the norms. -/
+theorem Algebra.norm_pi {R : Type*} [CommRing R] {ι : Type*} [Fintype ι] {S : ι → Type*}
+    [(i : ι) → CommRing (S i)] [(i : ι) → Algebra R (S i)]
+    [(i : ι) → Module.Free R (S i)] [(i : ι) → Module.Finite R (S i)]
+    (g : (i : ι) → S i) :
+    Algebra.norm R g = ∏ i, Algebra.norm R (g i) := by
+  have h : Algebra.lmul R ((i : ι) → S i) g
+      = LinearMap.pi fun i ↦ (Algebra.lmul R (S i) (g i)).comp (LinearMap.proj i) := by
+    ext x j
+    simp [Algebra.lmul]
+  rw [Algebra.norm_apply, h, LinearMap.det_pi']
+  simp_rw [← Algebra.norm_apply]
+
 section EtaleDecomposition
 
 /-!
@@ -1188,6 +1339,20 @@ lemma modPow_mk_eq_one_iff_forall_factors (hf : f ≠ 0) (hsq : Squarefree f) (n
   rw [← map_eq_one_iff (modPowEquivPiFactors hf hsq n) (modPowEquivPiFactors hf hsq n).injective,
     funext_iff]
   exact forall_congr' fun p ↦ by rw [modPowEquivPiFactors_mk, Pi.one_apply]
+
+/-- The norm of an element of `K[X]/(f)` is the product of the norms of its components in the
+field factors. -/
+theorem norm_eq_prod_norm_projFactor [Fintype f.Factors] (hf : f ≠ 0) (hsq : Squarefree f)
+    (a : AdjoinRoot f) :
+    Algebra.norm K a = ∏ p : f.Factors, Algebra.norm K (projFactor hf hsq p a) := by
+  rw [← Algebra.norm_eq_of_algEquiv (equivPiFactors hf hsq) a, Algebra.norm_pi]
+  rfl
+
+/-- The norm of the component at the factor `p` of the class of `C x - X` is `p.eval x`. -/
+lemma norm_projFactor_mk_C_sub_X (hf : f ≠ 0) (hsq : Squarefree f) (p : f.Factors) (x : K) :
+    Algebra.norm K (projFactor hf hsq p (mk f (C x - X))) = (p : K[X]).eval x := by
+  have hd : (C x - X).natDegree = 1 := by compute_degree!
+  rw [projFactor_mk, norm_mk_eq_resultant p.monic, hd, resultant_C_sub_X _ _ _ le_rfl]
 
 end AdjoinRoot
 

@@ -500,28 +500,6 @@ def deg2FactorEquivUpperRoots :
 
 end Polynomial
 
-/-! ### The norm on a product algebra -/
-
-/-- The `R`-norm on a product algebra is the product of the norms. -/
-theorem Algebra.norm_prod {R A B : Type*} [CommRing R] [CommRing A] [CommRing B] [Algebra R A]
-    [Algebra R B] [Module.Free R A] [Module.Finite R A] [Module.Free R B] [Module.Finite R B]
-    (x : A × B) : Algebra.norm R x = Algebra.norm R x.1 * Algebra.norm R x.2 := by
-  have h : Algebra.lmul R (A × B) x = ((Algebra.lmul R A x.1).prodMap (Algebra.lmul R B x.2)) := by
-    ext <;> simp
-  rw [Algebra.norm_apply, Algebra.norm_apply, Algebra.norm_apply, h, LinearMap.det_prodMap]
-
-/-- The `R`-norm on `ι → S` is the product of the norms. -/
-theorem Algebra.norm_pi {R : Type*} [CommRing R] {ι : Type*} [Fintype ι] {S : Type*} [CommRing S]
-    [Algebra R S] [Module.Free R S] [Module.Finite R S] (g : ι → S) :
-    Algebra.norm R g = ∏ i, Algebra.norm R (g i) := by
-  classical
-  rw [Algebra.norm_apply]
-  have h : Algebra.lmul R (ι → S) g
-      = LinearMap.pi (fun i ↦ (Algebra.lmul R S (g i)).comp (LinearMap.proj i)) := by
-    ext x j; simp [Algebra.lmul]
-  rw [h, LinearMap.det_pi]
-  simp_rw [← Algebra.norm_apply]
-
 namespace Polynomial
 
 variable {f : ℝ[X]}

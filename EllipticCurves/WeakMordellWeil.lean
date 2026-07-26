@@ -127,12 +127,13 @@ from `2`, but *not* at even places, where `disc f` is the finer invariant. -/
 lemma Δ_eq_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
   rw [Δ_of_isCharNeTwoNF W, W.discr_f]; ring
 
+lemma derivative_f : derivative W.f = C 3 * X ^ 2 + C (2 * W.a₂) * X + C W.a₄ := by
+  simp [f, C_ofNat]
+  ring
+
 lemma separable_f [W.IsElliptic] [W.IsCharNeTwoNF] : W.f.Separable := by
   have hΔ : W.Δ ≠ 0 := W.isUnit_Δ.ne_zero
-  rw [f, separable_def',
-    show derivative (X ^ 3 + C W.a₂ * X ^ 2 + C W.a₄ * X + C W.a₆)
-        = C 3 * X ^ 2 + C (2 * W.a₂) * X + C W.a₄ by
-      simp [C_ofNat]; ring]
+  rw [separable_def', derivative_f, f]
   refine ⟨C (W.Δ)⁻¹ * (C (288 * W.a₄ - 96 * W.a₂ ^ 2) * X
       + C (240 * W.a₂ * W.a₄ - 64 * W.a₂ ^ 3 - 432 * W.a₆)),
     C (W.Δ)⁻¹ * (C (32 * W.a₂ ^ 2 - 96 * W.a₄) * X ^ 2
@@ -326,6 +327,25 @@ lemma norm_mk_C_sub_X_add_fCofactor {x : K} (hx : W.f.eval x = 0) :
   rw [show C x - X + W.fCofactor x = (C x - X) + W.fCofactor x * 1 by ring,
     resultant_add_mul_right (W.fCofactor x) (C x - X) 1 2 2 (by simp) hq.le, hres]
   ring
+
+/-- The class of `f'` in `A = K[X]/⟨f⟩` is `3 θ² + 2 a₂ θ + a₄`, where `θ` is the image
+of `X`. -/
+lemma mk_derivative_f : AdjoinRoot.mk W.f (derivative W.f) =
+    3 * AdjoinRoot.root W.f ^ 2 + 2 * algebraMap K W.A W.a₂ * AdjoinRoot.root W.f
+      + algebraMap K W.A W.a₄ := by
+  rw [derivative_f]
+  simp [AdjoinRoot.mk_C, map_ofNat, ← AdjoinRoot.algebraMap_eq]
+
+/-- The norm of `f' θ` is `-disc f` (this needs `3 ≠ 0` in `K`, so that `f'` is honestly
+quadratic). -/
+lemma norm_mk_derivative_f (h3 : (3 : K) ≠ 0) :
+    Algebra.norm K (AdjoinRoot.mk W.f (derivative W.f)) = -W.f.discr := by
+  have hd : (derivative W.f).natDegree = 2 := W.derivative_f ▸ natDegree_quadratic h3
+  have h := Polynomial.resultant_deriv (f := W.f)
+    (by rw [← natDegree_pos_iff_degree_pos, natDegree_f]; norm_num)
+  rw [natDegree_f, W.monic_f.leadingCoeff, mul_one] at h
+  norm_num at h
+  rw [AdjoinRoot.norm_mk_eq_resultant W.monic_f, hd, natDegree_f, h]
 
 /-- The Chinese Remainder Theorem isomorphism `K[X]⧸f ≃ K × K[X]/cf`, where `cf` is the cofactor
 `f / (X - x)`. -/
