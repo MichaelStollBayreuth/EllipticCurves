@@ -20,6 +20,7 @@ import EllipticCurves.Mathlib.Chabauty.MvPowerSeriesPDeriv
 import EllipticCurves.Mathlib.Chabauty.PSeries
 import EllipticCurves.Mathlib.Chabauty.PadicInt
 import EllipticCurves.Mathlib.Chabauty.PadicValNat
+import EllipticCurves.Mathlib.EllipticCurvePoint
 import EllipticCurves.Mathlib.FormalGroup
 import EllipticCurves.Mathlib.FractionalIdeal
 import EllipticCurves.Mathlib.Henselian
