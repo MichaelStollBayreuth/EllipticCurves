@@ -984,7 +984,8 @@ number fields. Mathlib lists finiteness of `selmerGroup` as a TODO.
 
 Note that the valuation computation stays inside the single field factor `K[X]/(p)`; no
 splitting field is needed. That `f' θ` is a unit at every good prime
-(`valuation_deriv_root_eq_one`) is exactly what `Δ ∈ badPrimes` buys, via the Bézout identity
+(`valuation_deriv_root_eq_one`) needs exactly that the coefficients of the cubic are integral
+and `disc f` is a unit there — which is what `Δ ∈ badPrimes` buys, via the Bézout identity
 behind `separable_f`.
 
 All of this is carried out below: `badPrimes` (`S`) and its finiteness,
@@ -1093,6 +1094,16 @@ lemma valuation_two_eq_one_of_notMem_badPrimes (hv : v ∉ W.badPrimes R) :
     v.valuation K 2 = 1 :=
   not_not.mp fun hne ↦ hv (.inl (.inl (.inl (.inl hne))))
 
+/-- Away from the bad primes, `disc f` is a `v`-adic unit: `Δ = 16 · disc f`, and both `Δ`
+and `2` are `v`-adic units. -/
+lemma valuation_discr_eq_one_of_notMem_badPrimes [W.IsCharNeTwoNF] (hv : v ∉ W.badPrimes R) :
+    v.valuation K W.f.discr = 1 := by
+  have h16 : v.valuation K 16 = 1 := by
+    rw [show (16 : K) = 2 ^ 4 by norm_num, map_pow,
+      W.valuation_two_eq_one_of_notMem_badPrimes R hv, one_pow]
+  have hΔ := W.valuation_Δ_eq_one_of_notMem_badPrimes R hv
+  rwa [W.Δ_eq_discr_f, map_mul, h16, one_mul] at hΔ
+
 end BadPrimes
 
 section RingOfIntegers
@@ -1142,11 +1153,11 @@ lemma valuation_algebraMap_le_one [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Fact
   rw [← W.valuation_algebraMap_eq R p w z]
   simpa using pow_le_pow_left' hz _
 
-/-- A prime `w` not lying above a bad prime lies over a good prime of `R`. -/
-lemma below_notMem_badPrimes [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
-    {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
-    w.below R ∉ W.badPrimes R :=
+/-- A prime `w` of the ring of integers of a field factor that does not lie above `S` lies
+over a prime of `R` outside `S`. -/
+lemma below_notMem_of_notMem_primesAbove [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
+    {S : Set (HeightOneSpectrum R)} {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
+    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) S) : w.below R ∉ S :=
   fun hv ↦ hw ((HeightOneSpectrum.mem_primesAbove_iff R _ _ w).mpr hv)
 
 /-- `θ` satisfies the Weierstrass cubic in the field factor `K[X]/(p)`. -/
@@ -1184,37 +1195,17 @@ lemma mk_fCofactor_eq (p : W.f.Factors) (x : K) :
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
   {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
+  (ha₂ : (w.below R).valuation K W.a₂ ≤ 1) (ha₄ : (w.below R).valuation K W.a₄ ≤ 1)
+  (ha₆ : (w.below R).valuation K W.a₆ ≤ 1) (hd : (w.below R).valuation K W.f.discr = 1)
 
-/-- At a prime `w` not above a bad prime, `a₂` is integral. -/
-lemma valuation_a₂_le_one_of_notMem_primesAbove
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
-    w.valuation (𝕃 p) (ι p W.a₂) ≤ 1 :=
-  W.valuation_algebraMap_le_one R p w
-    (W.valuation_a₂_le_one_of_notMem_badPrimes R (W.below_notMem_badPrimes R p hw))
-
-/-- At a prime `w` not above a bad prime, `a₄` is integral. -/
-lemma valuation_a₄_le_one_of_notMem_primesAbove
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
-    w.valuation (𝕃 p) (ι p W.a₄) ≤ 1 :=
-  W.valuation_algebraMap_le_one R p w
-    (W.valuation_a₄_le_one_of_notMem_badPrimes R (W.below_notMem_badPrimes R p hw))
-
-/-- At a prime `w` not above a bad prime, `a₆` is integral. -/
-lemma valuation_a₆_le_one_of_notMem_primesAbove
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
-    w.valuation (𝕃 p) (ι p W.a₆) ≤ 1 :=
-  W.valuation_algebraMap_le_one R p w
-    (W.valuation_a₆_le_one_of_notMem_badPrimes R (W.below_notMem_badPrimes R p hw))
-
-/-- At a prime `w` not above a bad prime, the root `θ` is integral: it satisfies the monic
-cubic `f`, whose coefficients are integral at `w`. -/
-lemma valuation_root_le_one
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
-    w.valuation (𝕃 p) (θ p) ≤ 1 :=
+include ha₂ ha₄ ha₆ in
+/-- If the coefficients of the cubic are integral at the prime below `w`, then the root `θ` is
+`w`-integral: it satisfies the monic cubic `f`, whose coefficients are integral at `w`. -/
+lemma valuation_root_le_one : w.valuation (𝕃 p) (θ p) ≤ 1 :=
   Valuation.le_one_of_root_cubic _
-    (W.valuation_a₂_le_one_of_notMem_primesAbove R p hw)
-    (W.valuation_a₄_le_one_of_notMem_primesAbove R p hw)
-    (W.valuation_a₆_le_one_of_notMem_primesAbove R p hw)
+    (W.valuation_algebraMap_le_one R p w ha₂)
+    (W.valuation_algebraMap_le_one R p w ha₄)
+    (W.valuation_algebraMap_le_one R p w ha₆)
     (W.root_cubic_eq_zero p)
 
 /-- An element of `K` with trivial valuation at the prime below `w` has trivial valuation
@@ -1223,58 +1214,46 @@ lemma valuation_algebraMap_eq_one {z : K} (hz : (w.below R).valuation K z = 1) :
     w.valuation (𝕃 p) (ι p z) = 1 := by
   rw [← W.valuation_algebraMap_eq R p w z, hz, one_pow]
 
-/-- At a prime `w` not above a bad prime, `f' θ = 3 θ ^ 2 + 2 a₂ θ + a₄` is a unit.
+include ha₂ ha₄ ha₆ hd in
+/-- If the coefficients of the cubic are integral and `disc f` is a unit at the prime below
+`w`, then `f' θ = 3 θ ^ 2 + 2 a₂ θ + a₄` is a `w`-unit.
 
-This is where `Δ` earns its place in `badPrimes`: evaluating the Bézout identity behind
-`separable_f` at `θ` gives `v(θ) * f' θ = Δ` for an explicit quadratic `v`. Both factors are
-integral at `w` and the product is a unit, so both are units. -/
-lemma valuation_deriv_root_eq_one
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
+Evaluating the Bézout identity behind `separable_f` at `θ` gives `f'(θ) * c(θ) = disc f`
+(`deriv_root_mul_eq_discr_f`) for an explicit quadratic `c` with `w`-integral coefficients.
+Both factors are integral at `w` and the product is a unit, so both are units. -/
+lemma valuation_deriv_root_eq_one :
     w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1 := by
   set L := 𝕃 p
   set ν := w.valuation L
   set t := θ p
-  set A₂ := algebraMap K L W.a₂ with hA₂def
-  set A := algebraMap K L W.a₄ with hAdef
-  set B := algebraMap K L W.a₆ with hBdef
-  have hA₂ : ν A₂ ≤ 1 := W.valuation_a₂_le_one_of_notMem_primesAbove R p hw
-  have hA : ν A ≤ 1 := W.valuation_a₄_le_one_of_notMem_primesAbove R p hw
-  have hB : ν B ≤ 1 := W.valuation_a₆_le_one_of_notMem_primesAbove R p hw
-  have ht : ν t ≤ 1 := W.valuation_root_le_one R p hw
-  -- the Bézout identity, evaluated at `θ`
-  have hΔ : algebraMap K L W.Δ = -64 * A₂ ^ 3 * B + 16 * A₂ ^ 2 * A ^ 2 - 64 * A ^ 3
-      - 432 * B ^ 2 + 288 * A₂ * A * B := by
-    rw [Δ_of_isCharNeTwoNF W]
-    simp only [map_neg, map_sub, map_mul, map_add, map_pow, map_ofNat, hA₂def, hAdef, hBdef]
-  have hid : (3 * t ^ 2 + 2 * A₂ * t + A) * ((32 * A₂ ^ 2 - 96 * A) * t ^ 2
-        + (32 * A₂ ^ 3 - 112 * A₂ * A + 144 * B) * t
-        + (16 * A₂ ^ 2 * A - 64 * A ^ 2 + 48 * A₂ * B)) =
-      algebraMap K L W.Δ := by
-    rw [hΔ]
-    linear_combination (-(288 * A - 96 * A₂ ^ 2) * t - (240 * A₂ * A - 64 * A₂ ^ 3 - 432 * B)) *
-      W.root_cubic_eq_zero p
-  -- both factors are integral, and their product is a unit
+  set A₂ := algebraMap K L W.a₂
+  set A := algebraMap K L W.a₄
+  set B := algebraMap K L W.a₆
+  have hA₂ : ν A₂ ≤ 1 := W.valuation_algebraMap_le_one R p w ha₂
+  have hA : ν A ≤ 1 := W.valuation_algebraMap_le_one R p w ha₄
+  have hB : ν B ≤ 1 := W.valuation_algebraMap_le_one R p w ha₆
+  have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
+  -- both factors in `deriv_root_mul_eq_discr_f` are integral, and their product is a unit
   have hD : 3 * t ^ 2 + 2 * A₂ * t + A ∈ ν.integer :=
     add_mem (add_mem (mul_mem (ofNat_mem _ 3) (pow_mem ht 2))
       (mul_mem (mul_mem (ofNat_mem _ 2) hA₂) ht)) hA
-  have hC : (32 * A₂ ^ 2 - 96 * A) * t ^ 2 + (32 * A₂ ^ 3 - 112 * A₂ * A + 144 * B) * t
-      + (16 * A₂ ^ 2 * A - 64 * A ^ 2 + 48 * A₂ * B) ∈ ν.integer := by
+  have hC : (2 * A₂ ^ 2 - 6 * A) * t ^ 2 + (2 * A₂ ^ 3 - 7 * A₂ * A + 9 * B) * t
+      + (A₂ ^ 2 * A - 4 * A ^ 2 + 3 * A₂ * B) ∈ ν.integer := by
     refine add_mem (add_mem (mul_mem ?_ (pow_mem ht 2)) (mul_mem ?_ ht)) ?_
-    · exact sub_mem (mul_mem (ofNat_mem _ 32) (pow_mem hA₂ 2)) (mul_mem (ofNat_mem _ 96) hA)
-    · exact add_mem (sub_mem (mul_mem (ofNat_mem _ 32) (pow_mem hA₂ 3))
-        (mul_mem (mul_mem (ofNat_mem _ 112) hA₂) hA)) (mul_mem (ofNat_mem _ 144) hB)
-    · exact add_mem (sub_mem (mul_mem (mul_mem (ofNat_mem _ 16) (pow_mem hA₂ 2)) hA)
-        (mul_mem (ofNat_mem _ 64) (pow_mem hA 2))) (mul_mem (mul_mem (ofNat_mem _ 48) hA₂) hB)
+    · exact sub_mem (mul_mem (ofNat_mem _ 2) (pow_mem hA₂ 2)) (mul_mem (ofNat_mem _ 6) hA)
+    · exact add_mem (sub_mem (mul_mem (ofNat_mem _ 2) (pow_mem hA₂ 3))
+        (mul_mem (mul_mem (ofNat_mem _ 7) hA₂) hA)) (mul_mem (ofNat_mem _ 9) hB)
+    · exact add_mem (sub_mem (mul_mem (pow_mem hA₂ 2) hA)
+        (mul_mem (ofNat_mem _ 4) (pow_mem hA 2))) (mul_mem (mul_mem (ofNat_mem _ 3) hA₂) hB)
   refine ν.eq_one_of_mul_eq_one hD hC ?_
-  rw [hid]
-  exact W.valuation_algebraMap_eq_one R p
-    (W.valuation_Δ_eq_one_of_notMem_badPrimes R (W.below_notMem_badPrimes R p hw))
+  rw [deriv_root_mul_eq_discr_f]
+  exact W.valuation_algebraMap_eq_one R p hd
 
-/-- At a prime `w` not above a bad prime, if `x` is `w`-integral and `x - θ` is not a `w`-unit,
-then the cofactor `x ^ 2 + θ x + θ ^ 2 + a₂ (x + θ) + a₄` is a `w`-unit: modulo `x - θ` it
-equals `f' θ`. -/
+include ha₂ ha₄ ha₆ hd in
+/-- If the coefficients of the cubic are integral and `disc f` is a unit at the prime below
+`w`, and if `x` is `w`-integral and `x - θ` is not a `w`-unit, then the cofactor
+`x ^ 2 + θ x + θ ^ 2 + a₂ (x + θ) + a₄` is a `w`-unit: modulo `x - θ` it equals `f' θ`. -/
 lemma valuation_cofactor_eq_one {x : K}
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R))
     (hx : w.valuation (𝕃 p) (ι p x) ≤ 1)
     (hlt : w.valuation (𝕃 p) (ι p x - θ p) < 1) :
     w.valuation (𝕃 p) (ι p x ^ 2 + θ p * ι p x + θ p ^ 2
@@ -1285,9 +1264,10 @@ lemma valuation_cofactor_eq_one {x : K}
   set s := algebraMap K L x
   set A₂ := algebraMap K L W.a₂
   set A := algebraMap K L W.a₄
-  have hA₂ : ν A₂ ≤ 1 := W.valuation_a₂_le_one_of_notMem_primesAbove R p hw
-  have ht : ν t ≤ 1 := W.valuation_root_le_one R p hw
-  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 := W.valuation_deriv_root_eq_one R p hw
+  have hA₂ : ν A₂ ≤ 1 := W.valuation_algebraMap_le_one R p w ha₂
+  have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
+  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 :=
+    W.valuation_deriv_root_eq_one R p ha₂ ha₄ ha₆ hd
   have h2t : s + 2 * t + A₂ ∈ ν.integer :=
     add_mem (add_mem hx (mul_mem (ofNat_mem _ 2) ht)) hA₂
   have hlt' : ν ((s - t) * (s + 2 * t + A₂)) < ν (3 * t ^ 2 + 2 * A₂ * t + A) := by
@@ -1297,15 +1277,16 @@ lemma valuation_cofactor_eq_one {x : K}
       = (s - t) * (s + 2 * t + A₂) + (3 * t ^ 2 + 2 * A₂ * t + A) by ring,
     ν.map_add_eq_of_lt_right hlt', hderiv]
 
-/-- If `x` is a root of `f`, then at a prime `w` not above a bad prime the `p`-component of the
-`x - T` representative is a unit.
+include ha₂ ha₄ ha₆ hd in
+/-- If `x` is a root of `f`, then at a prime `w` at which (i.e. at the prime of `R` below
+which) the coefficients of the cubic are integral and `disc f` is a unit, the `p`-component of
+the `x - T` representative is a unit.
 
 Both `x` and `θ` are roots of `f`, so `x - θ` times the cofactor is `0` and, `L` being a field,
 one of the two factors vanishes. If `x = θ` the component is `f' θ`; if the cofactor vanishes
 the component is `x - θ` and `f' θ = -(x - θ)(x + 2θ + a₂)`. Either way
 `valuation_deriv_root_eq_one` makes it a unit. -/
-lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0)
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) :
+lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0) :
     w.valuation (𝕃 p) (ι p x - θ p + AdjoinRoot.mk (p : K[X]) (W.fCofactor x)) = 1 := by
   rw [W.mk_fCofactor_eq p x]
   set L := 𝕃 p
@@ -1315,11 +1296,12 @@ lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0)
   set A₂ := algebraMap K L W.a₂ with hA₂def
   set A := algebraMap K L W.a₄ with hAdef
   set B := algebraMap K L W.a₆ with hBdef
-  have hA₂ : ν A₂ ≤ 1 := W.valuation_a₂_le_one_of_notMem_primesAbove R p hw
-  have hA : ν A ≤ 1 := W.valuation_a₄_le_one_of_notMem_primesAbove R p hw
-  have hB : ν B ≤ 1 := W.valuation_a₆_le_one_of_notMem_primesAbove R p hw
-  have ht : ν t ≤ 1 := W.valuation_root_le_one R p hw
-  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 := W.valuation_deriv_root_eq_one R p hw
+  have hA₂ : ν A₂ ≤ 1 := W.valuation_algebraMap_le_one R p w ha₂
+  have hA : ν A ≤ 1 := W.valuation_algebraMap_le_one R p w ha₄
+  have hB : ν B ≤ 1 := W.valuation_algebraMap_le_one R p w ha₆
+  have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
+  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 :=
+    W.valuation_deriv_root_eq_one R p ha₂ ha₄ ha₆ hd
   -- `x` is a root of the cubic too, hence integral at `w`
   have hs : s ^ 3 + A₂ * s ^ 2 + A * s + B = 0 := by
     rw [hsdef, hA₂def, hAdef, hBdef, ← W.map_eval_f, hx, map_zero]
@@ -1353,9 +1335,10 @@ variable [W.IsElliptic] [W.IsCharNeTwoNF]
   (hu : (u : AdjoinRoot (p : K[X])) =
     algebraMap K (AdjoinRoot (p : K[X])) x - AdjoinRoot.root (p : K[X]))
   (w : HeightOneSpectrum (W.ringOfIntegersFactor R p))
-  (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R))
+  (ha₂ : (w.below R).valuation K W.a₂ ≤ 1) (ha₄ : (w.below R).valuation K W.a₄ ≤ 1)
+  (ha₆ : (w.below R).valuation K W.a₆ ≤ 1) (hd : (w.below R).valuation K W.f.discr = 1)
 
-include h hx hu hw
+include h hx hu ha₂ ha₄ ha₆
 
 /-- Non-integral case: `x` has a pole at the prime of `R` below `w`.
 
@@ -1380,18 +1363,18 @@ lemma even_valuationOfNeZero_sub_root_of_one_lt
       algebraMap K L W.a₄ * algebraMap K L x + algebraMap K L W.a₆ := by
     rw [← W.map_eval_f, (equation_iff_eval_f_eq_sq W x y).mp h, map_pow]
   have hval : ν (algebraMap K L y) ^ 2 = ν (algebraMap K L x) ^ 3 := by
-    rw [← map_pow, heq, ν.map_cubic_of_one_lt (W.valuation_a₂_le_one_of_notMem_primesAbove R p hw)
-      (W.valuation_a₄_le_one_of_notMem_primesAbove R p hw)
-      (W.valuation_a₆_le_one_of_notMem_primesAbove R p hw) hx']
+    rw [← map_pow, heq, ν.map_cubic_of_one_lt (W.valuation_algebraMap_le_one R p w ha₂)
+      (W.valuation_algebraMap_le_one R p w ha₄) (W.valuation_algebraMap_le_one R p w ha₆) hx']
   -- `ν (x - θ) = ν x`, since `θ` is integral and `x` is not
   have hu' : ν (u : L) = ν (algebraMap K L x) := by
     rw [hu]
-    exact Valuation.map_sub_eq_of_lt_left _ ((W.valuation_root_le_one R p hw).trans_lt hx')
+    exact Valuation.map_sub_eq_of_lt_left _ ((W.valuation_root_le_one R p ha₂ ha₄ ha₆).trans_lt hx')
   have hkey : ν (u : L) = ν ((Units.mk0 _ (div_ne_zero hy0 hx0) : Lˣ) : L) ^ 2 := by
     rw [hu', Units.val_mk0, map_div₀, div_pow, hval, eq_div_iff (pow_ne_zero 2 hx0'), mul_comm]
     exact (pow_succ _ 2).symm
   simpa using w.dvd_toAdd_valuationOfNeZero hkey
 
+include hd in
 /-- Integral case: `x` is integral at the prime of `R` below `w`.
 
 Over `L` the Weierstrass equation factors as `y ^ 2 = (x - θ) * c` with cofactor
@@ -1406,8 +1389,9 @@ lemma even_valuationOfNeZero_sub_root_of_le_one
   set t := θ p
   set A₂ := algebraMap K L W.a₂ with hA₂def
   set A := algebraMap K L W.a₄ with hAdef
-  have ht : ν t ≤ 1 := W.valuation_root_le_one R p hw
-  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 := W.valuation_deriv_root_eq_one R p hw
+  have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
+  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 :=
+    W.valuation_deriv_root_eq_one R p ha₂ ha₄ ha₆ hd
   -- `y ^ 2 = (x - θ) * (x ^ 2 + θ x + θ ^ 2 + a₂ (x + θ) + a₄)` over `L`
   have heqL : (algebraMap K L y) ^ 2 = algebraMap K L x ^ 3 + A₂ * algebraMap K L x ^ 2 +
       A * algebraMap K L x + algebraMap K L W.a₆ := by
@@ -1427,22 +1411,25 @@ lemma even_valuationOfNeZero_sub_root_of_le_one
   rw [hu] at hlt
   have hcof : ν (algebraMap K L x ^ 2 + t * algebraMap K L x + t ^ 2
       + A₂ * (algebraMap K L x + t) + A) = 1 :=
-    W.valuation_cofactor_eq_one R p hw hx' hlt
+    W.valuation_cofactor_eq_one R p ha₂ ha₄ ha₆ hd hx' hlt
   have hy0 : algebraMap K L y ≠ 0 := (_root_.map_ne_zero _).mpr (W.ne_zero_of_eval_f_ne_zero h hx)
   have hkey : ν (u : L) = ν ((Units.mk0 _ hy0 : Lˣ) : L) ^ 2 := by
     rw [Units.val_mk0, ← map_pow, ← hfac, map_mul, hcof, mul_one]
   simpa using w.dvd_toAdd_valuationOfNeZero hkey
 
+include hd in
 /-- The arithmetic core of Step 6, generic case, with all the group theory stripped away:
 for `(x, y)` on `W` with `f x ≠ 0`, and `w` a prime of the ring of integers of the field factor
-`K[X]/(p)` not lying above a bad prime, the `w`-adic valuation of `x - θ` is even.
+`K[X]/(p)` such that the coefficients of the cubic are integral and `disc f` is a unit at the
+prime of `R` below `w`, the `w`-adic valuation of `x - θ` is even.
 
 The proof splits on whether `x` has a pole at the prime of `R` below `w`. -/
 lemma even_valuationOfNeZero_sub_root :
     (2 : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero u) := by
   by_cases hx' : 1 < w.valuation (𝕃 p) (ι p x)
-  · exact W.even_valuationOfNeZero_sub_root_of_one_lt R p h hx u hu w hw hx'
-  · exact W.even_valuationOfNeZero_sub_root_of_le_one R p h hx u hu w hw (not_lt.mp hx')
+  · exact W.even_valuationOfNeZero_sub_root_of_one_lt R p h hx u hu w ha₂ ha₄ ha₆ hx'
+  · exact W.even_valuationOfNeZero_sub_root_of_le_one R p h hx u hu w ha₂ ha₄ ha₆ hd
+      (not_lt.mp hx')
 
 end Core
 
@@ -1482,30 +1469,30 @@ lemma projFactor_mk_C_sub_X_add_fCofactor (x : K) (p : W.f.Factors) :
     AdjoinRoot.algebraMap_eq]
 
 variable (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
+  (S : Set (HeightOneSpectrum R))
 
 /-- The `2`-Selmer group of the field factor `AdjoinRoot p` of `W.A`, relative to the primes of
-its ring of integers lying above the bad primes of `R`. -/
+its ring of integers lying above the primes in `S`. -/
 noncomputable def selmerGroupFactor (p : W.f.Factors) :
     Subgroup (Units.modPow (𝕃 p) 2) :=
-  IsDedekindDomain.selmerGroupAbove R (W.ringOfIntegersFactor R p)
-    (𝕃 p) (W.badPrimes R) 2
+  IsDedekindDomain.selmerGroupAbove R (W.ringOfIntegersFactor R p) (𝕃 p) S 2
 
 /-- `A(S,2)` in the product decomposition: the product of the `2`-Selmer groups of the field
 factors of `W.A`. -/
 noncomputable def selmerGroupPi :
     Subgroup ((p : W.f.Factors) → Units.modPow (𝕃 p) 2) :=
-  Subgroup.pi Set.univ (W.selmerGroupFactor R)
+  Subgroup.pi Set.univ (W.selmerGroupFactor R S)
 
 /-- `A(S,2)`, as a subgroup of `W.M`: the classes whose image in each field factor lies in the
-`2`-Selmer group of that factor. Step 6 asserts that `im μ ≤ A(S,2)`. -/
+`2`-Selmer group of that factor. Step 6 asserts that `im μ ≤ A(S,2)` for `S` the bad primes. -/
 noncomputable def selmerGroupA : Subgroup W.M :=
-  (W.selmerGroupPi R).comap
+  (W.selmerGroupPi R S).comap
     (AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2).toMonoidHom
 
 lemma mem_selmerGroupA_iff (m : W.M) :
-    m ∈ W.selmerGroupA R ↔ ∀ p : W.f.Factors,
+    m ∈ W.selmerGroupA R S ↔ ∀ p : W.f.Factors,
       AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2 m p ∈
-        W.selmerGroupFactor R p := by
+        W.selmerGroupFactor R S p := by
   simp [selmerGroupA, selmerGroupPi, Subgroup.mem_pi]
 
 /-!
@@ -1521,80 +1508,94 @@ representative, computed by `projFactor_mk_C_sub_X` and
 `x - θ + fCofactor x` when `x` is a root of `f`.
 
 What has to be shown is that this class lies in the `2`-Selmer group of `K[X]/(p)`, i.e. that
-`w (x - θ)` is even for every prime `w` of `𝓞` not lying above a bad prime `v` of `R`.
+`w (x - θ)` is even for every prime `w` of `𝓞` not lying above a prime of `S`; away from `S`,
+the coefficients of the cubic are integral and `disc f` is a unit, by hypothesis.
 The two cases are split off as `mem_selmerGroupFactor_of_eval_f_ne_zero` and
 `mem_selmerGroupFactor_of_eval_f_eq_zero`.
 -/
 
 /-- Membership of the class of a unit in the `2`-Selmer group of a field factor: its valuation
-is even at every prime of the ring of integers not lying above a bad prime. -/
+is even at every prime of the ring of integers not lying above `S`. -/
 lemma mem_selmerGroupFactor_unit_iff (p : W.f.Factors) (u : (𝕃 p)ˣ) :
-    (QuotientGroup.mk u : Units.modPow (𝕃 p) 2) ∈ W.selmerGroupFactor R p ↔
+    (QuotientGroup.mk u : Units.modPow (𝕃 p) 2) ∈ W.selmerGroupFactor R S p ↔
       ∀ w : HeightOneSpectrum (W.ringOfIntegersFactor R p),
-        w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R) →
+        w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) S →
           (2 : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero u) :=
   forall₂_congr fun w _ ↦ HeightOneSpectrum.valuationOfNeZeroMod_mk_eq_one_iff w 2 u
 
 /-- Membership of the class of a unit of the étale algebra in `A(S,2)`, componentwise: the
 valuation of each `projFactor`-component is even at every prime of the corresponding ring of
-integers that does not lie above a bad prime. -/
+integers that does not lie above `S`. -/
 lemma mem_selmerGroupA_unit_iff (a : W.Aˣ) :
-    (QuotientGroup.mk a : W.M) ∈ W.selmerGroupA R ↔
+    (QuotientGroup.mk a : W.M) ∈ W.selmerGroupA R S ↔
       ∀ (p : W.f.Factors) (w : HeightOneSpectrum (W.ringOfIntegersFactor R p)),
-        w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R) →
+        w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) S →
           (2 : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero
             (Units.map (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p).toMonoidHom a)) := by
   rw [mem_selmerGroupA_iff]
   refine forall_congr' fun p ↦ ?_
   rw [AdjoinRoot.modPowEquivPiFactors_mk, mem_selmerGroupFactor_unit_iff]
 
+variable (hSa₂ : ∀ v ∉ S, v.valuation K W.a₂ ≤ 1) (hSa₄ : ∀ v ∉ S, v.valuation K W.a₄ ≤ 1)
+  (hSa₆ : ∀ v ∉ S, v.valuation K W.a₆ ≤ 1) (hSd : ∀ v ∉ S, v.valuation K W.f.discr = 1)
+
+include hSa₂ hSa₄ hSa₆ hSd in
 /-- Generic case of the arithmetic input: `f x ≠ 0`, so the `p`-component of `μX x` is the class
 of `x - θ`. -/
 lemma mem_selmerGroupFactor_of_eval_f_ne_zero {x y : K} (h : W.Equation x y)
     (hx : W.f.eval x ≠ 0) (p : W.f.Factors) :
     (((isUnit_mk_sub_X_of_eval_f_ne_zero hx).map
       (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p)).unit :
-        Units.modPow (𝕃 p) 2) ∈ W.selmerGroupFactor R p := by
-  rw [W.mem_selmerGroupFactor_unit_iff R p]
-  refine W.even_valuationOfNeZero_sub_root R p h hx _ ?_
+        Units.modPow (𝕃 p) 2) ∈ W.selmerGroupFactor R S p := by
+  rw [W.mem_selmerGroupFactor_unit_iff R S p]
+  intro w hw
+  have hv := W.below_notMem_of_notMem_primesAbove R p hw
+  refine W.even_valuationOfNeZero_sub_root R p h hx _ ?_ w (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv)
+    (hSd _ hv)
   exact W.projFactor_mk_C_sub_X x p
 
+include hSa₂ hSa₄ hSa₆ hSd in
 /-- `2`-torsion case of the arithmetic input: `f x = 0`.
 
 By `projFactor_mk_C_sub_X_add_fCofactor` the `p`-component of `μX x` is `x - θ + fCofactor x`,
-which by `valuation_projFactor_torsion_eq_one` is a unit at every prime `w` not lying above a bad
-prime. Its valuation is therefore `0`, in particular even. -/
+which by `valuation_projFactor_torsion_eq_one` is a unit at every prime `w` not lying above
+`S`. Its valuation is therefore `0`, in particular even. -/
 lemma mem_selmerGroupFactor_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0)
     (p : W.f.Factors) :
     (((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
       (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p)).unit :
-        Units.modPow (𝕃 p) 2) ∈ W.selmerGroupFactor R p := by
-  rw [W.mem_selmerGroupFactor_unit_iff R p]
+        Units.modPow (𝕃 p) 2) ∈ W.selmerGroupFactor R S p := by
+  rw [W.mem_selmerGroupFactor_unit_iff R S p]
   intro w hw
+  have hv := W.below_notMem_of_notMem_primesAbove R p hw
   set u := ((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
     (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p)).unit with hudef
   have hval : w.valuation (𝕃 p) (u : 𝕃 p) = 1 := by
     rw [hudef, IsUnit.unit_spec, W.projFactor_mk_C_sub_X_add_fCofactor x p]
-    exact W.valuation_projFactor_torsion_eq_one R p hx hw
+    exact W.valuation_projFactor_torsion_eq_one R p (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv)
+      (hSd _ hv) hx
   simpa using w.dvd_toAdd_valuationOfNeZero (n := 2) (z := 1) (by simp [hval])
 
 section
 
 variable [DecidableEq K]
 
+include hSa₂ hSa₄ hSa₆ hSd in
 /-- The heart of Step 6: for a point `(x, y)` of `W` and a field factor `K[X]/(p)` of `W.A`,
 the square class of the image of the `x - T` map lies in the `2`-Selmer group of that factor. -/
 lemma μX_component_mem_selmerGroupFactor {x y : K} (h : W.Equation x y) (p : W.f.Factors) :
     AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2 (W.μX x) p ∈
-      W.selmerGroupFactor R p := by
+      W.selmerGroupFactor R S p := by
   rcases eq_or_ne (W.f.eval x) 0 with hx | hx
   · rw [μX_of_eval_f_eq_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
-    exact W.mem_selmerGroupFactor_of_eval_f_eq_zero R hx p
+    exact W.mem_selmerGroupFactor_of_eval_f_eq_zero R S hSa₂ hSa₄ hSa₆ hSd hx p
   · rw [μX_of_eval_f_ne_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
-    exact W.mem_selmerGroupFactor_of_eval_f_ne_zero R h hx p
+    exact W.mem_selmerGroupFactor_of_eval_f_ne_zero R S hSa₂ hSa₄ hSa₆ hSd h hx p
 
-/-- **Step 6**: the image of `μ` is contained in `A(S,2)`. -/
-theorem range_μ_le_selmerGroupA : (μ (W := W)).range ≤ W.selmerGroupA R := by
+include hSa₂ hSa₄ hSa₆ hSd in
+/-- **Step 6**: the image of `μ` is contained in `A(S,2)`, whenever the coefficients of the
+cubic are integral and `disc f` is a unit away from `S`. -/
+theorem range_μ_le_selmerGroupA : (μ (W := W)).range ≤ W.selmerGroupA R S := by
   rintro _ ⟨P, rfl⟩
   obtain ⟨P, rfl⟩ := Multiplicative.ofAdd.surjective P
   rw [μ_apply]
@@ -1602,7 +1603,7 @@ theorem range_μ_le_selmerGroupA : (μ (W := W)).range ≤ W.selmerGroupA R := b
   | 0 => rw [μ₀_zero]; exact one_mem _
   | .some x y h =>
     rw [μ₀_some, mem_selmerGroupA_iff]
-    exact fun p ↦ W.μX_component_mem_selmerGroupFactor R h.1 p
+    exact fun p ↦ W.μX_component_mem_selmerGroupFactor R S hSa₂ hSa₄ hSa₆ hSd h.1 p
 
 end
 
@@ -1614,29 +1615,29 @@ The finiteness of the `2`-Selmer group of each field factor is
 class group
 of the factor's ring of integers to be finite and its unit group to be finitely generated;
 these are taken as hypotheses here (for `K` a number field they are the class number theorem
-and Dirichlet's unit theorem). The relevant set of primes, those above the bad primes, is
-finite by `HeightOneSpectrum.primesAbove_finite` and `finite_badPrimes`.
--/
+and Dirichlet's unit theorem). The relevant set of primes, those above `S`, is finite by
+`HeightOneSpectrum.primesAbove_finite` whenever `S` is. -/
 
 section Step7
 
 variable [(p : W.f.Factors) → Finite (ClassGroup (W.ringOfIntegersFactor R p))]
   [(p : W.f.Factors) → Group.FG (W.ringOfIntegersFactor R p)ˣ]
 
-/-- The `2`-Selmer group of each field factor of `W.A` is finite. -/
-theorem finite_selmerGroupFactor (p : W.f.Factors) : Finite (W.selmerGroupFactor R p) :=
+/-- The `2`-Selmer group of each field factor of `W.A` is finite, for a finite set `S`. -/
+theorem finite_selmerGroupFactor (hS : S.Finite) (p : W.f.Factors) :
+    Finite (W.selmerGroupFactor R S p) :=
   finite_selmerGroup (W.ringOfIntegersFactor R p) (𝕃 p)
-    (HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) (W.badPrimes R)) 2
-    (HeightOneSpectrum.primesAbove_finite R (W.ringOfIntegersFactor R p)
-      (W.finite_badPrimes R))
+    (HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) S) 2
+    (HeightOneSpectrum.primesAbove_finite R (W.ringOfIntegersFactor R p) hS)
 
-/-- **Step 7**: `A(S,2)` is finite. -/
-theorem finite_selmerGroupA : Finite (W.selmerGroupA R) := by
+/-- **Step 7**: `A(S,2)` is finite, for a finite set `S`. -/
+theorem finite_selmerGroupA (hS : S.Finite) : Finite (W.selmerGroupA R S) := by
   have := Polynomial.Factors.finite W.f_ne_zero
-  have (p : W.f.Factors) : Finite (W.selmerGroupFactor R p) := W.finite_selmerGroupFactor R p
-  have : Finite (W.selmerGroupPi R) := Subgroup.instFinitePi
+  have (p : W.f.Factors) : Finite (W.selmerGroupFactor R S p) :=
+    W.finite_selmerGroupFactor R S hS p
+  have : Finite (W.selmerGroupPi R S) := Subgroup.instFinitePi
   exact Subgroup.finite_comap_of_injective
-    (AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2).injective (W.selmerGroupPi R)
+    (AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2).injective (W.selmerGroupPi R S)
 
 variable [DecidableEq K]
 
@@ -1651,8 +1652,13 @@ Mordell-Weil theorem, `fg_point` in `EllipticCurves.MordellWeil`. -/
 theorem finite_index_range_nsmulAddMonoidHom_two :
     (nsmulAddMonoidHom (α := W.Point) 2).range.FiniteIndex := by
   rw [finite_index_range_nsmulAddMonoidHom_two_iff]
-  have := W.finite_selmerGroupA R
-  exact ((W.selmerGroupA R : Set W.M).toFinite.subset (W.range_μ_le_selmerGroupA R)).to_subtype
+  have := W.finite_selmerGroupA R (W.badPrimes R) (W.finite_badPrimes R)
+  exact ((W.selmerGroupA R (W.badPrimes R) : Set W.M).toFinite.subset
+    (W.range_μ_le_selmerGroupA R (W.badPrimes R)
+      (fun _ hv ↦ W.valuation_a₂_le_one_of_notMem_badPrimes R hv)
+      (fun _ hv ↦ W.valuation_a₄_le_one_of_notMem_badPrimes R hv)
+      (fun _ hv ↦ W.valuation_a₆_le_one_of_notMem_badPrimes R hv)
+      (fun _ hv ↦ W.valuation_discr_eq_one_of_notMem_badPrimes R hv))).to_subtype
 
 end Step7
 
