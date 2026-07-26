@@ -3,7 +3,7 @@
 # Run the leanprover/comparator check for this project locally.
 #
 # Certifies that the repository proves the challenge statement(s) in the given config
-# (default: the Mordell-Weil theorem). See comparator/README.md for what is checked.
+# (default: both challenge theorems). See comparator/README.md for what is checked.
 #
 # Requires three binaries; override any location via the environment:
 #   COMPARATOR_BIN         the `comparator` binary (built from leanprover/comparator)
@@ -19,8 +19,8 @@ COMPARATOR_BIN="${COMPARATOR_BIN:-$HOME/lean4/comparator/.lake/build/bin/compara
 export COMPARATOR_LEAN4EXPORT COMPARATOR_LANDRUN
 export PATH="$(dirname "$COMPARATOR_LANDRUN"):$PATH"
 
-# Config file to check (default: the Mordell-Weil theorem).
-CONFIG="${1:-comparator/fg_point_of_numberField.json}"
+# Config file to check (default: both challenge theorems).
+CONFIG="${1:-comparator/challenges.json}"
 
 # Move to the repository root (this script lives in scripts/).
 cd "$(dirname "$0")/.."

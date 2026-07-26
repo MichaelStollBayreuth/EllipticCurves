@@ -1,34 +1,40 @@
 # Comparator verification harness
 
 This directory lets [Comparator](https://github.com/leanprover/comparator) — "a trustworthy judge
-for Lean proofs" — certify that this repository proves the **Mordell-Weil Theorem** over a number
-field (`WeierstrassCurve.Affine.fg_point_of_numberField`), independently of the repository's own
-build and using only the permitted axioms.
+for Lean proofs" — certify that this repository proves its two headline results, independently of
+the repository's own build and using only the permitted axioms:
+
+* the **Mordell-Weil Theorem** over a number field
+  (`WeierstrassCurve.Affine.fg_point_of_numberField`);
+* the **show-piece example** `E(ℚ) ≅ ℤ` for `E : y² = x³ - x + 1`
+  (`InfiniteOrderExample.nonempty_point_addEquiv_int`).
 
 ## What is checked
 
-- [`Challenge.lean`](Challenge.lean) imports **only Mathlib** and states the result with a `sorry`
-  proof. Every notion in the statement (`WeierstrassCurve.Affine`, its group of points `Point`,
-  `WeierstrassCurve.IsElliptic`, `NumberField`, `AddGroup.FG`) is a Mathlib definition, so it
-  reproduces nothing from this repository and is a self-contained specification of the claim.
-- [`Solution.lean`](Solution.lean) imports `EllipticCurves.MordellWeil` and proves that statement
-  via the library theorem `WeierstrassCurve.Affine.fg_point_of_numberField`.
+- [`Challenge.lean`](Challenge.lean) imports **only Mathlib** and states both results with `sorry`
+  proofs. Every notion in the statements (`WeierstrassCurve.Affine`, its group of points `Point`,
+  `WeierstrassCurve.IsElliptic`, `NumberField`, `AddGroup.FG`, `≃+`) is a Mathlib definition, so it
+  reproduces nothing from this repository and is a self-contained specification of the claims; the
+  example curve and its `IsElliptic` instance are defined in the challenge itself, from Mathlib
+  notions only.
+- [`Solution.lean`](Solution.lean) imports `EllipticCurves.MordellWeil` and
+  `EllipticCurves.RankExample` and proves those statements via the library theorems.
 
 Comparator builds both modules (the solution in a sandbox), exports them with `lean4export`, and
-checks that `challenge_fg_point_of_numberField` in the solution:
+checks that each challenge theorem in the solution:
 
 1. proves the **same statement** as in the challenge — comparing the full bodies (not just the
    types) of every definition the statement transitively refers to (here, all from Mathlib);
 2. uses no axioms beyond `permitted_axioms` (`propext`, `Quot.sound`, `Classical.choice`);
 3. is accepted by the Lean kernel.
 
-Because the statement is expressed entirely in Mathlib terms, no definitions are reproduced in the
-challenge; the two statements are literally identical.
+Because the statements are expressed entirely in Mathlib terms, nothing from the library is
+reproduced in the challenge; the challenge and solution statements are literally identical.
 
 ## Config
 
-[`fg_point_of_numberField.json`](fg_point_of_numberField.json) — theorem
-`challenge_fg_point_of_numberField`.
+[`challenges.json`](challenges.json) — theorems `challenge_fg_point_of_numberField` and
+`challenge_nonempty_point_addEquiv_int`.
 
 ## Running
 
@@ -51,7 +57,7 @@ the project and invokes `lake build Challenge` / `lake build Solution` there):
 ```bash
 lake exe cache get                       # trusted Mathlib oleans, optional
 lake build EllipticCurves                # so the Solution build reuses the library oleans
-lake env /path/to/comparator comparator/fg_point_of_numberField.json
+lake env /path/to/comparator comparator/challenges.json
 ```
 
 Exit code `0` (and `Your solution is okay!`) means the check passed.
