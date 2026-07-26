@@ -35,6 +35,8 @@ torsion, and preservation of the order of torsion points are transported back al
   (that is, `e ≤ p - 2` for the ramification index `e`, e.g. `p` odd and `v` unramified).
 * `WeierstrassCurve.Affine.addOrderOf_red`: under the same condition, reduction preserves the
   order of a torsion point.
+* `WeierstrassCurve.Affine.addOrderOf_dvd_natCard_red`: consequently, the order of a torsion
+  point divides the number of points of the reduction.
 -/
 
 open Function IsDedekindDomain IsDedekindDomain.HeightOneSpectrum IsLocalRing WithZero
@@ -404,6 +406,17 @@ lemma addOrderOf_red {p : ℕ} (hp : p.Prime) (hpmem : (p : R) ∈ v.asIdeal)
           (fun hc ↦ hpram ((natCast_mem_maximalIdeal_pow_iff (K := K) v).mp hc))
           (AddMonoidHom.isOfFinAddOrder _ hP)
     _ = addOrderOf P := addOrderOf_injective _ (pointMap_injective E (v.adicCompletion K)) P
+
+include hE in
+/-- The order of a torsion point of `E(K)` divides the number of points of the reduction at a
+good prime `v` (hypotheses on the residue characteristic as in
+`eq_zero_of_isOfFinAddOrder_of_red_eq_zero`).  This is nontrivial only when the residue field
+is finite, which makes `Ẽ(R ⧸ v.asIdeal)` a finite group. -/
+lemma addOrderOf_dvd_natCard_red {p : ℕ} (hp : p.Prime) (hpmem : (p : R) ∈ v.asIdeal)
+    (hpram : (p : R) ∉ v.asIdeal ^ (p - 1)) {P : E.Point} (hP : IsOfFinAddOrder P) :
+    addOrderOf P ∣ Nat.card (redCurve v W₀).Point := by
+  rw [← addOrderOf_red v hE hp hpmem hpram hP]
+  exact addOrderOf_dvd_natCard _
 
 end Transport
 
