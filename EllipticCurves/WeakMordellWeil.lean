@@ -127,6 +127,9 @@ from `2`, but *not* at even places, where `disc f` is the finer invariant. -/
 lemma Δ_eq_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
   rw [Δ_of_isCharNeTwoNF W, W.discr_f]; ring
 
+lemma discr_f_ne_zero [W.IsElliptic] [W.IsCharNeTwoNF] : W.f.discr ≠ 0 := fun h ↦
+  W.isUnit_Δ.ne_zero (by rw [W.Δ_eq_discr_f, h, mul_zero])
+
 lemma derivative_f : derivative W.f = C 3 * X ^ 2 + C (2 * W.a₂) * X + C W.a₄ := by
   simp [f, C_ofNat]
   ring
@@ -1105,6 +1108,40 @@ lemma finite_badPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R 
         (HeightOneSpectrum.Support.finite R W.a₄)).union
           (HeightOneSpectrum.Support.finite R W.a₆)
 
+open WithZero in
+/-- The places where the reduced cubic degenerates: `disc f` vanishes to order at least `2`,
+or a coefficient has a pole. Away from these the local descent image consists of unramified
+classes (in any residue characteristic). -/
+def discBadPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
+    [IsFractionRing R K] : Set (HeightOneSpectrum R) :=
+  {v | ¬ exp (-1 : ℤ) ≤ v.valuation K W.f.discr} ∪ HeightOneSpectrum.Support R W.a₂ ∪
+    HeightOneSpectrum.Support R W.a₄ ∪ HeightOneSpectrum.Support R W.a₆
+
+/-- The places where the local condition genuinely constrains the 2-Selmer group: the
+degenerate places of `discBadPrimes` together with all even places. -/
+def badPrimes₂ (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
+    [IsFractionRing R K] : Set (HeightOneSpectrum R) :=
+  W.discBadPrimes R ∪ {v | v.valuation K 2 ≠ 1}
+
+open WithZero in
+/-- There are only finitely many places in `discBadPrimes`: where `exp (-1) ≤ v(disc f)`
+fails, in particular `v(disc f) ≠ 1`, and `disc f` is nonzero. -/
+lemma finite_discBadPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
+    [IsFractionRing R K] [W.IsElliptic] [W.IsCharNeTwoNF] : (W.discBadPrimes R).Finite :=
+  have h : {v : HeightOneSpectrum R | ¬ exp (-1 : ℤ) ≤ v.valuation K W.f.discr} ⊆
+      {v | v.valuation K W.f.discr ≠ 1} := fun v hv he ↦
+    hv ((le_of_le_of_eq (exp_le_exp.mpr (by lia)) exp_zero).trans he.ge)
+  ((((HeightOneSpectrum.finite_setOf_valuation_ne_one W.discr_f_ne_zero).subset h).union
+    (HeightOneSpectrum.Support.finite R W.a₂)).union
+      (HeightOneSpectrum.Support.finite R W.a₄)).union
+        (HeightOneSpectrum.Support.finite R W.a₆)
+
+/-- There are only finitely many places in `badPrimes₂`. -/
+lemma finite_badPrimes₂ (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
+    [IsFractionRing R K] [W.IsElliptic] [W.IsCharNeTwoNF] : (W.badPrimes₂ R).Finite :=
+  (W.finite_discBadPrimes R).union <|
+    HeightOneSpectrum.finite_setOf_valuation_ne_one <| Ring.two_ne_zero (ringChar_ne_two W)
+
 section BadPrimes
 
 variable (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
@@ -1139,6 +1176,54 @@ lemma valuation_discr_eq_one_of_notMem_badPrimes [W.IsCharNeTwoNF] (hv : v ∉ W
       W.valuation_two_eq_one_of_notMem_badPrimes R hv, one_pow]
   have hΔ := W.valuation_Δ_eq_one_of_notMem_badPrimes R hv
   rwa [W.Δ_eq_discr_f, map_mul, h16, one_mul] at hΔ
+
+open WithZero in
+lemma exp_neg_one_le_valuation_discr_of_notMem_discBadPrimes (hv : v ∉ W.discBadPrimes R) :
+    exp (-1 : ℤ) ≤ v.valuation K W.f.discr :=
+  not_not.mp fun hne ↦ hv (.inl (.inl (.inl hne)))
+
+lemma valuation_a₂_le_one_of_notMem_discBadPrimes (hv : v ∉ W.discBadPrimes R) :
+    v.valuation K W.a₂ ≤ 1 :=
+  not_lt.mp fun hlt ↦ hv (.inl (.inl (.inr hlt)))
+
+lemma valuation_a₄_le_one_of_notMem_discBadPrimes (hv : v ∉ W.discBadPrimes R) :
+    v.valuation K W.a₄ ≤ 1 :=
+  not_lt.mp fun hlt ↦ hv (.inl (.inr hlt))
+
+lemma valuation_a₆_le_one_of_notMem_discBadPrimes (hv : v ∉ W.discBadPrimes R) :
+    v.valuation K W.a₆ ≤ 1 :=
+  not_lt.mp fun hlt ↦ hv (.inr hlt)
+
+lemma notMem_discBadPrimes_of_notMem_badPrimes₂ (hv : v ∉ W.badPrimes₂ R) :
+    v ∉ W.discBadPrimes R :=
+  fun h ↦ hv (.inl h)
+
+lemma valuation_two_eq_one_of_notMem_badPrimes₂ (hv : v ∉ W.badPrimes₂ R) :
+    v.valuation K 2 = 1 :=
+  not_not.mp fun hne ↦ hv (.inr hne)
+
+/-- Away from `badPrimes₂`, the residue characteristic is odd. -/
+lemma two_notMem_asIdeal_of_notMem_badPrimes₂ (hv : v ∉ W.badPrimes₂ R) :
+    (2 : R) ∉ v.asIdeal := by
+  have h := W.valuation_two_eq_one_of_notMem_badPrimes₂ R hv
+  rw [← map_ofNat (algebraMap R K) 2] at h
+  exact v.valuation_eq_one_iff_notMem.mp h
+
+lemma discBadPrimes_subset_badPrimes₂ : W.discBadPrimes R ⊆ W.badPrimes₂ R :=
+  Set.subset_union_left
+
+open WithZero in
+/-- The refined bad set is contained in the old one: away from `badPrimes`, both `2` and
+`disc f` are `v`-adic units and the coefficients are `v`-integral. -/
+lemma badPrimes₂_subset_badPrimes [W.IsCharNeTwoNF] : W.badPrimes₂ R ⊆ W.badPrimes R := by
+  refine fun v hv ↦ by_contra fun hb ↦ ?_
+  rcases hv with (((hd | h) | h) | h) | h2
+  · exact hd <| (le_of_le_of_eq (exp_le_exp.mpr (by lia)) exp_zero).trans
+      (W.valuation_discr_eq_one_of_notMem_badPrimes R hb).ge
+  · exact hb (.inl (.inl (.inr h)))
+  · exact hb (.inl (.inr h))
+  · exact hb (.inr h)
+  · exact hb (.inl (.inl (.inl (.inl h2))))
 
 end BadPrimes
 

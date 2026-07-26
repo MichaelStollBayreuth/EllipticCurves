@@ -34,18 +34,21 @@ number field case): see `WeierstrassCurve.Affine.selmerGroup₂`. For a number f
 * `card_range_μ`: `#(im μ) = 2 ^ rank E(K) · #E(K)[2]` for finitely generated `E(K)`, so
   together with the previous item the 2-Selmer group bounds the rank
   (`pow_rank_le_card_of_range_μ_le`).
-* `selmerGroup₂_eq_badPrimes` (over a number field): the local conditions at the good finite
-  places are subsumed by the `S`-unramifiedness condition `W.selmerGroupA`, so membership in
-  the 2-Selmer group reduces to the *finitely many* local conditions at the bad places and the
-  infinite places, inside the finite group `A(S,2) ⊓ ker N`. In particular the 2-Selmer group
-  is finite (`finite_selmerGroup₂`). Both directions of the semilocal comparison
+* `selmerGroup₂_le_selmerGroupA_inf_ker` and `selmerGroup₂_eq_badPrimes₂` (over a number
+  field): the 2-Selmer group is contained in the finite group `A(S,2) ⊓ ker N` for
+  `S = discBadPrimes` — the places where `disc f` vanishes to order at least `2` or a
+  coefficient has a pole — and is cut out of it by the local conditions at the places of
+  `badPrimes₂` (`discBadPrimes` plus all even places: an even place with tame `disc f`
+  imposes no unramifiedness constraint, but its local condition remains — the local image
+  there exceeds the unramified classes with trivial norm by the factor `(#𝔽_v)^(v(2))` of
+  the counting formula) and at the infinite places. In particular the 2-Selmer group is
+  finite (`finite_selmerGroup₂`). Both directions of the semilocal comparison
   (`localRes_mem_selmerGroupA`, `mem_selmerGroupA_of_forall_localRes`) are proved, via
   contraction of primes along the embeddings of the field factors and their completions;
   the local statement that at an effectively good place (odd residue characteristic, integral
   coefficients, `v(disc f) ≥ exp (-1)`) the image of `μ_v` is exactly the group of
   unramified classes with trivial norm (`selmerGroupA_inf_ker_normM_eq_range_μ`) is proved
-  by counting. The
-  whole reduction is now fully proved, resting on the formal-group results of
+  by counting, resting on the formal-group results of
   `EllipticCurves.WeierstrassFormalGroup.Filtration`.
 * `range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr`: at a finite place with integral
   coefficients and `v(disc f) ≥ exp (-1)`, the local descent image consists of unramified
@@ -754,35 +757,6 @@ private instance instIsScalarTowerRingOfIntegersFactor (p : W.f.Factors) :
       Algebra.toSMul Algebra.toSMul Algebra.toSMul :=
   .of_algebraMap_eq' rfl
 
--- Goodness transfers to the completion: over the valuation ring of a good place, the
--- base-changed curve has no bad primes.
-private lemma badPrimes_adicCompletionIntegers {v : HeightOneSpectrum (𝓞 F)}
-    (hv : v ∉ W.badPrimes (𝓞 F)) :
-    𝕎[v].badPrimes 𝒪_[v] = ∅ := by
-  ext P
-  simp only [Set.mem_empty_iff_false, iff_false]
-  have hPval (z : F) : P.valuation F_[v] (algebraMap F F_[v] z) = v.valuation F z :=
-    valuation_adicCompletion_algebraMap v P z
-  have hone {y : F} {c : F_[v]} (hc : c = algebraMap F F_[v] y)
-      (h : P.valuation F_[v] c ≠ 1) : v.valuation F y ≠ 1 := by
-    rwa [hc, hPval] at h
-  have hsupp {y : F} {c : F_[v]} (hc : c = algebraMap F F_[v] y)
-      (h : P ∈ HeightOneSpectrum.Support 𝒪_[v] c) : ¬ v.valuation F y ≤ 1 :=
-    not_le.mpr <| by rwa [HeightOneSpectrum.Support, Set.mem_setOf_eq, hc, hPval] at h
-  rintro ((((h | h) | h) | h) | h)
-  · exact hone (by rw [map_ofNat]) h (W.valuation_two_eq_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hone (map_Δ ..) h (W.valuation_Δ_eq_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hsupp (map_a₂ ..) h (W.valuation_a₂_le_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hsupp (map_a₄ ..) h (W.valuation_a₄_le_one_of_notMem_badPrimes (𝓞 F) hv)
-  · exact hsupp (map_a₆ ..) h (W.valuation_a₆_le_one_of_notMem_badPrimes (𝓞 F) hv)
-
--- At a good place, the residue characteristic is odd.
-private lemma two_notMem_asIdeal_of_notMem_badPrimes {v : HeightOneSpectrum (𝓞 F)}
-    (hv : v ∉ W.badPrimes (𝓞 F)) : (2 : 𝓞 F) ∉ v.asIdeal := by
-  have h := W.valuation_two_eq_one_of_notMem_badPrimes (𝓞 F) hv
-  rw [← map_ofNat (algebraMap (𝓞 F) F) 2] at h
-  exact v.valuation_eq_one_iff_notMem.mp h
-
 -- The base-change map on a field factor is integral on the ring of integers.
 private lemma isIntegral_mapOfDvd {p : W.f.Factors} {q : 𝕎[v].f.Factors}
     (hq : (q : F_[v][X]) ∣ (p : F[X]).map (algebraMap F F_[v]))
@@ -1466,24 +1440,21 @@ open AdjoinRoot in
 /-- Semilocal comparison, local to global: a square class that localizes to an unramified
 class at every finite place is `S`-unramified.
 
-Every prime `w` of a field factor `F[X]/(p)` above a good place `v` arises from a factor of
+Every prime `w` of a field factor `F[X]/(p)` above a place `v ∉ S` arises from a factor of
 `f` over `F_v`: the minimal polynomial of the image of the root in the completion at `w`
 (`localFactor`). Evenness of the valuation transports from the primes of the local ring of
 integers through the completion `(F[X]/(p))_w` back to `w`. -/
-theorem mem_selmerGroupA_of_forall_localRes {m : W.M}
-    (hm : ∀ v : HeightOneSpectrum (𝓞 F),
-      W.localRes F_[v] m ∈
-        𝕎[v].selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v])) :
-    m ∈ W.selmerGroupA (𝓞 F) (W.badPrimes (𝓞 F)) := by
+theorem mem_selmerGroupA_of_forall_localRes {S : Set (HeightOneSpectrum (𝓞 F))} {m : W.M}
+    (hm : ∀ v ∉ S, W.localRes F_[v] m ∈ 𝕎[v].selmerGroupA 𝒪_[v] ∅) :
+    m ∈ W.selmerGroupA (𝓞 F) S := by
   obtain ⟨a, rfl⟩ := QuotientGroup.mk'_surjective _ m
   simp only [QuotientGroup.mk'_apply]
   rw [mem_selmerGroupA_unit_iff]
   intro p w hw
-  have hv : w.below (𝓞 F) ∉ W.badPrimes (𝓞 F) := W.below_notMem_of_notMem_primesAbove (𝓞 F) p hw
+  have hv : w.below (𝓞 F) ∉ S := W.below_notMem_of_notMem_primesAbove (𝓞 F) p hw
   refine W.dvd_toAdd_valuationOfNeZero_of_localFactor (w.below (𝓞 F)) p w a ?_
-  refine (W.localRes_mem_selmerGroupA_iff (w.below (𝓞 F)) _ a).mp (hm (w.below (𝓞 F))) _ _ ?_
-  rw [HeightOneSpectrum.mem_primesAbove_iff, W.badPrimes_adicCompletionIntegers hv]
-  exact Set.notMem_empty _
+  refine (W.localRes_mem_selmerGroupA_iff (w.below (𝓞 F)) _ a).mp (hm _ hv) _ _ fun hc ↦ ?_
+  exact Set.notMem_empty _ ((HeightOneSpectrum.mem_primesAbove_iff _ _ _ _).mp hc)
 
 /-!
 ### The size of the local images
@@ -1880,37 +1851,56 @@ theorem inf_le_localCondition_adicCompletion {v : HeightOneSpectrum (𝓞 F)} [D
 variable [DecidableEq F]
 
 open scoped Classical in
+/-- **Upper bound for the 2-Selmer group**: over a number field, every 2-Selmer class is
+unramified away from `W.discBadPrimes (𝓞 F)` and has trivial norm. Only the places where
+`disc f` vanishes to order at least `2` or a coefficient has a pole enter: at every other
+finite place — in any residue characteristic — the local descent image consists of
+unramified classes. -/
+theorem selmerGroup₂_le_selmerGroupA_inf_ker :
+    W.selmerGroup₂ (𝓞 F) (fun v : InfinitePlace F ↦ v.Completion) ≤
+      W.selmerGroupA (𝓞 F) (W.discBadPrimes (𝓞 F)) ⊓ (normM (W := W)).ker := by
+  intro m hm
+  obtain ⟨h1, h2, -⟩ := (W.mem_selmerGroup₂_iff (𝓞 F) _).mp hm
+  refine Subgroup.mem_inf.mpr ⟨W.mem_selmerGroupA_of_forall_localRes fun v hv ↦ ?_,
+    MonoidHom.mem_ker.mpr h1⟩
+  exact W.range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr
+    (W.valuation_a₂_le_one_of_notMem_discBadPrimes (𝓞 F) hv)
+    (W.valuation_a₄_le_one_of_notMem_discBadPrimes (𝓞 F) hv)
+    (W.valuation_a₆_le_one_of_notMem_discBadPrimes (𝓞 F) hv)
+    (W.exp_neg_one_le_valuation_discr_of_notMem_discBadPrimes (𝓞 F) hv)
+    ((W.mem_localCondition_iff F_[v]).mp (h2 v))
+
+open scoped Classical in
 /-- **Reduction of the 2-Selmer group to the bad places**: over a number field, the 2-Selmer
-group consists of the classes in `A(S,2) ∩ ker N` (a finite group computable from the class
-groups and unit groups of the field factors, via `EllipticCurves.Mathlib.SelmerGroup`) that
-satisfy the local conditions at the places in `W.badPrimes (𝓞 F)` (which include the places
-above `2` and the places of bad reduction) and at the infinite places. -/
-theorem selmerGroup₂_eq_badPrimes :
+group consists of the classes in `A(S,2) ∩ ker N` for `S = W.discBadPrimes (𝓞 F)` (a finite
+group computable from the class groups and unit groups of the field factors, via
+`EllipticCurves.Mathlib.SelmerGroup`) that satisfy the local conditions at the places in
+`W.badPrimes₂ (𝓞 F)` — the places of `discBadPrimes` together with all even places — and at
+the infinite places. An even place with `exp (-1) ≤ v(disc f)` contributes nothing to the
+unramifiedness bound, but its local condition cannot be dropped: the local image there is
+larger than the unramified classes with trivial norm, by the factor `(#𝔽_v)^(v(2))` of the
+counting formula (`card_range_μ_adicCompletion`). -/
+theorem selmerGroup₂_eq_badPrimes₂ :
     W.selmerGroup₂ (𝓞 F) (fun v : InfinitePlace F ↦ v.Completion) =
-      W.selmerGroupA (𝓞 F) (W.badPrimes (𝓞 F)) ⊓ (normM (W := W)).ker
-        ⊓ (⨅ v : W.badPrimes (𝓞 F), W.localCondition F_[(v : HeightOneSpectrum (𝓞 F))])
+      W.selmerGroupA (𝓞 F) (W.discBadPrimes (𝓞 F)) ⊓ (normM (W := W)).ker
+        ⊓ (⨅ v : W.badPrimes₂ (𝓞 F), W.localCondition F_[(v : HeightOneSpectrum (𝓞 F))])
         ⊓ ⨅ v : InfinitePlace F, W.localCondition v.Completion := by
-  ext m
-  simp only [mem_selmerGroup₂_iff, Subgroup.mem_inf, Subgroup.mem_iInf, MonoidHom.mem_ker]
-  refine ⟨fun ⟨h1, h2, h3⟩ ↦ ⟨⟨⟨W.mem_selmerGroupA_of_forall_localRes fun v ↦ ?_, h1⟩,
-    fun v ↦ h2 v⟩, h3⟩, fun ⟨⟨⟨hA, h1⟩, h2⟩, h3⟩ ↦ ⟨h1, fun v ↦ ?_, h3⟩⟩
-  · exact 𝕎[v].range_μ_le_selmerGroupA 𝒪_[v] (𝕎[v].badPrimes 𝒪_[v])
-      (fun _ hw ↦ 𝕎[v].valuation_a₂_le_one_of_notMem_badPrimes 𝒪_[v] hw)
-      (fun _ hw ↦ 𝕎[v].valuation_a₄_le_one_of_notMem_badPrimes 𝒪_[v] hw)
-      (fun _ hw ↦ 𝕎[v].valuation_a₆_le_one_of_notMem_badPrimes 𝒪_[v] hw)
-      (fun _ hw ↦ 𝕎[v].valuation_discr_eq_one_of_notMem_badPrimes 𝒪_[v] hw)
-      ((W.mem_localCondition_iff F_[v]).mp (h2 v))
-  · by_cases hv : v ∈ W.badPrimes (𝓞 F)
-    · exact h2 ⟨v, hv⟩
-    · have hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr := by
-        rw [W.valuation_discr_eq_one_of_notMem_badPrimes (𝓞 F) hv, ← exp_zero]
-        exact exp_le_exp.mpr (by lia)
-      exact W.inf_le_localCondition_adicCompletion hv
-        (W.two_notMem_asIdeal_of_notMem_badPrimes hv)
-        (W.valuation_a₂_le_one_of_notMem_badPrimes (𝓞 F) hv)
-        (W.valuation_a₄_le_one_of_notMem_badPrimes (𝓞 F) hv)
-        (W.valuation_a₆_le_one_of_notMem_badPrimes (𝓞 F) hv) hd <|
-        Subgroup.mem_inf.mpr ⟨hA, MonoidHom.mem_ker.mpr h1⟩
+  refine le_antisymm (le_inf (le_inf W.selmerGroup₂_le_selmerGroupA_inf_ker
+    (le_iInf fun v m hm ↦ ((W.mem_selmerGroup₂_iff (𝓞 F) _).mp hm).2.1 v))
+    (le_iInf fun v m hm ↦ ((W.mem_selmerGroup₂_iff (𝓞 F) _).mp hm).2.2 v)) fun m hm ↦ ?_
+  simp only [Subgroup.mem_inf, Subgroup.mem_iInf] at hm
+  obtain ⟨⟨⟨hA, h1⟩, h2⟩, h3⟩ := hm
+  refine (W.mem_selmerGroup₂_iff (𝓞 F) _).mpr ⟨MonoidHom.mem_ker.mp h1, fun v ↦ ?_, h3⟩
+  by_cases hv : v ∈ W.badPrimes₂ (𝓞 F)
+  · exact h2 ⟨v, hv⟩
+  · have hv' := W.notMem_discBadPrimes_of_notMem_badPrimes₂ (𝓞 F) hv
+    exact W.inf_le_localCondition_adicCompletion hv'
+      (W.two_notMem_asIdeal_of_notMem_badPrimes₂ (𝓞 F) hv)
+      (W.valuation_a₂_le_one_of_notMem_discBadPrimes (𝓞 F) hv')
+      (W.valuation_a₄_le_one_of_notMem_discBadPrimes (𝓞 F) hv')
+      (W.valuation_a₆_le_one_of_notMem_discBadPrimes (𝓞 F) hv')
+      (W.exp_neg_one_le_valuation_discr_of_notMem_discBadPrimes (𝓞 F) hv')
+      (Subgroup.mem_inf.mpr ⟨hA, h1⟩)
 
 open scoped Classical in
 /-- The 2-Selmer group of an elliptic curve over a number field is finite. -/
@@ -1918,11 +1908,8 @@ theorem finite_selmerGroup₂
     [(p : W.f.Factors) → Finite (ClassGroup (W.ringOfIntegersFactor (𝓞 F) p))]
     [(p : W.f.Factors) → Group.FG (W.ringOfIntegersFactor (𝓞 F) p)ˣ] :
     Finite (W.selmerGroup₂ (𝓞 F) (fun v : InfinitePlace F ↦ v.Completion)) := by
-  have hle : W.selmerGroup₂ (𝓞 F) (fun v : InfinitePlace F ↦ v.Completion) ≤
-      W.selmerGroupA (𝓞 F) (W.badPrimes (𝓞 F)) := by
-    rw [selmerGroup₂_eq_badPrimes]
-    exact inf_le_left.trans <| inf_le_left.trans inf_le_left
-  have := W.finite_selmerGroupA (𝓞 F) (W.badPrimes (𝓞 F)) (W.finite_badPrimes (𝓞 F))
+  have hle := W.selmerGroup₂_le_selmerGroupA_inf_ker.trans inf_le_left
+  have := W.finite_selmerGroupA (𝓞 F) (W.discBadPrimes (𝓞 F)) (W.finite_discBadPrimes (𝓞 F))
   exact Finite.of_injective _ (Subgroup.inclusion_injective hle)
 
 end NumberField
