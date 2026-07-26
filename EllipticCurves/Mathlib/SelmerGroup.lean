@@ -392,6 +392,54 @@ theorem AddSubgroup.index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGro
     Nat.card_prod, hkerF]
   simp
 
+open Module in
+/-- The order of the group of `n`-th power classes of a finitely generated commutative group
+`G` is `n ^ rank G * #G[n]`; multiplicative version of `AddSubgroup.index_range_nsmul_of_fg`. -/
+theorem CommGroup.card_modPow (G : Type*) [CommGroup G] [Group.FG G] {n : ℕ} (hn : n ≠ 0) :
+    Nat.card (G ⧸ (powMonoidHom n : G →* G).range) =
+      n ^ finrank ℤ (Additive G) * Nat.card (powMonoidHom n : G →* G).ker := by
+  have : AddGroup.FG (Additive G) := AddGroup.fg_iff_mul_fg.mpr ‹_›
+  have hrange : (powMonoidHom n : G →* G).range =
+      AddSubgroup.toSubgroup' (nsmulAddMonoidHom (α := Additive G) n).range := by
+    ext x
+    exact ⟨fun ⟨y, hy⟩ ↦ ⟨Additive.ofMul y, hy⟩, fun ⟨y, hy⟩ ↦ ⟨y.toMul, hy⟩⟩
+  have hker : (powMonoidHom n : G →* G).ker =
+      AddSubgroup.toSubgroup' (nsmulAddMonoidHom (α := Additive G) n).ker := by
+    ext x
+    exact Iff.rfl
+  rw [hrange, hker, ← Subgroup.index_eq_card]
+  exact AddSubgroup.index_range_nsmul_of_fg (Additive G) hn
+
+/-- In a domain of characteristic `≠ 2`, the `2`-torsion of the unit group is `{1, -1}`. -/
+theorem Units.card_ker_powMonoidHom_two (R : Type*) [CommRing R] [IsDomain R]
+    (h2 : ringChar R ≠ 2) :
+    Nat.card ((powMonoidHom 2 : Rˣ →* Rˣ).ker) = 2 := by
+  have hker : (powMonoidHom 2 : Rˣ →* Rˣ).ker = Subgroup.zpowers (-1 : Rˣ) := by
+    ext x
+    rw [MonoidHom.mem_ker, powMonoidHom_apply]
+    constructor
+    · intro hx
+      have : (x : R) * x = 1 := by
+        rw [← Units.val_mul, ← sq, hx, Units.val_one]
+      rcases mul_self_eq_one_iff.mp this with h | h
+      · exact ⟨0, by ext; simp [h]⟩
+      · exact ⟨1, by ext; simp [h]⟩
+    · rintro ⟨k, rfl⟩
+      calc ((-1 : Rˣ) ^ k) ^ 2 = ((-1 : Rˣ) ^ 2) ^ k := by group
+        _ = 1 := by simp
+  have h1 : orderOf (-1 : Rˣ) = 2 := by
+    rw [← orderOf_units, Units.val_neg, Units.val_one, orderOf_neg_one, if_neg h2]
+  rw [hker, Nat.card_zpowers, h1]
+
+open Module in
+/-- The order of `Rˣ/(Rˣ)²` for a domain `R` of characteristic `≠ 2` with finitely generated
+unit group: `2 ^ (r + 1)`, where `r` is the rank of `Rˣ`. -/
+theorem Units.card_modPow_two (R : Type*) [CommRing R] [IsDomain R] [Group.FG Rˣ]
+    (h2 : ringChar R ≠ 2) :
+    Nat.card (Units.modPow R 2) = 2 ^ (finrank ℤ (Additive Rˣ) + 1) := by
+  rw [Units.modPow, CommGroup.card_modPow Rˣ two_ne_zero, Units.card_ker_powMonoidHom_two R h2,
+    pow_succ]
+
 namespace IsDedekindDomain
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] (K : Type*) [Field K] [Algebra R K]
@@ -829,6 +877,42 @@ theorem finite_selmerGroup [Finite (ClassGroup R)] [Group.FG Rˣ] (hS : S.Finite
   have hquot : Finite (selmerGroup (K := K) (S := S) (n := n) ⧸ (toSClassGroup K S n).ker) :=
     .of_injective _ (QuotientGroup.kerLift_injective (toSClassGroup K S n))
   exact Finite.of_subgroup_quotient (toSClassGroup K S n).ker
+
+/-!
+### Trivial class group: the Selmer group is a quotient of the unit square classes
+-/
+
+/-- If the class group of the `S`-integers is trivial, every Selmer class is the class of an
+`S`-unit: the fundamental exact sequence collapses on the right. -/
+theorem sUnitToSelmer_surjective [NeZero n] [Subsingleton (ClassGroup (S.integer K))] :
+    Function.Surjective (sUnitToSelmer K S n) := fun x ↦ by
+  have hx : x ∈ (sUnitToSelmer K S n).range := by
+    rw [← ker_toSClassGroup, MonoidHom.mem_ker]
+    exact Subsingleton.elim _ _
+  exact hx
+
+/-- **The Selmer group bound from a trivial class group**: if the class group of the
+`S`-integers is trivial, then `K(S,n)` is a quotient of `𝒪_S^× / (𝒪_S^×)ⁿ`, so its order is
+bounded by that of the latter group. -/
+theorem card_selmerGroup_le [NeZero n] [Group.FG Rˣ] (hS : S.Finite)
+    [Subsingleton (ClassGroup (S.integer K))] :
+    Nat.card (selmerGroup (K := K) (S := S) (n := n)) ≤
+      Nat.card (S.unit K ⧸ (powMonoidHom n : S.unit K →* S.unit K).range) := by
+  have := fg_sUnit K S hS
+  have : Finite (S.unit K ⧸ (powMonoidHom n : S.unit K →* S.unit K).range) :=
+    CommGroup.finite_modPow n
+  refine Nat.card_le_card_of_surjective (sUnitModPowToSelmer K S n) fun x ↦ ?_
+  obtain ⟨u, hu⟩ := sUnitToSelmer_surjective K S n x
+  exact ⟨QuotientGroup.mk u, hu⟩
+
+/-- **The everywhere-unramified Selmer group bound**: if `R` has trivial class group and
+finitely generated units, then `K(∅,n)` is at most as large as `Rˣ/(Rˣ)ⁿ`. -/
+theorem card_selmerGroup_empty_le [NeZero n] [Group.FG Rˣ] [Subsingleton (ClassGroup R)] :
+    Nat.card (selmerGroup (K := K) (S := (∅ : Set (HeightOneSpectrum R))) (n := n)) ≤
+      Nat.card (Units.modPow R n) := by
+  refine (card_selmerGroup_le K ∅ n Set.finite_empty).trans_eq ?_
+  exact Nat.card_congr
+    (QuotientGroup.congrRangePowMonoidHom (unitsEquivEmptyUnit K (R := R)).symm n).toEquiv
 
 /-!
 ### Selmer groups of finite étale algebras

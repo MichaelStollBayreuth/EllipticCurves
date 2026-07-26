@@ -465,6 +465,12 @@ lemma extendedHom_surjective :
 instance finite_classGroup [Finite (ClassGroup R)] : Finite (ClassGroup (S.integer K)) :=
   .of_surjective _ (extendedHom_surjective K S)
 
+/-- Triviality of the class group descends from `R` to `𝒪_S`, the latter being a quotient of
+the former. -/
+instance subsingleton_classGroup [Subsingleton (ClassGroup R)] :
+    Subsingleton (ClassGroup (S.integer K)) :=
+  (extendedHom_surjective K S).subsingleton
+
 /-- Divisibility by prime powers transfers along extension to `𝒪_S` and back, for primes off
 `S` (`comap_map_pow` for the reverse direction). -/
 lemma map_le_map_pow_iff {v : HeightOneSpectrum R} (hv : v ∉ S) (J : Ideal R) (k : ℕ) :
