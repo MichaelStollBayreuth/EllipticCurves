@@ -483,6 +483,33 @@ lemma IsDedekindDomain.HeightOneSpectrum.valuation_algebraMap_eq_one_of_pow_eq_s
   refine v.isMaximal.eq_of_le w.isPrime.ne_top (Ideal.IsPrime.le_of_pow_le (n := n) ?_)
   rwa [h, Ideal.span_le, Set.singleton_subset_iff]
 
+open WithZero in
+/-- The valuation of an element of `R` not lying in `v ^ 2` is at least `exp (-1)`: it can
+vanish at `v` at most to first order. -/
+lemma IsDedekindDomain.HeightOneSpectrum.exp_neg_one_le_valuation_algebraMap
+    {R : Type*} [CommRing R] [IsDedekindDomain R] {K : Type*} [Field K] [Algebra R K]
+    [IsFractionRing R K] (v : HeightOneSpectrum R) {r : R} (hr : r ∉ v.asIdeal ^ 2) :
+    exp (-1 : ℤ) ≤ v.valuation K (algebraMap R K r) := by
+  rw [valuation_of_algebraMap]
+  have h2 : ¬ v.intValuation r ≤ exp (-((2 : ℕ) : ℤ)) := fun hc ↦
+    hr ((intValuation_le_pow_iff_mem v r 2).mp hc)
+  rw [intValuation_le_exp_iff_le_emultiplicity, not_le] at h2
+  rw [show (-1 : ℤ) = -((1 : ℕ) : ℤ) by norm_num,
+    exp_le_intValuation_iff_emultiplicity_le]
+  exact Order.le_of_lt_succ (by exact_mod_cast h2)
+
+/-- In a principal ideal domain, a squarefree element lies in no square of a maximal ideal. -/
+lemma IsDedekindDomain.HeightOneSpectrum.notMem_pow_two_of_squarefree
+    {R : Type*} [CommRing R] [IsPrincipalIdealRing R] (v : HeightOneSpectrum R) {r : R}
+    (hr : Squarefree r) : r ∉ v.asIdeal ^ 2 := by
+  obtain ⟨p, hp⟩ := IsPrincipalIdealRing.principal v.asIdeal
+  intro hmem
+  rw [hp, Ideal.submodule_span_eq, Ideal.span_singleton_pow, Ideal.mem_span_singleton] at hmem
+  have hunit : IsUnit p := hr p (by rwa [← sq])
+  exact v.isPrime.ne_top <| by
+    rw [hp, Ideal.submodule_span_eq, Ideal.span_singleton_eq_top]
+    exact hunit
+
 variable (R) (B : Type*) [CommRing B] [IsDedekindDomain B] [Algebra R B]
 
 /-- The primes of `B` lying above a set `S` of primes of `R`. -/
@@ -1138,6 +1165,13 @@ lemma monic (p : f.Factors) : (p : K[X]).Monic := p.2.1
 lemma irreducible (p : f.Factors) : Irreducible (p : K[X]) := p.2.2.1
 
 lemma dvd (p : f.Factors) : (p : K[X]) ∣ f := p.2.2.2
+
+/-- A monic irreducible polynomial has itself as its only monic irreducible factor. -/
+@[reducible]
+def unique (hf : Irreducible f) (hmon : f.Monic) : Unique f.Factors where
+  default := ⟨f, hmon, hf, dvd_rfl⟩
+  uniq p := Subtype.ext <| Polynomial.eq_of_monic_of_associated p.monic hmon <|
+    p.irreducible.associated_of_dvd hf p.dvd
 
 lemma ne_zero (p : f.Factors) : (p : K[X]) ≠ 0 := p.irreducible.ne_zero
 

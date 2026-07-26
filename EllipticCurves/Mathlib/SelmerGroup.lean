@@ -184,6 +184,25 @@ theorem MonoidHom.index_range_eq_card_ker {G : Type*} [Group G] [Finite G] (φ :
   have h1 : φ.range.index * Nat.card φ.range = Nat.card G := φ.range.index_mul_card
   exact Nat.eq_of_mul_eq_mul_right Nat.card_pos (h1.trans φ.card_ker_mul_card_range.symm)
 
+/-- If a finite subgroup `X` contains an element on which `φ` does not vanish, then
+`X ∩ ker φ` is at most half of `X`. -/
+theorem Subgroup.two_mul_card_inf_ker_le {G H : Type*} [Group G] [Group H] {X : Subgroup G}
+    [Finite X] (φ : G →* H) {x : G} (hx : x ∈ X) (hφx : φ x ≠ 1) :
+    2 * Nat.card (X ⊓ φ.ker : Subgroup G) ≤ Nat.card X := by
+  set ψ := φ.comp X.subtype with hψ
+  have : Finite ψ.range := Finite.of_surjective _ ψ.rangeRestrict_surjective
+  have hker : Nat.card ψ.ker = Nat.card (X ⊓ φ.ker : Subgroup G) :=
+    Nat.card_congr ⟨fun a ↦ ⟨a.1, a.1.2, a.2⟩, fun a ↦ ⟨⟨a.1, a.2.1⟩, a.2.2⟩,
+      fun a ↦ rfl, fun a ↦ rfl⟩
+  have hrange : 2 ≤ Nat.card ψ.range := by
+    have : Nontrivial ψ.range :=
+      ⟨1, ⟨ψ ⟨x, hx⟩, MonoidHom.mem_range.mpr ⟨⟨x, hx⟩, rfl⟩⟩,
+        fun hc ↦ hφx (Subtype.ext_iff.mp hc).symm⟩
+    exact Finite.one_lt_card
+  calc 2 * Nat.card (X ⊓ φ.ker : Subgroup G) = 2 * Nat.card ψ.ker := by rw [hker]
+    _ ≤ Nat.card ψ.range * Nat.card ψ.ker := Nat.mul_le_mul_right _ hrange
+    _ = Nat.card X := by rw [mul_comm]; exact ψ.card_ker_mul_card_range
+
 /-- On a torsion-free additive group, multiplication by `n ≠ 0` has trivial kernel. -/
 lemma AddMonoidHom.ker_nsmulAddMonoidHom {G : Type*} [AddCommGroup G] [IsAddTorsionFree G]
     {n : ℕ} (hn : n ≠ 0) : (nsmulAddMonoidHom (α := G) n).ker = ⊥ :=

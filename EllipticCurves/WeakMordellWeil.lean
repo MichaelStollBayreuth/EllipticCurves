@@ -271,6 +271,9 @@ lemma deriv_f_ne_zero [W.IsElliptic] [W.IsCharNeTwoNF] {x : K} (hx : W.f.eval x 
 /-- The étale algebra associated to a Weierstrass curve with `a₁ = a₃ = 0`. -/
 abbrev A : Type _ := AdjoinRoot W.f
 
+lemma finrank_A : Module.finrank K W.A = 3 := by
+  rw [(AdjoinRoot.powerBasis W.f_ne_zero).finrank, AdjoinRoot.powerBasis_dim, natDegree_f]
+
 lemma exists_mk_eq (a : W.A) :
     ∃ r s t, a = AdjoinRoot.mk W.f (C r * X ^ 2 + C s * X + C t) := by
   obtain ⟨p, hp, rfl⟩ := AdjoinRoot.exists_degree_lt_mk_eq W.monic_f a
@@ -1145,6 +1148,41 @@ lemma finite_badPrimes₂ (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra
   (W.finite_discBadPrimes R).union <|
     HeightOneSpectrum.finite_setOf_valuation_ne_one <| Ring.two_ne_zero (ringChar_ne_two W)
 
+/-- The norm of the class of `-1` in the étale algebra is the class of `-1`: the algebra has
+odd rank `3` over `K`. -/
+lemma normM_neg_one : W.normM (QuotientGroup.mk (-1 : W.Aˣ)) = QuotientGroup.mk (-1 : Kˣ) := by
+  have hnorm : Algebra.norm K (-1 : W.A) = -1 := by
+    rw [show (-1 : W.A) = algebraMap K W.A (-1) by simp, Algebra.norm_algebraMap, W.finrank_A]
+    norm_num
+  rw [normM, Units.modPow.map_mk]
+  congr 1
+  ext
+  rw [Units.coe_map]
+  simpa using hnorm
+
+/-- If `-1` is not a square in `K`, the class of `-1` in the étale algebra has nontrivial
+norm class. -/
+lemma normM_neg_one_ne_one (h : ¬ IsSquare (-1 : K)) :
+    W.normM (QuotientGroup.mk (-1 : W.Aˣ)) ≠ 1 := by
+  rw [W.normM_neg_one, Ne, Units.modPow.mk_eq_one_iff_isSquare]
+  simpa using h
+
+open WithZero in
+/-- `discBadPrimes` is empty when the coefficients of the cubic are everywhere integral and
+its discriminant vanishes at most to first order everywhere — e.g. for a global integral model
+with squarefree `disc f` (`IsDedekindDomain.HeightOneSpectrum.notMem_pow_two_of_squarefree`). -/
+lemma discBadPrimes_eq_empty (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
+    [IsFractionRing R K] (ha₂ : ∀ v : HeightOneSpectrum R, v.valuation K W.a₂ ≤ 1)
+    (ha₄ : ∀ v : HeightOneSpectrum R, v.valuation K W.a₄ ≤ 1)
+    (ha₆ : ∀ v : HeightOneSpectrum R, v.valuation K W.a₆ ≤ 1)
+    (hd : ∀ v : HeightOneSpectrum R, exp (-1 : ℤ) ≤ v.valuation K W.f.discr) :
+    W.discBadPrimes R = ∅ := by
+  rw [discBadPrimes, Set.eq_empty_iff_forall_notMem]
+  rintro v (((hv | hv) | hv) | hv) <;>
+    simp only [Set.mem_setOf_eq, HeightOneSpectrum.Support, Set.mem_setOf_eq] at hv
+  exacts [hv (hd v), absurd hv (not_lt.mpr (ha₂ v)), absurd hv (not_lt.mpr (ha₄ v)),
+    absurd hv (not_lt.mpr (ha₆ v))]
+
 section BadPrimes
 
 variable (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
@@ -1739,6 +1777,20 @@ lemma mem_selmerGroupA_unit_iff (a : W.Aˣ) :
   rw [mem_selmerGroupA_iff]
   refine forall_congr' fun p ↦ ?_
   rw [AdjoinRoot.modPowEquivPiFactors_mk, mem_selmerGroupFactor_unit_iff]
+
+/-- The class of `-1` lies in `A(S,2)` for every `S`: all its valuations vanish. -/
+lemma neg_one_mem_selmerGroupA : (QuotientGroup.mk (-1 : W.Aˣ) : W.M) ∈ W.selmerGroupA R S := by
+  rw [mem_selmerGroupA_unit_iff]
+  intro p w hw
+  set u := Units.map (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p).toMonoidHom
+    (-1 : W.Aˣ) with hu
+  have hsq : u ^ 2 = 1 := by rw [hu, ← map_pow]; simp
+  have h1 : w.valuationOfNeZero u = 1 := by
+    have h := congrArg w.valuationOfNeZero hsq
+    rw [map_pow, map_one] at h
+    exact pow_eq_one_iff_left two_ne_zero |>.mp h
+  rw [h1]
+  simp
 
 variable (hSa₂ : ∀ v ∉ S, v.valuation K W.a₂ ≤ 1) (hSa₄ : ∀ v ∉ S, v.valuation K W.a₄ ≤ 1)
   (hSa₆ : ∀ v ∉ S, v.valuation K W.a₆ ≤ 1) (hSd : ∀ v ∉ S, v.valuation K W.f.discr = 1)
