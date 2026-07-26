@@ -137,23 +137,34 @@ full (in the Heights project these statements were `sorry`ed).
   (`valued_norm_eq_pow_inertiaDeg`), which powers the norm-parity argument behind the
   effectively-good-place sharpening above.
 
-## An infinite-order certificate
+## Certificates from reduction: infinite order and torsion-freeness
 
-[`InfiniteOrder.lean`](EllipticCurves/InfiniteOrder.lean) turns the reduction map into a certificate
-for a point of `E(K)` to have **infinite order**: since base change `E(K) → E(K_v)` is injective
-(`pointMap_injective`) and reduction is injective on torsion, a nonzero point whose reductions at
-two good primes are torsion of *coprime* orders cannot itself be torsion
-(`not_isOfFinAddOrder_of_coprime_red`, with the single-prime bridge
-`nsmul_eq_zero_of_red_pointMap_nsmul_eq_zero`).
+[`InfiniteOrder.lean`](EllipticCurves/InfiniteOrder.lean) turns the reduction map into two
+certificates:
 
-[`InfiniteOrderExample.lean`](EllipticCurves/InfiniteOrderExample.lean) instantiates the input for
-`P = (1, 1)` on `y² = x³ − x + 1`: modulo `3` the reduced point is killed by `7` (`#E(𝔽₃) = 7`) and
-modulo `5` by `8` (`#E(𝔽₅) = 8`), and `gcd(7, 8) = 1`. Because Mathlib's point addition is
-noncomputable, these torsion facts (`nsmul_seven_eq_zero_mod_three`, `nsmul_eight_eq_zero_mod_five`)
-are computed by hand from the explicit group-law formulas rather than by `decide`. Assembling the
-full statement that `(1, 1) ∈ E(ℚ)` has infinite order — which additionally needs the abstract
-residue field of `𝒪_v` identified with `ZMod p` and the `p`-adic integral model — is left as future
-work.
+* **infinite order**: since base change `E(K) → E(K_v)` is injective (`pointMap_injective`) and
+  reduction is injective on torsion, a nonzero point whose reductions at two good primes are
+  torsion of *coprime* orders cannot itself be torsion (`not_isOfFinAddOrder_of_coprime_red`);
+* **torsion-freeness of `E(K)`**: the order of a torsion point equals the order of its reduction
+  at any good prime satisfying the ramification condition, so it divides the number of points of
+  that reduction (`addOrderOf_dvd_natCard_red` in
+  [`ReductionAtPrime.lean`](EllipticCurves/ReductionAtPrime.lean)); if the point counts of
+  finitely many such reductions have gcd `1`, then `E(K)` is torsion-free
+  (`isAddTorsionFree_of_gcd_natCard_red_eq_one`, with a two-prime version
+  `isAddTorsionFree_of_coprime_natCard_red`).
+
+[`InfiniteOrderExample.lean`](EllipticCurves/InfiniteOrderExample.lean) instantiates both for
+`y² = x³ − x + 1` over `ℚ`: the point `P = (1, 1)` has infinite order
+(`not_isOfFinAddOrder_P`; modulo `3` the reduced point is killed by `7`, modulo `5` by `8`, and
+`gcd(7, 8) = 1`), and `E(ℚ)` is torsion-free (an `IsAddTorsionFree` instance; the reduction
+counts `#E(𝔽₃) = 7` and `#E(𝔽₅) = 8` are coprime). The torsion facts `7 • P̃ = 0` and
+`8 • P̃ = 0` are closed by `decide +kernel` — Mathlib's point addition is noncomputable, so plain
+`decide` gets stuck, but the operations reduce in the kernel — while the point counts are plain
+`decide`s using the `Fintype` instance on point groups from
+[`Mathlib/EllipticCurvePoint.lean`](EllipticCurves/Mathlib/EllipticCurvePoint.lean), which
+enumerates `ZMod p × ZMod p` and decides the curve equation pointwise. By the Mordell-Weil
+theorem, `E(ℚ)` is therefore free abelian of positive rank; the 2-descent rank bound `≤ 1` (in
+progress, see above) will pin down `E(ℚ) ≅ ℤ`.
 
 ## Supporting theory intended for Mathlib
 
@@ -179,6 +190,10 @@ Beyond the formal-group files above, [`EllipticCurves/Mathlib/`](EllipticCurves/
   (`AdjoinRoot.norm_eq_prod_norm_projFactor`, via a dependent-family version of
   `Algebra.norm_pi`), the discriminant of a polynomial with a split-off root
   (`Polynomial.discr_X_sub_C_mul`), and the primes of an extension lying above a set of primes.
+* [`EllipticCurvePoint.lean`](EllipticCurves/Mathlib/EllipticCurvePoint.lean): decidability of
+  the (non)singular-point predicates of a Weierstrass curve, `Finite`/`Fintype` instances for the
+  point group over a finite ring (making point counts over `ZMod p` computable by `decide`), and
+  the point-group isomorphism induced by an isomorphism of base fields (`Point.mapEquiv`).
 * [`AdicCompletionExtension.lean`](EllipticCurves/Mathlib/AdicCompletionExtension.lean): the
   extension `K_v →+* L_w` of adic completions along an extension of Dedekind domains with `w ∣ v`,
   its compatibility with the valuations (up to ramification) and rings of integers (adapted from the
