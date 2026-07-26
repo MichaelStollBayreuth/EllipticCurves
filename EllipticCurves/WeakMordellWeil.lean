@@ -200,6 +200,22 @@ lemma f_eq_mul_of_eval_eq_zero {x : K} (hx : W.f.eval x = 0) :
     W.f = W.fCofactor x * (X - C x) := by
   simp [fCofactor_mul_eq, hx]
 
+lemma discr_fCofactor (x : K) :
+    (W.fCofactor x).discr = (x + W.a₂) ^ 2 - 4 * (x ^ 2 + W.a₂ * x + W.a₄) := by
+  have hdeg : (W.fCofactor x).degree = 2 := by
+    rw [degree_eq_natDegree (W.monic_fCofactor x).ne_zero, W.natDegree_fCofactor x]; rfl
+  rw [discr_of_degree_eq_two hdeg]
+  simp only [fCofactor, coeff_add, coeff_C_mul, coeff_X_pow, coeff_C, coeff_X]
+  norm_num
+
+/-- If `x` is a root of `f`, splitting off the factor `X - x` writes `disc f` as
+`(fCofactor x).discr * f'(x) ^ 2`. -/
+lemma discr_f_eq_discr_fCofactor_mul_sq {x : K} (hx : W.f.eval x = 0) :
+    W.f.discr = (W.fCofactor x).discr * (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) ^ 2 := by
+  conv_lhs => rw [W.f_eq_mul_of_eval_eq_zero hx, mul_comm]
+  rw [discr_X_sub_C_mul (W.monic_fCofactor x) (by rw [W.natDegree_fCofactor]; norm_num) x,
+    W.eval_fCofactor_self x]
+
 /- Dividing the relation `(r X + s)² ≡ x - X mod (fCofactor x)` by `r²` yields the polynomial
 identity certifying that a point with `2`-torsion `x`-coordinate `x` is divisible by `2`
 (used in Step 4). -/
@@ -328,11 +344,11 @@ lemma norm_mk_C_sub_X_add_fCofactor {x : K} (hx : W.f.eval x = 0) :
     resultant_add_mul_right (W.fCofactor x) (C x - X) 1 2 2 (by simp) hq.le, hres]
   ring
 
-/-- The class of `f'` in `A = K[X]/⟨f⟩` is `3 θ² + 2 a₂ θ + a₄`, where `θ` is the image
-of `X`. -/
-lemma mk_derivative_f : AdjoinRoot.mk W.f (derivative W.f) =
-    3 * AdjoinRoot.root W.f ^ 2 + 2 * algebraMap K W.A W.a₂ * AdjoinRoot.root W.f
-      + algebraMap K W.A W.a₄ := by
+/-- The class of `f'` in `K[X]/⟨g⟩`, for any modulus `g` (e.g. `f` itself or one of its
+irreducible factors), is `3 θ² + 2 a₂ θ + a₄`, where `θ` is the image of `X`. -/
+lemma mk_derivative_f (g : K[X]) : AdjoinRoot.mk g (derivative W.f) =
+    3 * AdjoinRoot.root g ^ 2 + 2 * algebraMap K (AdjoinRoot g) W.a₂ * AdjoinRoot.root g
+      + algebraMap K (AdjoinRoot g) W.a₄ := by
   rw [derivative_f]
   simp [AdjoinRoot.mk_C, map_ofNat, ← AdjoinRoot.algebraMap_eq]
 
@@ -1126,6 +1142,63 @@ lemma valuation_discr_eq_one_of_notMem_badPrimes [W.IsCharNeTwoNF] (hv : v ∉ W
 
 end BadPrimes
 
+section DerivativeUnit
+
+/- `f'(x)` is a unit at a rational root `x` of `f` whenever the coefficients are integral and
+the valuation of `disc f` is `1` or `exp (-1)`: this is the arithmetic input for the
+`2`-torsion `x - T` representative, both at good primes and at primes with
+`v(disc f) = exp (-1)`. -/
+
+/-- The discriminant of `f` is a polynomial in the coefficients of `W`, so it is integral
+wherever they are. -/
+lemma valuation_discr_le_one {Γ : Type*} [LinearOrderedCommGroupWithZero Γ] (ν : Valuation K Γ)
+    (ha₂ : ν W.a₂ ≤ 1) (ha₄ : ν W.a₄ ≤ 1) (ha₆ : ν W.a₆ ≤ 1) : ν W.f.discr ≤ 1 := by
+  have h : W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a₂ ^ 3 * W.a₆ - 27 * W.a₆ ^ 2
+      + 18 * W.a₂ * W.a₄ * W.a₆ ∈ ν.integer :=
+    add_mem (sub_mem (sub_mem (sub_mem (mul_mem (pow_mem ha₂ 2) (pow_mem ha₄ 2))
+      (mul_mem (ofNat_mem _ 4) (pow_mem ha₄ 3))) (mul_mem (mul_mem (ofNat_mem _ 4)
+        (pow_mem ha₂ 3)) ha₆)) (mul_mem (ofNat_mem _ 27) (pow_mem ha₆ 2)))
+      (mul_mem (mul_mem (mul_mem (ofNat_mem _ 18) ha₂) ha₄) ha₆)
+  rw [W.discr_f]
+  exact h
+
+open WithZero in
+private lemma eq_one_of_le_one_of_exp_neg_one_le_sq {t : ℤᵐ⁰} (h1 : t ≤ 1)
+    (h2 : exp (-1) ≤ t ^ 2) : t = 1 := by
+  have ht0 : t ≠ 0 := by
+    rintro rfl
+    simp at h2
+  rw [← exp_log ht0] at h1 h2 ⊢
+  rw [← exp_nsmul, two_nsmul] at h2
+  rw [← exp_zero] at h1
+  rw [exp_eq_one]
+  have h1' := exp_le_exp.mp h1
+  have h2' := exp_le_exp.mp h2
+  lia
+
+open WithZero in
+/-- If `x` is a rational root of `f` and the coefficients of the cubic are `ν`-integral with
+`exp (-1) ≤ ν (disc f)`, then `f'(x)` is a `ν`-unit: `disc f = (fCofactor x).discr * f'(x)²`
+with both factors integral, and the square `ν (f'(x))²` cannot equal `exp (-1)`. -/
+lemma valuation_deriv_eval_eq_one (ν : Valuation K ℤᵐ⁰) {x : K} (hx : W.f.eval x = 0)
+    (ha₂ : ν W.a₂ ≤ 1) (ha₄ : ν W.a₄ ≤ 1) (ha₆ : ν W.a₆ ≤ 1)
+    (hd : exp (-1) ≤ ν W.f.discr) :
+    ν (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1 := by
+  have hx1 : ν x ≤ 1 := by
+    rw [eval_f] at hx
+    exact ν.le_one_of_root_cubic ha₂ ha₄ ha₆ hx
+  have hfx : 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ ∈ ν.integer :=
+    add_mem (add_mem (mul_mem (ofNat_mem _ 3) (pow_mem hx1 2))
+      (mul_mem (mul_mem (ofNat_mem _ 2) ha₂) hx1)) ha₄
+  have hcd' : (x + W.a₂) ^ 2 - 4 * (x ^ 2 + W.a₂ * x + W.a₄) ∈ ν.integer :=
+    sub_mem (pow_mem (add_mem hx1 ha₂) 2) (mul_mem (ofNat_mem _ 4)
+      (add_mem (add_mem (pow_mem hx1 2) (mul_mem ha₂ hx1)) ha₄))
+  have hcd : ν (W.fCofactor x).discr ≤ 1 := by rw [W.discr_fCofactor x]; exact hcd'
+  rw [W.discr_f_eq_discr_fCofactor_mul_sq hx, map_mul, map_pow] at hd
+  exact eq_one_of_le_one_of_exp_neg_one_le_sq hfx (hd.trans (mul_le_of_le_one_left' hcd))
+
+end DerivativeUnit
+
 section RingOfIntegers
 
 variable (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
@@ -1217,6 +1290,12 @@ variable [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
   {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
   (ha₂ : (w.below R).valuation K W.a₂ ≤ 1) (ha₄ : (w.below R).valuation K W.a₄ ≤ 1)
   (ha₆ : (w.below R).valuation K W.a₆ ≤ 1) (hd : (w.below R).valuation K W.f.discr = 1)
+  -- (this is `w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1`;
+  -- `variable` commands cannot use the local notation)
+  (hderiv : w.valuation (AdjoinRoot (p : K[X]))
+    (3 * AdjoinRoot.root (p : K[X]) ^ 2
+      + 2 * algebraMap K (AdjoinRoot (p : K[X])) W.a₂ * AdjoinRoot.root (p : K[X])
+      + algebraMap K (AdjoinRoot (p : K[X])) W.a₄) = 1)
 
 include ha₂ ha₄ ha₆ in
 /-- If the coefficients of the cubic are integral at the prime below `w`, then the root `θ` is
@@ -1233,6 +1312,18 @@ at `w`. -/
 lemma valuation_algebraMap_eq_one {z : K} (hz : (w.below R).valuation K z = 1) :
     w.valuation (𝕃 p) (ι p z) = 1 := by
   rw [← W.valuation_algebraMap_eq R p w z, hz, one_pow]
+
+include ha₂ ha₄ ha₆ in
+/-- If the coefficients of the cubic are integral at the prime below `w`, then `f' θ` is
+`w`-integral. -/
+lemma valuation_deriv_root_le_one :
+    w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) ≤ 1 := by
+  have ht := W.valuation_root_le_one R p ha₂ ha₄ ha₆
+  have h : 3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄ ∈ (w.valuation (𝕃 p)).integer :=
+    add_mem (add_mem (mul_mem (ofNat_mem _ 3) (pow_mem ht 2))
+      (mul_mem (mul_mem (ofNat_mem _ 2) (W.valuation_algebraMap_le_one R p w ha₂)) ht))
+      (W.valuation_algebraMap_le_one R p w ha₄)
+  exact h
 
 include ha₂ ha₄ ha₆ hd in
 /-- If the coefficients of the cubic are integral and `disc f` is a unit at the prime below
@@ -1254,9 +1345,8 @@ lemma valuation_deriv_root_eq_one :
   have hB : ν B ≤ 1 := W.valuation_algebraMap_le_one R p w ha₆
   have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
   -- both factors in `deriv_root_mul_eq_discr_f` are integral, and their product is a unit
-  have hD : 3 * t ^ 2 + 2 * A₂ * t + A ∈ ν.integer :=
-    add_mem (add_mem (mul_mem (ofNat_mem _ 3) (pow_mem ht 2))
-      (mul_mem (mul_mem (ofNat_mem _ 2) hA₂) ht)) hA
+  have hD : ν (3 * t ^ 2 + 2 * A₂ * t + A) ≤ 1 :=
+    W.valuation_deriv_root_le_one R p ha₂ ha₄ ha₆
   have hC : (2 * A₂ ^ 2 - 6 * A) * t ^ 2 + (2 * A₂ ^ 3 - 7 * A₂ * A + 9 * B) * t
       + (A₂ ^ 2 * A - 4 * A ^ 2 + 3 * A₂ * B) ∈ ν.integer := by
     refine add_mem (add_mem (mul_mem ?_ (pow_mem ht 2)) (mul_mem ?_ ht)) ?_
@@ -1269,9 +1359,9 @@ lemma valuation_deriv_root_eq_one :
   rw [deriv_root_mul_eq_discr_f]
   exact W.valuation_algebraMap_eq_one R p hd
 
-include ha₂ ha₄ ha₆ hd in
-/-- If the coefficients of the cubic are integral and `disc f` is a unit at the prime below
-`w`, and if `x` is `w`-integral and `x - θ` is not a `w`-unit, then the cofactor
+include ha₂ ha₄ ha₆ hderiv in
+/-- If the coefficients of the cubic are integral at the prime below `w` and `f' θ` is a
+`w`-unit, and if `x` is `w`-integral and `x - θ` is not a `w`-unit, then the cofactor
 `x ^ 2 + θ x + θ ^ 2 + a₂ (x + θ) + a₄` is a `w`-unit: modulo `x - θ` it equals `f' θ`. -/
 lemma valuation_cofactor_eq_one {x : K}
     (hx : w.valuation (𝕃 p) (ι p x) ≤ 1)
@@ -1286,8 +1376,6 @@ lemma valuation_cofactor_eq_one {x : K}
   set A := algebraMap K L W.a₄
   have hA₂ : ν A₂ ≤ 1 := W.valuation_algebraMap_le_one R p w ha₂
   have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
-  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 :=
-    W.valuation_deriv_root_eq_one R p ha₂ ha₄ ha₆ hd
   have h2t : s + 2 * t + A₂ ∈ ν.integer :=
     add_mem (add_mem hx (mul_mem (ofNat_mem _ 2) ht)) hA₂
   have hlt' : ν ((s - t) * (s + 2 * t + A₂)) < ν (3 * t ^ 2 + 2 * A₂ * t + A) := by
@@ -1297,16 +1385,20 @@ lemma valuation_cofactor_eq_one {x : K}
       = (s - t) * (s + 2 * t + A₂) + (3 * t ^ 2 + 2 * A₂ * t + A) by ring,
     ν.map_add_eq_of_lt_right hlt', hderiv]
 
-include ha₂ ha₄ ha₆ hd in
+include ha₂ ha₄ ha₆ in
 /-- If `x` is a root of `f`, then at a prime `w` at which (i.e. at the prime of `R` below
-which) the coefficients of the cubic are integral and `disc f` is a unit, the `p`-component of
+which) the coefficients of the cubic are integral and `f'(x)` is a unit, the `p`-component of
 the `x - T` representative is a unit.
 
 Both `x` and `θ` are roots of `f`, so `x - θ` times the cofactor is `0` and, `L` being a field,
-one of the two factors vanishes. If `x = θ` the component is `f' θ`; if the cofactor vanishes
-the component is `x - θ` and `f' θ = -(x - θ)(x + 2θ + a₂)`. Either way
-`valuation_deriv_root_eq_one` makes it a unit. -/
-lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0) :
+one of the two factors vanishes. If `x = θ` the component is `f'(x)`; if the cofactor vanishes
+the component is `x - θ` and `f'(x) = (x - θ)(2x + θ + a₂)`. Either way `hdx` makes it a unit.
+
+At a good prime, `hdx` is supplied by `valuation_deriv_eval_eq_one`; at an odd prime with
+`v(disc f) = exp (-1)` the same lemma applies, so the `2`-torsion representative is unramified
+there as well. -/
+lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0)
+    (hdx : (w.below R).valuation K (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1) :
     w.valuation (𝕃 p) (ι p x - θ p + AdjoinRoot.mk (p : K[X]) (W.fCofactor x)) = 1 := by
   rw [W.mk_fCofactor_eq p x]
   set L := 𝕃 p
@@ -1320,8 +1412,10 @@ lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0) :
   have hA : ν A ≤ 1 := W.valuation_algebraMap_le_one R p w ha₄
   have hB : ν B ≤ 1 := W.valuation_algebraMap_le_one R p w ha₆
   have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
-  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 :=
-    W.valuation_deriv_root_eq_one R p ha₂ ha₄ ha₆ hd
+  -- the `w`-unit `f'(x)`, transported to `L`
+  have hderiv : ν (3 * s ^ 2 + 2 * A₂ * s + A) = 1 := by
+    simpa only [map_add, map_mul, map_pow, map_ofNat]
+      using W.valuation_algebraMap_eq_one R p (w := w) hdx
   -- `x` is a root of the cubic too, hence integral at `w`
   have hs : s ^ 3 + A₂ * s ^ 2 + A * s + B = 0 := by
     rw [hsdef, hA₂def, hAdef, hBdef, ← W.map_eval_f, hx, map_zero]
@@ -1329,19 +1423,17 @@ lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0) :
   have hprod : (s - t) * (t ^ 2 + (s + A₂) * t + (s ^ 2 + A₂ * s + A)) = 0 := by
     linear_combination hs - W.root_cubic_eq_zero p
   rcases mul_eq_zero.mp hprod with h0 | h0
-  · -- `x = θ`: the component is `f' θ`
+  · -- `x = θ`: the component is `f'(x)`
     rw [h0, zero_add, show t ^ 2 + (s + A₂) * t + (s ^ 2 + A₂ * s + A)
-        = (s - t) * (s + 2 * t + A₂) + (3 * t ^ 2 + 2 * A₂ * t + A)
-      by ring, h0, zero_mul, zero_add, hderiv]
-  · -- the cofactor vanishes: the component is `x - θ`, and `f' θ = -(x - θ)(x + 2θ + a₂)`
+        = 3 * s ^ 2 + 2 * A₂ * s + A by linear_combination -(t + 2 * s + A₂) * h0, hderiv]
+  · -- the cofactor vanishes: the component is `x - θ`, and `f'(x) = (x - θ)(2x + θ + a₂)`
     rw [h0, add_zero]
     have hst : s - t ∈ ν.integer := sub_mem hs1 ht
-    have h2t : s + 2 * t + A₂ ∈ ν.integer :=
-      add_mem (add_mem hs1 (mul_mem (ofNat_mem _ 2) ht)) hA₂
+    have h2t : 2 * s + t + A₂ ∈ ν.integer :=
+      add_mem (add_mem (mul_mem (ofNat_mem _ 2) hs1) ht) hA₂
     refine ν.eq_one_of_mul_eq_one hst h2t ?_
-    rw [show (s - t) * (s + 2 * t + A₂) = -(3 * t ^ 2 + 2 * A₂ * t + A)
-        by linear_combination h0,
-      Valuation.map_neg, hderiv]
+    rw [show (s - t) * (2 * s + t + A₂) = 3 * s ^ 2 + 2 * A₂ * s + A by linear_combination -h0,
+      hderiv]
 
 end RingOfIntegers
 
@@ -1356,7 +1448,13 @@ variable [W.IsElliptic] [W.IsCharNeTwoNF]
     algebraMap K (AdjoinRoot (p : K[X])) x - AdjoinRoot.root (p : K[X]))
   (w : HeightOneSpectrum (W.ringOfIntegersFactor R p))
   (ha₂ : (w.below R).valuation K W.a₂ ≤ 1) (ha₄ : (w.below R).valuation K W.a₄ ≤ 1)
-  (ha₆ : (w.below R).valuation K W.a₆ ≤ 1) (hd : (w.below R).valuation K W.f.discr = 1)
+  (ha₆ : (w.below R).valuation K W.a₆ ≤ 1)
+  -- (this is `w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1`;
+  -- `variable` commands cannot use the local notation)
+  (hderiv : w.valuation (AdjoinRoot (p : K[X]))
+    (3 * AdjoinRoot.root (p : K[X]) ^ 2
+      + 2 * algebraMap K (AdjoinRoot (p : K[X])) W.a₂ * AdjoinRoot.root (p : K[X])
+      + algebraMap K (AdjoinRoot (p : K[X])) W.a₄) = 1)
 
 include h hx hu ha₂ ha₄ ha₆
 
@@ -1394,7 +1492,7 @@ lemma even_valuationOfNeZero_sub_root_of_one_lt
     exact (pow_succ _ 2).symm
   simpa using w.dvd_toAdd_valuationOfNeZero hkey
 
-include hd in
+include hderiv in
 /-- Integral case: `x` is integral at the prime of `R` below `w`.
 
 Over `L` the Weierstrass equation factors as `y ^ 2 = (x - θ) * c` with cofactor
@@ -1410,8 +1508,6 @@ lemma even_valuationOfNeZero_sub_root_of_le_one
   set A₂ := algebraMap K L W.a₂ with hA₂def
   set A := algebraMap K L W.a₄ with hAdef
   have ht : ν t ≤ 1 := W.valuation_root_le_one R p ha₂ ha₄ ha₆
-  have hderiv : ν (3 * t ^ 2 + 2 * A₂ * t + A) = 1 :=
-    W.valuation_deriv_root_eq_one R p ha₂ ha₄ ha₆ hd
   -- `y ^ 2 = (x - θ) * (x ^ 2 + θ x + θ ^ 2 + a₂ (x + θ) + a₄)` over `L`
   have heqL : (algebraMap K L y) ^ 2 = algebraMap K L x ^ 3 + A₂ * algebraMap K L x ^ 2 +
       A * algebraMap K L x + algebraMap K L W.a₆ := by
@@ -1431,24 +1527,24 @@ lemma even_valuationOfNeZero_sub_root_of_le_one
   rw [hu] at hlt
   have hcof : ν (algebraMap K L x ^ 2 + t * algebraMap K L x + t ^ 2
       + A₂ * (algebraMap K L x + t) + A) = 1 :=
-    W.valuation_cofactor_eq_one R p ha₂ ha₄ ha₆ hd hx' hlt
+    W.valuation_cofactor_eq_one R p ha₂ ha₄ ha₆ hderiv hx' hlt
   have hy0 : algebraMap K L y ≠ 0 := (_root_.map_ne_zero _).mpr (W.ne_zero_of_eval_f_ne_zero h hx)
   have hkey : ν (u : L) = ν ((Units.mk0 _ hy0 : Lˣ) : L) ^ 2 := by
     rw [Units.val_mk0, ← map_pow, ← hfac, map_mul, hcof, mul_one]
   simpa using w.dvd_toAdd_valuationOfNeZero hkey
 
-include hd in
+include hderiv in
 /-- The arithmetic core of Step 6, generic case, with all the group theory stripped away:
 for `(x, y)` on `W` with `f x ≠ 0`, and `w` a prime of the ring of integers of the field factor
-`K[X]/(p)` such that the coefficients of the cubic are integral and `disc f` is a unit at the
-prime of `R` below `w`, the `w`-adic valuation of `x - θ` is even.
+`K[X]/(p)` such that the coefficients of the cubic are integral at the prime of `R` below `w`
+and `f' θ` is a `w`-unit, the `w`-adic valuation of `x - θ` is even.
 
 The proof splits on whether `x` has a pole at the prime of `R` below `w`. -/
 lemma even_valuationOfNeZero_sub_root :
     (2 : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero u) := by
   by_cases hx' : 1 < w.valuation (𝕃 p) (ι p x)
   · exact W.even_valuationOfNeZero_sub_root_of_one_lt R p h hx u hu w ha₂ ha₄ ha₆ hx'
-  · exact W.even_valuationOfNeZero_sub_root_of_le_one R p h hx u hu w ha₂ ha₄ ha₆ hd
+  · exact W.even_valuationOfNeZero_sub_root_of_le_one R p h hx u hu w ha₂ ha₄ ha₆ hderiv
       (not_lt.mp hx')
 
 end Core
@@ -1571,7 +1667,7 @@ lemma mem_selmerGroupFactor_of_eval_f_ne_zero {x y : K} (h : W.Equation x y)
   intro w hw
   have hv := W.below_notMem_of_notMem_primesAbove R p hw
   refine W.even_valuationOfNeZero_sub_root R p h hx _ ?_ w (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv)
-    (hSd _ hv)
+    (W.valuation_deriv_root_eq_one R p (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv) (hSd _ hv))
   exact W.projFactor_mk_C_sub_X x p
 
 include hSa₂ hSa₄ hSa₆ hSd in
@@ -1590,10 +1686,13 @@ lemma mem_selmerGroupFactor_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0)
   have hv := W.below_notMem_of_notMem_primesAbove R p hw
   set u := ((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
     (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p)).unit with hudef
+  have hd1 : WithZero.exp (-1 : ℤ) ≤ (w.below R).valuation K W.f.discr := by
+    rw [hSd _ hv]
+    exact (WithZero.exp_le_exp.mpr (by lia)).trans_eq WithZero.exp_zero
   have hval : w.valuation (𝕃 p) (u : 𝕃 p) = 1 := by
     rw [hudef, IsUnit.unit_spec, W.projFactor_mk_C_sub_X_add_fCofactor x p]
-    exact W.valuation_projFactor_torsion_eq_one R p (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv)
-      (hSd _ hv) hx
+    exact W.valuation_projFactor_torsion_eq_one R p (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv) hx
+      (W.valuation_deriv_eval_eq_one _ hx (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv) hd1)
   simpa using w.dvd_toAdd_valuationOfNeZero (n := 2) (z := 1) (by simp [hval])
 
 section

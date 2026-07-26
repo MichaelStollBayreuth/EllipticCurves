@@ -46,6 +46,11 @@ number field case): see `WeierstrassCurve.Affine.selmerGroup₂`. For a number f
   by counting. The
   whole reduction is now fully proved, resting on the formal-group results of
   `EllipticCurves.WeierstrassFormalGroup.Filtration`.
+* `range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr`: at a finite place with integral
+  coefficients and `v(disc f) ≥ exp (-1)`, the local descent image consists of unramified
+  classes — with no condition at `2`. Such places are "effectively good" for the 2-Selmer
+  group: their local conditions beyond unramifiedness are subsumed (up to the norm and
+  counting steps) by those of good places.
 * `card_range_μ_adicCompletion`, `card_range_μ_completion_isReal`,
   `card_range_μ_completion_isComplex`: the size of the local image is
   `#E(K_v)[2] · ‖2‖_v⁻¹` — concretely `#E(K_v)[2] · (#𝔽_v)^(v(2))` at a finite place (so
@@ -591,6 +596,88 @@ theorem pow_rank_le_card_of_range_μ_le [AddGroup.FG W.Point] {S : Subgroup W.M}
 
 end SelmerGroup
 
+section WithZeroArith
+
+/- Private helpers for the norm-parity argument at places with `v(disc f) = exp (-1)`:
+arithmetic in the value group `ℤᵐ⁰`, extraction of the unique critical index from a weighted
+product of integral values equal to `exp (-1)`, and parity of the critical component of a
+weighted product that is a square. -/
+
+open WithZero
+
+private lemma eq_exp_neg_one_or_eq_one {t : ℤᵐ⁰} (h1 : exp (-1) ≤ t) (h2 : t ≤ 1) :
+    t = exp (-1) ∨ t = 1 := by
+  have ht0 : t ≠ 0 := fun h0 ↦ by simp [h0] at h1
+  rw [← exp_log ht0] at h1 h2 ⊢
+  rw [← exp_zero] at h2
+  rw [exp_le_exp] at h1 h2
+  simp only [exp_inj, exp_eq_one]
+  lia
+
+private lemma exp_sum {ι : Type*} (s : Finset ι) (g : ι → ℤ) :
+    exp (∑ q ∈ s, g q) = ∏ q ∈ s, exp (g q) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih => rw [Finset.sum_cons, Finset.prod_cons, exp_add, ih]
+
+private lemma sum_mul_log_eq {ι : Type*} [Fintype ι] {t : ι → ℤᵐ⁰} (ht : ∀ q, t q ≠ 0)
+    (e : ι → ℕ) {c : ℤᵐ⁰} (hprod : ∏ q, t q ^ e q = c) :
+    ∑ q, (e q : ℤ) * log (t q) = log c := by
+  have h : ∏ q, t q ^ e q = exp (∑ q, (e q : ℤ) * log (t q)) := by
+    rw [exp_sum]
+    refine Finset.prod_congr rfl fun q _ ↦ ?_
+    rw [show ((e q : ℤ) * log (t q)) = e q • log (t q) by rw [nsmul_eq_mul], exp_nsmul,
+      exp_log (ht q)]
+  rw [← hprod, h, log_exp]
+
+private lemma exists_unique_neg_one_of_sum {ι : Type*} [Fintype ι] {e : ι → ℕ} {l : ι → ℤ}
+    (hl : ∀ q, l q ≤ 0) (he : ∀ q, 1 ≤ e q) (hsum : ∑ q, (e q : ℤ) * l q = -1) :
+    ∃ q₀, e q₀ = 1 ∧ l q₀ = -1 ∧ ∀ q ≠ q₀, l q = 0 := by
+  classical
+  -- there is a factor with `l q₀ < 0`
+  obtain ⟨q₀, hq₀⟩ : ∃ q₀, l q₀ < 0 := by
+    by_contra! h
+    rw [Finset.sum_eq_zero fun q _ ↦ by rw [le_antisymm (hl q) (h q), mul_zero]] at hsum
+    lia
+  have hrest : ∑ q ∈ Finset.univ.erase q₀, (e q : ℤ) * l q ≤ 0 :=
+    Finset.sum_nonpos fun q _ ↦ mul_nonpos_of_nonneg_of_nonpos (Int.natCast_nonneg _) (hl q)
+  have hsplit : (e q₀ : ℤ) * l q₀ + ∑ q ∈ Finset.univ.erase q₀, (e q : ℤ) * l q = -1 := by
+    rw [Finset.add_sum_erase _ (fun q ↦ (e q : ℤ) * l q) (Finset.mem_univ q₀)]
+    exact hsum
+  have he₀ : 1 ≤ (e q₀ : ℤ) := by exact_mod_cast he q₀
+  -- the critical term is `-1`, i.e. `e q₀ = 1` and `l q₀ = -1`
+  have hkey : (e q₀ : ℤ) * l q₀ = -1 := by
+    have h2 : (e q₀ : ℤ) * l q₀ ≤ 1 * l q₀ := mul_le_mul_of_nonpos_right he₀ hq₀.le
+    lia
+  have he₁ : (e q₀ : ℤ) = 1 := by
+    by_contra! hne
+    have h2 : (e q₀ : ℤ) * l q₀ ≤ 2 * l q₀ := mul_le_mul_of_nonpos_right (by lia) hq₀.le
+    lia
+  refine ⟨q₀, by exact_mod_cast he₁, by lia, fun q hq ↦ ?_⟩
+  -- the remaining terms are nonpositive with sum `0`, hence all vanish
+  have hsum0 : ∑ q ∈ Finset.univ.erase q₀, (e q : ℤ) * l q = 0 := by lia
+  have hzero := (Finset.sum_eq_zero_iff_of_nonpos
+    fun q _ ↦ mul_nonpos_of_nonneg_of_nonpos (Int.natCast_nonneg _) (hl q)).mp hsum0
+    q (Finset.mem_erase.mpr ⟨hq, Finset.mem_univ q⟩)
+  have he' : (e q : ℤ) ≠ 0 := by have := he q; lia
+  exact (mul_eq_zero.mp hzero).resolve_left he'
+
+private lemma even_log_of_prod_eq_sq {ι : Type*} [Fintype ι] {t : ι → ℤᵐ⁰} {e : ι → ℕ}
+    {s : ℤᵐ⁰} (ht : ∀ q, t q ≠ 0) {q₀ : ι} (he : e q₀ = 1)
+    (hev : ∀ q ≠ q₀, (2 : ℤ) ∣ log (t q)) (hprod : ∏ q, t q ^ e q = s ^ 2) :
+    (2 : ℤ) ∣ log (t q₀) := by
+  classical
+  have hsum := sum_mul_log_eq ht e hprod
+  rw [log_pow, nsmul_eq_mul, Nat.cast_ofNat] at hsum
+  rw [← Finset.add_sum_erase _ (fun q ↦ (e q : ℤ) * log (t q)) (Finset.mem_univ q₀), he]
+    at hsum
+  have hdvd : (2 : ℤ) ∣ ∑ q ∈ Finset.univ.erase q₀, (e q : ℤ) * log (t q) :=
+    Finset.dvd_sum fun q hq ↦ ((hev q (Finset.mem_erase.mp hq).1).mul_left _)
+  obtain ⟨c, hc⟩ := hdvd
+  exact ⟨log s - c, by push_cast at hsum ⊢; lia⟩
+
+end WithZeroArith
+
 /-!
 ### Reduction to the bad places, and finiteness
 
@@ -969,6 +1056,42 @@ private lemma map_projFactor {p : W.f.Factors} {q : 𝕎[v].f.Factors}
 
 end Semilocal
 
+-- The inertia degree of a factor prime is positive.
+private lemma one_le_inertiaDeg (v : HeightOneSpectrum (𝓞 F)) (q : 𝕎[v].f.Factors)
+    (w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) :
+    1 ≤ w.asIdeal.inertiaDeg 𝒪_[v] := by
+  have hFD : FiniteDimensional F_[v] (AdjoinRoot (q : F_[v][X])) :=
+    (AdjoinRoot.powerBasis' q.monic).finite
+  have : Algebra.IsAlgebraic F_[v] (AdjoinRoot (q : F_[v][X])) := .of_finite ..
+  have : CharZero F_[v] :=
+    charZero_of_injective_algebraMap (algebraMap F F_[v]).injective
+  have hsep : Algebra.IsSeparable F_[v] (AdjoinRoot (q : F_[v][X])) := inferInstance
+  have := w.isPrime
+  exact Ideal.inertiaDeg_pos w.asIdeal 𝒪_[v]
+
+-- The coefficients of the base-changed curve are integral at the prime of `𝒪_v`, when the
+-- coefficients of `W` are `v`-integral.
+private lemma valuation_a₂_adicCompletion_le_one (v : HeightOneSpectrum (𝓞 F))
+    (ha₂ : v.valuation F W.a₂ ≤ 1)
+    (P : HeightOneSpectrum 𝒪_[v]) : P.valuation F_[v] 𝕎[v].a₂ ≤ 1 := by
+  change P.valuation F_[v] (algebraMap F F_[v] W.a₂) ≤ 1
+  rw [v.valuation_adicCompletion_algebraMap P]
+  exact ha₂
+
+private lemma valuation_a₄_adicCompletion_le_one (v : HeightOneSpectrum (𝓞 F))
+    (ha₄ : v.valuation F W.a₄ ≤ 1)
+    (P : HeightOneSpectrum 𝒪_[v]) : P.valuation F_[v] 𝕎[v].a₄ ≤ 1 := by
+  change P.valuation F_[v] (algebraMap F F_[v] W.a₄) ≤ 1
+  rw [v.valuation_adicCompletion_algebraMap P]
+  exact ha₄
+
+private lemma valuation_a₆_adicCompletion_le_one (v : HeightOneSpectrum (𝓞 F))
+    (ha₆ : v.valuation F W.a₆ ≤ 1)
+    (P : HeightOneSpectrum 𝒪_[v]) : P.valuation F_[v] 𝕎[v].a₆ ≤ 1 := by
+  change P.valuation F_[v] (algebraMap F F_[v] W.a₆) ≤ 1
+  rw [v.valuation_adicCompletion_algebraMap P]
+  exact ha₆
+
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 
 /-- **Local image at a place with squarefree reduced cubic**: if the coefficients of `W` are
@@ -992,6 +1115,312 @@ theorem range_μ_le_selmerGroupA_empty {v : HeightOneSpectrum (𝓞 F)} [Decidab
   · change P.valuation F_[v] (algebraMap F F_[v] W.a₆) ≤ 1
     rw [key]; exact ha₆
   · rw [W.baseChange_discr_f F_[v], key]; exact hd
+
+section OddPlace
+
+/-!
+#### Effectively good places: `v(disc f) = exp (-1)`
+
+At a place `v` with integral coefficients and `v(disc f) = exp (-1)`, the local image is
+still unramified, by a norm-parity argument over the field factors of the completed étale
+algebra: the ring of integers of each factor `F_v[X]/(q)` is a discrete valuation ring with
+unique prime `factorPrime`, and the valuation of a norm is the `w`-adic valuation raised to
+the inertia degree (`valued_norm_projFactor`, from
+`IsDedekindDomain.HeightOneSpectrum.valued_norm_eq_pow_inertiaDeg`). Applying this to `f'(θ)`
+expresses `v(disc f)` as the weighted product of the `w(f'(θ_q))`
+(`prod_valuation_deriv`), so there is a unique *critical* factor `q₀`, with inertia degree
+`1`; at every other factor `f' θ` is a unit (`exists_critical_factor`). For a point `(x, y)`
+with `f(x) ≠ 0` the same product formula applied to `x - T` gives
+`∏ w(x - θ_q) ^ f_q = v(y)²` (`prod_valuation_sub_root`); the non-critical components are
+even by the generic Step-6 argument, and since `f_{q₀} = 1`, parity forces the critical
+component to be even as well (`even_valuationOfNeZero_critical`). Rational `2`-torsion is
+handled by `WeierstrassCurve.Affine.valuation_deriv_eval_eq_one`: `f'(x)` is a unit, since
+`disc f = (fCofactor x).discr * f'(x)²` and `exp (-1)` is not a square.
+-/
+
+open AdjoinRoot IsDedekindDomain.HeightOneSpectrum WithZero
+
+variable (v : HeightOneSpectrum (𝓞 F))
+
+/- The set of factors of the base-changed cubic is a finite type. -/
+@[implicit_reducible]
+private noncomputable def instFintypeFactorsBaseChange : Fintype 𝕎[v].f.Factors :=
+  have : Finite 𝕎[v].f.Factors := Polynomial.Factors.finite 𝕎[v].f_ne_zero
+  Fintype.ofFinite _
+
+attribute [local instance] instFintypeFactorsBaseChange
+
+/- The ring of integers of a field factor of the completed étale algebra is a discrete
+valuation ring; `factorPrime` is its unique height-one prime (the maximal ideal). -/
+private noncomputable def factorPrime (q : 𝕎[v].f.Factors) :
+    HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q) := by
+  have hFD : FiniteDimensional F_[v] (AdjoinRoot (q : F_[v][X])) :=
+    (AdjoinRoot.powerBasis' q.monic).finite
+  have : Algebra.IsAlgebraic F_[v] (AdjoinRoot (q : F_[v][X])) := .of_finite ..
+  have : CharZero F_[v] :=
+    charZero_of_injective_algebraMap (algebraMap F F_[v]).injective
+  have hsep : Algebra.IsSeparable F_[v] (AdjoinRoot (q : F_[v][X])) := inferInstance
+  have hDed : IsDedekindDomain (integralClosure 𝒪_[v] (AdjoinRoot (q : F_[v][X]))) :=
+    𝕎[v].isDedekindDomain_ringOfIntegersFactor 𝒪_[v] q
+  exact IsDiscreteValuationRing.maximalIdeal _
+
+-- Any height-one prime of the ring of integers of a field factor is `factorPrime`.
+private lemma eq_factorPrime {q : 𝕎[v].f.Factors}
+    (w w' : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) : w = w' := by
+  have hFD : FiniteDimensional F_[v] (AdjoinRoot (q : F_[v][X])) :=
+    (AdjoinRoot.powerBasis' q.monic).finite
+  have : Algebra.IsAlgebraic F_[v] (AdjoinRoot (q : F_[v][X])) := .of_finite ..
+  have : CharZero F_[v] :=
+    charZero_of_injective_algebraMap (algebraMap F F_[v]).injective
+  have hsep : Algebra.IsSeparable F_[v] (AdjoinRoot (q : F_[v][X])) := inferInstance
+  have hDed : IsDedekindDomain (integralClosure 𝒪_[v] (AdjoinRoot (q : F_[v][X]))) :=
+    𝕎[v].isDedekindDomain_ringOfIntegersFactor 𝒪_[v] q
+  rw [w.eq_maximalIdeal, w'.eq_maximalIdeal]
+
+-- C1, instantiated at a field factor: the valuation of the norm is the `w`-adic valuation
+-- raised to the inertia degree.
+private lemma valued_norm_projFactor (q : 𝕎[v].f.Factors)
+    (w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q))
+    {z : AdjoinRoot (q : F_[v][X])} (hz : z ≠ 0) :
+    Valued.v (Algebra.norm F_[v] z) =
+      w.valuation (AdjoinRoot (q : F_[v][X])) z ^ w.asIdeal.inertiaDeg 𝒪_[v] := by
+  have hFD : FiniteDimensional F_[v] (AdjoinRoot (q : F_[v][X])) :=
+    (AdjoinRoot.powerBasis' q.monic).finite
+  have : Algebra.IsAlgebraic F_[v] (AdjoinRoot (q : F_[v][X])) := .of_finite ..
+  have : CharZero F_[v] :=
+    charZero_of_injective_algebraMap (algebraMap F F_[v]).injective
+  have hsep : Algebra.IsSeparable F_[v] (AdjoinRoot (q : F_[v][X])) := inferInstance
+  have hDed : IsDedekindDomain (integralClosure 𝒪_[v] (AdjoinRoot (q : F_[v][X]))) :=
+    𝕎[v].isDedekindDomain_ringOfIntegersFactor 𝒪_[v] q
+  have hFrac : IsFractionRing (integralClosure 𝒪_[v] (AdjoinRoot (q : F_[v][X])))
+      (AdjoinRoot (q : F_[v][X])) :=
+    isFractionRing_ringOfIntegersFactor (W := 𝕎[v]) 𝒪_[v] q
+  exact valued_norm_eq_pow_inertiaDeg (K := F) v (AdjoinRoot (q : F_[v][X])) w hz
+
+-- `f'` does not vanish in any field factor: `f` is separable.
+private lemma mk_derivative_ne_zero (q : 𝕎[v].f.Factors) :
+    AdjoinRoot.mk (q : F_[v][X]) (derivative 𝕎[v].f) ≠ 0 := by
+  rw [Ne, AdjoinRoot.mk_eq_zero]
+  intro hdvd
+  obtain ⟨a, b, hab⟩ := separable_f 𝕎[v]
+  exact q.prime.not_unit <| isUnit_of_dvd_one <|
+    hab ▸ dvd_add (q.dvd.mul_left a) (hdvd.mul_left b)
+
+-- Step 1: the product over the factors of the `w`-valuations of `f'(θ)`, weighted by the
+-- inertia degrees, is the `v`-valuation of `disc f`.
+private lemma prod_valuation_deriv :
+    ∏ q : 𝕎[v].f.Factors, (W.factorPrime v q).valuation (AdjoinRoot (q : F_[v][X]))
+        (AdjoinRoot.mk (q : F_[v][X]) (derivative 𝕎[v].f))
+        ^ (W.factorPrime v q).asIdeal.inertiaDeg 𝒪_[v] =
+      v.valuation F W.f.discr := by
+  have : CharZero F_[v] :=
+    charZero_of_injective_algebraMap (algebraMap F F_[v]).injective
+  calc ∏ q : 𝕎[v].f.Factors, (W.factorPrime v q).valuation (AdjoinRoot (q : F_[v][X]))
+        (AdjoinRoot.mk (q : F_[v][X]) (derivative 𝕎[v].f))
+        ^ (W.factorPrime v q).asIdeal.inertiaDeg 𝒪_[v]
+      = ∏ q : 𝕎[v].f.Factors, Valued.v (Algebra.norm F_[v] (projFactor 𝕎[v].f_ne_zero
+          𝕎[v].squarefree_f q (AdjoinRoot.mk 𝕎[v].f (derivative 𝕎[v].f)))) := by
+        refine Finset.prod_congr rfl fun q _ ↦ ?_
+        rw [projFactor_mk,
+          W.valued_norm_projFactor v q (W.factorPrime v q) (W.mk_derivative_ne_zero v q)]
+    _ = Valued.v (Algebra.norm F_[v] (AdjoinRoot.mk 𝕎[v].f (derivative 𝕎[v].f))) := by
+        rw [norm_eq_prod_norm_projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f, map_prod]
+    _ = v.valuation F W.f.discr := by
+        rw [𝕎[v].norm_mk_derivative_f three_ne_zero, Valuation.map_neg,
+          W.baseChange_discr_f F_[v]]
+        exact v.valuedAdicCompletion_eq_valuation' _
+
+-- Step 2: at a place with `v (disc f) = exp (-1)` there is a unique "critical" factor;
+-- it has inertia degree `1`, and at every other factor `f' θ` is a `w`-unit.
+private lemma exists_critical_factor (ha₂ : v.valuation F W.a₂ ≤ 1)
+    (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+    (hd : v.valuation F W.f.discr = exp (-1)) :
+    ∃ q₀ : 𝕎[v].f.Factors, (W.factorPrime v q₀).asIdeal.inertiaDeg 𝒪_[v] = 1 ∧
+      ∀ q, q ≠ q₀ → ∀ w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q),
+        w.valuation (AdjoinRoot (q : F_[v][X]))
+          (AdjoinRoot.mk (q : F_[v][X]) (derivative 𝕎[v].f)) = 1 := by
+  set t : 𝕎[v].f.Factors → ℤᵐ⁰ := fun q ↦ (W.factorPrime v q).valuation
+    (AdjoinRoot (q : F_[v][X])) (AdjoinRoot.mk (q : F_[v][X]) (derivative 𝕎[v].f))
+  set e : 𝕎[v].f.Factors → ℕ := fun q ↦ (W.factorPrime v q).asIdeal.inertiaDeg 𝒪_[v]
+  have hint (q : 𝕎[v].f.Factors)
+      (w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) :
+      w.valuation (AdjoinRoot (q : F_[v][X]))
+        (AdjoinRoot.mk (q : F_[v][X]) (derivative 𝕎[v].f)) ≤ 1 := by
+    rw [𝕎[v].mk_derivative_f (q : F_[v][X])]
+    exact 𝕎[v].valuation_deriv_root_le_one 𝒪_[v] q
+      (W.valuation_a₂_adicCompletion_le_one v ha₂ _)
+      (W.valuation_a₄_adicCompletion_le_one v ha₄ _)
+      (W.valuation_a₆_adicCompletion_le_one v ha₆ _)
+  have hprod : ∏ q, t q ^ e q = exp (-1) := by rw [W.prod_valuation_deriv v, hd]
+  have ht0 (q : 𝕎[v].f.Factors) : t q ≠ 0 := by
+    intro h0
+    rw [Finset.prod_eq_zero (Finset.mem_univ q)
+      (by rw [h0]; exact zero_pow (by have := W.one_le_inertiaDeg v q (W.factorPrime v q); lia))]
+      at hprod
+    exact exp_ne_zero hprod.symm
+  have hsum : ∑ q, (e q : ℤ) * log (t q) = -1 := by
+    rw [sum_mul_log_eq ht0 e hprod, log_exp]
+  have hl (q : 𝕎[v].f.Factors) : log (t q) ≤ 0 := by
+    rw [← log_one]
+    exact (log_le_log (ht0 q) one_ne_zero).mpr (hint q (W.factorPrime v q))
+  obtain ⟨q₀, he₁, -, hrest⟩ := exists_unique_neg_one_of_sum hl
+    (fun q ↦ W.one_le_inertiaDeg v q (W.factorPrime v q)) hsum
+  refine ⟨q₀, he₁, fun q hq w ↦ ?_⟩
+  rw [W.eq_factorPrime v w (W.factorPrime v q)]
+  have h1 : t q = 1 := by
+    rw [← exp_log (ht0 q), hrest q hq, exp_zero]
+  exact h1
+
+-- Step 3: the product over the factors of the `w`-valuations of `x - θ`, weighted by the
+-- inertia degrees, is the square `v(y)²`.
+private lemma prod_valuation_sub_root {x y : F_[v]} (h : 𝕎[v].toAffine.Equation x y)
+    (hx : 𝕎[v].f.eval x ≠ 0) :
+    ∏ q : 𝕎[v].f.Factors, (W.factorPrime v q).valuation (AdjoinRoot (q : F_[v][X]))
+        (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q (AdjoinRoot.mk 𝕎[v].f (C x - X)))
+        ^ (W.factorPrime v q).asIdeal.inertiaDeg 𝒪_[v] =
+      Valued.v y ^ 2 := by
+  calc ∏ q : 𝕎[v].f.Factors, (W.factorPrime v q).valuation (AdjoinRoot (q : F_[v][X]))
+        (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q (AdjoinRoot.mk 𝕎[v].f (C x - X)))
+        ^ (W.factorPrime v q).asIdeal.inertiaDeg 𝒪_[v]
+      = ∏ q : 𝕎[v].f.Factors, Valued.v (Algebra.norm F_[v] (projFactor 𝕎[v].f_ne_zero
+          𝕎[v].squarefree_f q (AdjoinRoot.mk 𝕎[v].f (C x - X)))) := by
+        refine Finset.prod_congr rfl fun q _ ↦ ?_
+        rw [W.valued_norm_projFactor v q (W.factorPrime v q)
+          ((isUnit_mk_sub_X_of_eval_f_ne_zero hx).map
+            (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q)).ne_zero]
+    _ = Valued.v (Algebra.norm F_[v] (AdjoinRoot.mk 𝕎[v].f (C x - X))) := by
+        rw [norm_eq_prod_norm_projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f, map_prod]
+    _ = Valued.v y ^ 2 := by
+        rw [𝕎[v].norm_mk_C_sub_X x, (equation_iff_eval_f_eq_sq 𝕎[v].toAffine x y).mp h,
+          map_pow]
+
+/- At the critical factor, evenness of `w(x - θ)` follows from norm parity: the weighted
+product of the valuations over all factors is the square `v(y)²`, the non-critical components
+are even by the generic argument, and the critical weight is `1`. -/
+private lemma even_valuationOfNeZero_critical (ha₂ : v.valuation F W.a₂ ≤ 1)
+    (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+    {x y : F_[v]} (h : 𝕎[v].toAffine.Equation x y) (hx : 𝕎[v].f.eval x ≠ 0)
+    {q₀ : 𝕎[v].f.Factors} (he : (W.factorPrime v q₀).asIdeal.inertiaDeg 𝒪_[v] = 1)
+    (hother : ∀ q, q ≠ q₀ → ∀ w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q),
+      w.valuation (AdjoinRoot (q : F_[v][X]))
+        (AdjoinRoot.mk (q : F_[v][X]) (derivative 𝕎[v].f)) = 1)
+    (u : (AdjoinRoot (q₀ : F_[v][X]))ˣ)
+    (hu : (u : AdjoinRoot (q₀ : F_[v][X])) =
+      projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q₀ (AdjoinRoot.mk 𝕎[v].f (C x - X)))
+    (w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q₀)) :
+    (2 : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero u) := by
+  obtain rfl := W.eq_factorPrime v w (W.factorPrime v q₀)
+  set t : 𝕎[v].f.Factors → ℤᵐ⁰ := fun q ↦ (W.factorPrime v q).valuation
+    (AdjoinRoot (q : F_[v][X]))
+    (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q (AdjoinRoot.mk 𝕎[v].f (C x - X)))
+  have ht (q : 𝕎[v].f.Factors) : t q ≠ 0 :=
+    ((W.factorPrime v q).valuation _).ne_zero_iff.mpr
+      ((isUnit_mk_sub_X_of_eval_f_ne_zero hx).map
+        (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q)).ne_zero
+  have hev (q : 𝕎[v].f.Factors) (hq : q ≠ q₀) : (2 : ℤ) ∣ log (t q) := by
+    set u' := ((isUnit_mk_sub_X_of_eval_f_ne_zero hx).map
+      (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q)).unit
+    have hspec : (u' : AdjoinRoot (q : F_[v][X])) =
+        projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q (AdjoinRoot.mk 𝕎[v].f (C x - X)) :=
+      IsUnit.unit_spec _
+    have heven := 𝕎[v].even_valuationOfNeZero_sub_root 𝒪_[v] q h hx u'
+      (hspec.trans (𝕎[v].projFactor_mk_C_sub_X x q)) (W.factorPrime v q)
+      (W.valuation_a₂_adicCompletion_le_one v ha₂ _)
+      (W.valuation_a₄_adicCompletion_le_one v ha₄ _)
+      (W.valuation_a₆_adicCompletion_le_one v ha₆ _)
+      (by rw [← 𝕎[v].mk_derivative_f (q : F_[v][X])]; exact hother q hq _)
+    have hlog : t q = ((W.factorPrime v q).valuationOfNeZero u' : ℤᵐ⁰) := by
+      rw [(W.factorPrime v q).valuationOfNeZero_eq u', hspec]
+    rw [hlog]
+    exact heven
+  have hdvd := even_log_of_prod_eq_sq ht he hev (W.prod_valuation_sub_root v h hx)
+  have hlog₀ : t q₀ = ((W.factorPrime v q₀).valuationOfNeZero u : ℤᵐ⁰) := by
+    rw [(W.factorPrime v q₀).valuationOfNeZero_eq u, hu]
+  rw [hlog₀] at hdvd
+  exact hdvd
+
+/- The `2`-torsion case: with integral coefficients and `exp (-1) ≤ v(disc f)`, `f'(x)` is a
+unit at every rational `2`-torsion `x`, so the representative is a unit at every prime of
+every factor. -/
+private lemma mem_selmerGroupFactor_empty_of_eval_f_eq_zero (ha₂ : v.valuation F W.a₂ ≤ 1)
+    (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+    (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) {x : F_[v]} (hx : 𝕎[v].f.eval x = 0)
+    (q : 𝕎[v].f.Factors) :
+    (((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
+      (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q)).unit :
+        Units.modPow (AdjoinRoot (q : F_[v][X])) 2) ∈ 𝕎[v].selmerGroupFactor 𝒪_[v] ∅ q := by
+  rw [𝕎[v].mem_selmerGroupFactor_unit_iff 𝒪_[v] ∅ q]
+  intro w _
+  set u := ((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
+    (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q)).unit with hudef
+  have hdisc : exp (-1 : ℤ) ≤ (w.below 𝒪_[v]).valuation F_[v] 𝕎[v].f.discr := by
+    rw [W.baseChange_discr_f F_[v], v.valuation_adicCompletion_algebraMap]
+    exact hd
+  have hval : w.valuation (AdjoinRoot (q : F_[v][X])) (u : AdjoinRoot (q : F_[v][X])) = 1 := by
+    rw [hudef, IsUnit.unit_spec, 𝕎[v].projFactor_mk_C_sub_X_add_fCofactor x q]
+    exact 𝕎[v].valuation_projFactor_torsion_eq_one 𝒪_[v] q
+      (W.valuation_a₂_adicCompletion_le_one v ha₂ _)
+      (W.valuation_a₄_adicCompletion_le_one v ha₄ _)
+      (W.valuation_a₆_adicCompletion_le_one v ha₆ _) hx
+      (𝕎[v].valuation_deriv_eval_eq_one ((w.below 𝒪_[v]).valuation F_[v]) hx
+        (W.valuation_a₂_adicCompletion_le_one v ha₂ _)
+        (W.valuation_a₄_adicCompletion_le_one v ha₄ _)
+        (W.valuation_a₆_adicCompletion_le_one v ha₆ _) hdisc)
+  simpa using w.dvd_toAdd_valuationOfNeZero (n := 2) (z := 1) (by simp [hval])
+
+-- The generic case at `v(disc f) = exp (-1)`: split into the critical factor (norm parity)
+-- and the others (generic argument with `f' θ` a unit).
+private lemma mem_selmerGroupFactor_empty_of_eval_f_ne_zero (ha₂ : v.valuation F W.a₂ ≤ 1)
+    (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+    (hd : v.valuation F W.f.discr = exp (-1)) {x y : F_[v]}
+    (h : 𝕎[v].toAffine.Equation x y) (hx : 𝕎[v].f.eval x ≠ 0) (q : 𝕎[v].f.Factors) :
+    (((isUnit_mk_sub_X_of_eval_f_ne_zero hx).map
+      (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q)).unit :
+        Units.modPow (AdjoinRoot (q : F_[v][X])) 2) ∈ 𝕎[v].selmerGroupFactor 𝒪_[v] ∅ q := by
+  rw [𝕎[v].mem_selmerGroupFactor_unit_iff 𝒪_[v] ∅ q]
+  intro w _
+  obtain ⟨q₀, he, hother⟩ := W.exists_critical_factor v ha₂ ha₄ ha₆ hd
+  rcases eq_or_ne q q₀ with rfl | hq
+  · exact W.even_valuationOfNeZero_critical v ha₂ ha₄ ha₆ h hx he hother _
+      (IsUnit.unit_spec _) w
+  · refine 𝕎[v].even_valuationOfNeZero_sub_root 𝒪_[v] q h hx _ ?_ w
+      (W.valuation_a₂_adicCompletion_le_one v ha₂ _)
+      (W.valuation_a₄_adicCompletion_le_one v ha₄ _)
+      (W.valuation_a₆_adicCompletion_le_one v ha₆ _)
+      (by rw [← 𝕎[v].mk_derivative_f (q : F_[v][X])]; exact hother q hq w)
+    exact (IsUnit.unit_spec _).trans (𝕎[v].projFactor_mk_C_sub_X x q)
+
+/-- **Local image at a place with `v(disc f) ≥ exp (-1)`**: if the coefficients of `W` are
+`v`-integral and the valuation of `disc f` is `1` or `exp (-1)`, the local descent image at
+`v` consists of unramified classes, `im μ_v ≤ A_v(∅, 2)`; such places are thereby
+"effectively good" for the `2`-Selmer group. In particular this applies at odd places where
+the valuation of `Δ` is `1` or `exp (-1)`.
+
+Notably, no condition at `2` is needed: the norm-parity argument over the field factors of
+the completed étale algebra is uniform in the residue characteristic. -/
+theorem range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr {v : HeightOneSpectrum (𝓞 F)}
+    [DecidableEq F_[v]]
+    (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1)
+    (ha₆ : v.valuation F W.a₆ ≤ 1) (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) :
+    (μ (W := 𝕎[v])).range ≤ 𝕎[v].selmerGroupA 𝒪_[v] ∅ := by
+  rcases eq_exp_neg_one_or_eq_one hd (W.valuation_discr_le_one (v.valuation F) ha₂ ha₄ ha₆)
+    with hd1 | hd1
+  · rintro _ ⟨P, rfl⟩
+    obtain ⟨P, rfl⟩ := Multiplicative.ofAdd.surjective P
+    rw [μ_apply]
+    match P with
+    | 0 => rw [μ₀_zero]; exact one_mem _
+    | .some x y h =>
+      rw [μ₀_some, mem_selmerGroupA_iff]
+      intro q
+      rcases eq_or_ne (𝕎[v].f.eval x) 0 with hx | hx
+      · rw [μX_of_eval_f_eq_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
+        exact W.mem_selmerGroupFactor_empty_of_eval_f_eq_zero v ha₂ ha₄ ha₆ hd hx q
+      · rw [μX_of_eval_f_ne_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
+        exact W.mem_selmerGroupFactor_empty_of_eval_f_ne_zero v ha₂ ha₄ ha₆ hd1 h.1 hx q
+  · exact W.range_μ_le_selmerGroupA_empty ha₂ ha₄ ha₆ hd1
+
+end OddPlace
 
 open AdjoinRoot in
 /-- Semilocal comparison, global to local: an `S`-unramified square class localizes to an
@@ -1191,12 +1620,6 @@ private lemma finrank_baseChange_A : Module.finrank F_[v] 𝕎[v].A = 3 := by
   have h := (AdjoinRoot.powerBasis' 𝕎[v].monic_f).finrank
   rw [AdjoinRoot.powerBasis'_dim, natDegree_f] at h
   exact h
-
-/- The set of factors of the base-changed cubic is a finite type. -/
-@[implicit_reducible]
-private noncomputable def instFintypeFactorsBaseChange : Fintype 𝕎[v].f.Factors :=
-  have : Finite 𝕎[v].f.Factors := Polynomial.Factors.finite 𝕎[v].f_ne_zero
-  Fintype.ofFinite _
 
 attribute [local instance] instFintypeFactorsBaseChange
 
