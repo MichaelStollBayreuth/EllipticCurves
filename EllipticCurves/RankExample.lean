@@ -12,9 +12,10 @@ public import EllipticCurves.SelmerGroup
 
 For the elliptic curve `E : y² = x³ - x + 1` over `ℚ`, the cubic `f = x³ - x + 1` is
 irreducible with squarefree discriminant `-23`, so `W.discBadPrimes (𝓞 ℚ) = ∅` and the general
-bound `WeierstrassCurve.Affine.two_mul_card_selmerGroup₂_le` applies: granted that the cubic
-field `ℚ[x]/(f)` (of discriminant `-23`) has trivial class group and unit rank `1`, the
-2-Selmer group of `E` has order at most `(2 ^ (1 + 1))/2 = 2`.  Since `E(ℚ)` is torsion-free
+bound `WeierstrassCurve.Affine.two_mul_card_selmerGroup₂_le` applies: the cubic field
+`ℚ[x]/(f)` (of discriminant `-23`) has trivial class group (proved here via the Minkowski
+bound), and granted that its unit rank is `1` (the remaining `sorry`ed input), the 2-Selmer
+group of `E` has order at most `(2 ^ (1 + 1))/2 = 2`.  Since `E(ℚ)` is torsion-free
 (`InfiniteOrderExample`), the rank bound `2 ^ rank ≤ #Sel₂` gives `rank E(ℚ) ≤ 1`; being
 finitely generated (Mordell-Weil), torsion-free, and nontrivial (it contains `P = (1, 1)`),
 the Mordell-Weil group is free of rank exactly one: `E(ℚ) ≅ ℤ`.
@@ -25,9 +26,10 @@ the Mordell-Weil group is free of rank exactly one: `E(ℚ) ≅ ℤ`.
   modulo `2`).
 * `InfiniteOrderExample.discBadPrimes_empty`: no finite place imposes an unramifiedness
   restriction beyond the norm condition.
-* `InfiniteOrderExample.subsingleton_classGroup`, `.finrank_additive_units`: the two inputs
-  from the arithmetic of the cubic field of discriminant `-23` — trivial class group and unit
-  rank `1`.  **Both are currently `sorry`ed**; see their docstrings for the intended proofs.
+* `InfiniteOrderExample.subsingleton_classGroup`: the cubic field of discriminant `-23` has
+  trivial class group (its field discriminant divides `-23`, so the Minkowski bound applies).
+* `InfiniteOrderExample.finrank_additive_units`: its unit group has rank `1`.  **This is
+  currently `sorry`ed**; see the docstring for the intended proof.
 * `InfiniteOrderExample.card_selmerGroup₂_le_two`: the 2-Selmer group of `E` has order at
   most `2`.
 * `InfiniteOrderExample.finrank_point_le_one`: the rank of `E(ℚ)` is at most `1`.
@@ -108,18 +110,48 @@ lemma discBadPrimes_empty : E.discBadPrimes (𝓞 ℚ) = ∅ := by
 
 /-! ### The arithmetic of the cubic field of discriminant `-23`
 
-The two remaining inputs are standard facts about the cubic field `L = ℚ[x]/(x³ - x + 1)`
-(LMFDB label 3.1.23.1); they are `sorry`ed here.
+The two inputs are standard facts about the cubic field `L = ℚ[x]/(x³ - x + 1)` (LMFDB label
+3.1.23.1): its class group is trivial (proved below via the Minkowski bound) and its unit
+group has rank `1` (still `sorry`ed).
 -/
 
-/-- **(sorried)** The ring of integers of the cubic field `ℚ[x]/(x³ - x + 1)` of discriminant
-`-23` has trivial class group.
+private lemma coe_factors_eq (p : E.f.Factors) : (p : ℚ[X]) = E.f :=
+  eq_of_monic_of_associated p.monic E.monic_f
+    (p.irreducible.associated_of_dvd irreducible_f p.dvd)
 
-Intended proof: the Minkowski bound is `(3!/3³)·(4/π)·√23 < 2`, so every ideal class contains
-an integral ideal of norm `1`. -/
+private lemma isIntegral_root (p : E.f.Factors) :
+    IsIntegral ℤ (AdjoinRoot.root (p : ℚ[X])) := by
+  refine ⟨X ^ 3 - X + 1, by monicity!, ?_⟩
+  have h1 : AdjoinRoot.mk (p : ℚ[X]) ((X ^ 3 - X + 1 : ℤ[X]).map (algebraMap ℤ ℚ)) = 0 :=
+    (congrArg (AdjoinRoot.mk _) ((coe_factors_eq p).trans f_eq_map)).symm.trans
+      AdjoinRoot.mk_self
+  simp only [Polynomial.map_add, Polynomial.map_sub, Polynomial.map_pow, Polynomial.map_X,
+    Polynomial.map_one, map_add, map_sub, map_pow, map_one, AdjoinRoot.mk_X] at h1
+  simpa only [eval₂_add, eval₂_sub, eval₂_pow, eval₂_X, eval₂_one] using h1
+
+/-- The ring of integers of the cubic field `ℚ[x]/(x³ - x + 1)` of discriminant `-23` has
+trivial class group: the field discriminant divides `-23`, so the Minkowski bound
+`(3!/3³)·(4/π)·√23 < 2` shows that every ideal class contains an integral ideal of
+norm `1`. -/
 theorem subsingleton_classGroup (p : E.f.Factors) :
     Subsingleton (ClassGroup (E.ringOfIntegersFactor (𝓞 ℚ) p)) := by
-  sorry
+  have hpf := coe_factors_eq p
+  have : NumberField (AdjoinRoot (p : ℚ[X])) := .of_module_finite ℚ _
+  refine NumberField.subsingleton_classGroup_integralClosure ℚ _ ?_
+  refine RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le ?_ ?_
+  · rw [(AdjoinRoot.powerBasis p.ne_zero).finrank, AdjoinRoot.powerBasis_dim, hpf, natDegree_f]
+  · have := AdjoinRoot.isSeparable_of_separable E.separable_f p
+    have hder : (derivative (p : ℚ[X])).natDegree = (p : ℚ[X]).natDegree - 1 := by
+      rw [hpf, natDegree_f, E.derivative_f]
+      exact natDegree_quadratic (by norm_num)
+    have hdisc := AdjoinRoot.discr_powerBasis_eq_discr (K := ℚ) p.monic hder
+    rw [congrArg Polynomial.discr hpf, discr_f_E] at hdisc
+    have hdvd : NumberField.discr (AdjoinRoot (p : ℚ[X])) ∣ -23 :=
+      NumberField.discr_dvd_powerBasis_discr (AdjoinRoot.powerBasis p.ne_zero)
+        (isIntegral_root p) (by exact_mod_cast hdisc)
+    have h23 : |NumberField.discr (AdjoinRoot (p : ℚ[X]))| ≤ 23 :=
+      Int.le_of_dvd (by norm_num) ((abs_dvd _ _).mpr (dvd_neg.mp hdvd))
+    lia
 
 /-- **(sorried)** The unit group of the ring of integers of `ℚ[x]/(x³ - x + 1)` has rank `1`.
 
@@ -140,7 +172,7 @@ lemma not_isSquare_neg_one : ¬ IsSquare (-1 : ℚ) := by
   nlinarith [mul_self_nonneg r]
 
 /-- **The 2-Selmer group of `E : y² = x³ - x + 1` over `ℚ` has order at most `2`** (granted
-the sorried inputs on the cubic field of discriminant `-23`). -/
+the sorried unit-rank input on the cubic field of discriminant `-23`). -/
 theorem card_selmerGroup₂_le_two :
     Nat.card (E.selmerGroup₂ (𝓞 ℚ) (fun v : InfinitePlace ℚ ↦ v.Completion)) ≤ 2 := by
   have : Unique E.f.Factors := Polynomial.Factors.unique irreducible_f E.monic_f
@@ -150,7 +182,7 @@ theorem card_selmerGroup₂_le_two :
   rw [Fintype.prod_unique, finrank_additive_units] at h
   lia
 
-/-- **The rank of `E(ℚ)` is at most `1`** (granted the sorried inputs): combine the Selmer
+/-- **The rank of `E(ℚ)` is at most `1`** (granted the sorried input): combine the Selmer
 bound with `2 ^ rank ∣ #(im μ) ≤ #Sel₂` and the torsion-freeness of `E(ℚ)`. -/
 theorem finrank_point_le_one : Module.finrank ℤ E.Point ≤ 1 := by
   have : Unique E.f.Factors := Polynomial.Factors.unique irreducible_f E.monic_f
@@ -168,9 +200,9 @@ theorem finrank_point_le_one : Module.finrank ℤ E.Point ≤ 1 := by
   exact (Nat.pow_le_pow_iff_right one_lt_two).mp (h2.trans_eq (pow_one 2).symm)
 
 /-- **The Mordell-Weil group of `y² = x³ - x + 1` over `ℚ` is infinite cyclic** (granted the
-two sorried inputs on the cubic field of discriminant `-23`): `E(ℚ)` is finitely generated
-(the Mordell-Weil theorem), torsion-free, nontrivial (it contains `P = (1, 1)`), and of rank
-at most `1`, hence free of rank exactly `1`. -/
+sorried unit-rank input on the cubic field of discriminant `-23`): `E(ℚ)` is finitely
+generated (the Mordell-Weil theorem), torsion-free, nontrivial (it contains `P = (1, 1)`),
+and of rank at most `1`, hence free of rank exactly `1`. -/
 theorem nonempty_point_addEquiv_int : Nonempty (E.Point ≃+ ℤ) := by
   have : AddGroup.FG E.Point := fg_point_of_numberField
   have : Nontrivial E.Point := nontrivial_of_ne P 0 (Point.some_ne_zero _)

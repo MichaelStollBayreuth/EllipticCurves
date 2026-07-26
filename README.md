@@ -4,7 +4,9 @@ This project formalizes some of the arithmetic of elliptic curves over number fi
 generally, over fraction fields of Dedekind domains) in Lean 4. Its centerpieces are a complete
 proof of the **Mordell-Weil Theorem** and the machinery of **explicit 2-descent**: the 2-Selmer
 group, the formal group of an elliptic curve over a local field, and the local computations that
-feed a rank bound. The development is `sorry`-free.
+feed a rank bound. The development is `sorry`-free, except for one explicitly flagged
+number-theoretic input to the show-piece rank computation (the unit rank of a specific cubic
+field).
 
 It grew out of the [Heights](https://github.com/MichaelStollBayreuth/Heights) project and was split
 off from it once it became independent of the heights implementation there: the general theory of
@@ -100,9 +102,12 @@ that field has class number `1` and unit rank `1`. This computation is carried o
 (`finrank_point_le_one`), and hence — `E(ℚ)` being finitely generated, torsion-free, and
 containing the point `(1, 1)` — the **show-piece result `E(ℚ) ≅ ℤ`**
 (`nonempty_point_addEquiv_int`, via the generic
-`AddCommGroup.nonempty_addEquiv_int_of_finrank_le_one`). All this is modulo exactly two
-`sorry`ed inputs from the arithmetic of the cubic field, its trivial class group and its unit
-rank `1`. The reduction
+`AddCommGroup.nonempty_addEquiv_int_of_finrank_le_one`). All this is modulo exactly one
+`sorry`ed input from the arithmetic of the cubic field: its unit rank `1`. Its trivial class
+group *is* proved: the field discriminant divides the power-basis discriminant `−23`
+(`NumberField.discr_dvd_powerBasis_discr` via `AdjoinRoot.discr_powerBasis_eq_discr`), so the
+Minkowski bound is less than `2`
+(`RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le`). The reduction
 itself is fully proved, via general building blocks: `x³ − x + 1` is irreducible (by reduction
 mod `2`) with squarefree discriminant, `discBadPrimes (𝓞 ℚ) = ∅` (`discBadPrimes_eq_empty` +
 `notMem_pow_two_of_squarefree`), a trivial class group makes each factor's everywhere-unramified

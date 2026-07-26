@@ -33,7 +33,14 @@ that have nothing to do with elliptic curves and look like candidates for Mathli
   `.modByMonic_mul_add`, `modByMonic_mem_degreeLT`, `divByMonic_mem_degreeLT`.
 * `isIntegralClosure_int_integralClosure`, `NumberField.finite_classGroup_integralClosure` and
   `NumberField.fg_units_integralClosure`: the class number theorem and the finite generation of
-  the unit group for the integral closure of `𝓞 K` in a finite extension of a number field `K`.
+  the unit group for the integral closure of `𝓞 K` in a finite extension of a number field `K`;
+  `NumberField.subsingleton_classGroup_integralClosure` transports triviality of the class
+  group from `𝓞 L`.
+* `AdjoinRoot.discr_powerBasis_eq_discr`, `NumberField.discr_dvd_powerBasis_discr` and
+  `RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le`: the discriminant
+  of the power basis of `K[X]/(f)` is `f.discr`; the field discriminant divides any integral
+  power-basis discriminant; a cubic field with `|discr| ≤ 49` has trivial class group
+  (Minkowski bound).
 * `AdjoinRoot.norm_mk_eq_resultant`: for monic `g`, the norm of `AdjoinRoot.mk g p` is the
   resultant of `g` and `p`. This links `Polynomial.resultant` to `Algebra.norm`.
 * `AdjoinRoot.equivPiFactors`: for nonzero squarefree `f`, `K[X]/(f)` is the product of the
@@ -1291,6 +1298,17 @@ instance instFiniteDimensional (p : f.Factors) : FiniteDimensional K (AdjoinRoot
 lemma minpoly_root_factor (p : f.Factors) : minpoly K (root (p : K[X])) = (p : K[X]) := by
   rw [minpoly_root p.irreducible.ne_zero, p.monic.leadingCoeff, inv_one, map_one, mul_one]
 
+/-- The discriminant of the power basis of `K[X]/(f)`, for `f` monic irreducible with
+derivative of the generic degree, is the discriminant of the polynomial `f`. -/
+theorem discr_powerBasis_eq_discr [Fact (Irreducible f)] [Algebra.IsSeparable K (AdjoinRoot f)]
+    (hf : f.Monic) (hd : f.derivative.natDegree = f.natDegree - 1) :
+    Algebra.discr K (powerBasis hf.ne_zero).basis = f.discr := by
+  have : Module.Finite K (AdjoinRoot f) := (powerBasis hf.ne_zero).finite
+  rw [Algebra.discr_powerBasis_eq_norm, (powerBasis hf.ne_zero).finrank, powerBasis_dim,
+    powerBasis_gen, minpoly_root hf.ne_zero, hf.leadingCoeff, inv_one, map_one, mul_one,
+    aeval_eq, norm_mk_eq_resultant hf, hd, resultant_deriv (Fact.out : Irreducible f).degree_pos,
+    hf.leadingCoeff, mul_one, ← mul_assoc, ← pow_add, Even.neg_one_pow ⟨_, rfl⟩, one_mul]
+
 open IntermediateField in
 /-- If `f` is separable, then each field factor of `K[X]/(f)` is a separable extension of `K`.
 This is what `IsIntegralClosure.isDedekindDomain` needs. -/
@@ -1440,6 +1458,72 @@ theorem NumberField.fg_units_integralClosure :
     (f := (Units.mapEquiv e.symm.toRingEquiv.toMulEquiv).toMonoidHom)
     (Units.mapEquiv e.symm.toRingEquiv.toMulEquiv).surjective
 
+/-- If the ring of integers of `L` is a principal ideal domain, then the integral closure of
+`𝓞 K` in `L` (being isomorphic to `𝓞 L`) has trivial class group. -/
+theorem NumberField.subsingleton_classGroup_integralClosure (h : IsPrincipalIdealRing (𝓞 L)) :
+    Subsingleton (ClassGroup (integralClosure (𝓞 K) L)) := by
+  have : NumberField L := .of_module_finite K L
+  have e : integralClosure (𝓞 K) L ≃ₐ[𝓞 K] 𝓞 L :=
+    IsIntegralClosure.equiv (𝓞 K) (integralClosure (𝓞 K) L) L (𝓞 L)
+  have : IsPrincipalIdealRing (integralClosure (𝓞 K) L) :=
+    IsPrincipalIdealRing.of_surjective e.symm.toRingEquiv.toRingHom e.symm.surjective
+  exact Fintype.card_le_one_iff_subsingleton.mp card_classGroup_eq_one.le
+
 end NumberField
+
+/-!
+### Discriminant divisibility and a class-number criterion for cubic fields
+
+The discriminant of a number field divides the discriminant of any power basis with integral
+generator; consequently a cubic field whose power-basis discriminant is at most `49` in
+absolute value has trivial class group, by the Minkowski bound.
+-/
+
+section Discriminant
+
+open NumberField Module
+
+variable {K : Type*} [Field K] [NumberField K]
+
+/-- The discriminant of a number field `K` divides (the integer giving) the discriminant of
+any power basis of `K` over `ℚ` whose generator is an algebraic integer. -/
+theorem NumberField.discr_dvd_powerBasis_discr (pb : PowerBasis ℚ K)
+    (hpb : IsIntegral ℤ pb.gen) {d : ℤ} (hd : Algebra.discr ℚ pb.basis = (d : ℚ)) :
+    discr K ∣ d := by
+  let b := (integralBasis K).reindex ((integralBasis K).indexEquiv pb.basis)
+  have hP (i j : Fin pb.dim) : IsIntegral ℤ (b.toMatrix pb.basis i j) := by
+    have hint : IsIntegral ℤ (pb.basis j) := by rw [pb.coe_basis]; exact hpb.pow _
+    rw [Basis.toMatrix_apply, show pb.basis j = algebraMap (𝓞 K) K ⟨_, hint⟩ from rfl,
+      Basis.repr_reindex_apply, integralBasis_repr_apply]
+    exact isIntegral_algebraMap
+  obtain ⟨q, hq⟩ := IsIntegrallyClosed.isIntegral_iff.mp (IsIntegral.det hP)
+  rw [eq_intCast (algebraMap ℤ ℚ)] at hq
+  have key : Algebra.discr ℚ pb.basis = (b.toMatrix pb.basis).det ^ 2 * Algebra.discr ℚ b := by
+    nth_rw 1 [← b.toMatrix_map_vecMul pb.basis]
+    rw [Algebra.discr_of_matrix_vecMul]
+  have hb : Algebra.discr ℚ ⇑b = (discr K : ℚ) := by
+    rw [Basis.coe_reindex, Algebra.discr_reindex, ← coe_discr]
+  refine ⟨q ^ 2, ?_⟩
+  have h : (d : ℚ) = ((discr K * q ^ 2 : ℤ) : ℚ) := by
+    push_cast
+    rw [← hd, key, hb, ← hq]
+    ring
+  exact_mod_cast h
+
+/-- A cubic number field with `|discr K| ≤ 49` has a principal ring of integers: its Minkowski
+bound is less than `2` for either signature. -/
+theorem RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le
+    (h3 : finrank ℚ K = 3) (hd : |discr K| ≤ 49) : IsPrincipalIdealRing (𝓞 K) := by
+  refine isPrincipalIdealRing_of_abs_discr_lt ?_
+  have h2 := InfinitePlace.card_add_two_mul_card_eq_rank K
+  rw [h3] at h2
+  have hd' : (|discr K| : ℝ) ≤ 49 := by exact_mod_cast hd
+  have hpi := Real.pi_gt_d4
+  set s := InfinitePlace.nrComplexPlaces K
+  have hs : s ≤ 1 := by lia
+  rw [h3]
+  interval_cases s <;> norm_num <;> nlinarith
+
+end Discriminant
 
 end
