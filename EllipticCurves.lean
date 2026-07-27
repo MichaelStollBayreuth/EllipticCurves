@@ -1,3 +1,4 @@
+import EllipticCurves.CanonicalHeight
 import EllipticCurves.InfiniteOrder
 import EllipticCurves.InfiniteOrderExample
 import EllipticCurves.IntegralModel
@@ -5,6 +6,7 @@ import EllipticCurves.Mathlib.AdicCompletionExtension
 import EllipticCurves.Mathlib.AdicFormalGroupLog
 import EllipticCurves.Mathlib.AdicValuation
 import EllipticCurves.Mathlib.Basic
+import EllipticCurves.Mathlib.CanonicalHeight
 import EllipticCurves.Mathlib.Chabauty.AdicTopology
 import EllipticCurves.Mathlib.Chabauty.ExpConverge
 import EllipticCurves.Mathlib.Chabauty.FormalGroupLaw
