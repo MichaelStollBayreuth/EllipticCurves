@@ -380,9 +380,9 @@ lemma mem_unitsNDivisible {n : ℕ} {u : Kˣ} :
 
 /-- The restriction of `toPrincipalIdeal` to `unitsNDivisible`, into the `n`-divisible
 subgroup. -/
-noncomputable def unitsNDivisibleToNDivisible (n : ℕ) :
+def unitsNDivisibleToNDivisible (n : ℕ) :
     unitsNDivisible R K n →* nDivisible R K n :=
-  ((toPrincipalIdeal R K).comp (unitsNDivisible R K n).subtype).codRestrict _ (fun x ↦ x.2)
+  (toPrincipalIdeal R K).restrict fun _ hx ↦ hx
 
 @[simp] lemma coe_unitsNDivisibleToNDivisible (n : ℕ) (u : unitsNDivisible R K n) :
     (unitsNDivisibleToNDivisible R K n u : (FractionalIdeal R⁰ K)ˣ) =

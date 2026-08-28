@@ -213,10 +213,7 @@ lemma aeval_etaleTuple : aeval (etaleTuple f) f = 0 := by
   have h2 : (aeval (etaleTuple f) f).2 = 0 := by
     funext p
     rw [Pi.zero_apply, aeval_etaleTuple_snd]
-    have hd : aeval (upperRoot p.1.irreducible) (p.1 : ℝ[X]) ∣
-        aeval (upperRoot p.1.irreducible) f := _root_.map_dvd _ p.1.dvd
-    rw [aeval_upperRoot] at hd
-    exact zero_dvd_iff.mp hd
+    exact (p.1.irreducible.dvd_iff_aeval_eq_zero (aeval_upperRoot p.1.irreducible)).mpr p.1.dvd
   exact Prod.ext h1 h2
 
 /-- Evaluation as an `ℝ`-algebra hom `ℝ[X]/f → (real roots → ℝ) × (degree-2 factors → ℂ)`. -/
@@ -266,8 +263,7 @@ lemma etaleEvalHom_injective (hf : f ≠ 0) (hsq : Squarefree f) :
       have hq : aeval (upperRoot p.irreducible) q = 0 := by
         have h := congrArg (·.2 ⟨p, hd2⟩) ha
         simpa using h
-      rw [minpoly.eq_of_irreducible_of_monic p.irreducible (aeval_upperRoot p.irreducible) p.monic]
-      exact minpoly.dvd ℝ _ hq
+      exact (p.irreducible.dvd_iff_aeval_eq_zero (aeval_upperRoot p.irreducible)).mp hq
   exact ((Factors.associated_prod hf hsq).symm.dvd).trans
     (Fintype.prod_dvd_of_coprime (fun _ _ hab ↦ Factors.isCoprime hab) hfac)
 
@@ -475,9 +471,7 @@ upper half-plane, via `upperRoot` (with inverse the real minimal polynomial). -/
 def deg2FactorEquivUpperRoots :
     {p : f.Factors // (p : ℝ[X]).natDegree = 2} ≃ {z : ℂ // aeval z f = 0 ∧ 0 < z.im} where
   toFun p := ⟨upperRoot p.1.irreducible,
-    (by have h : aeval (upperRoot p.1.irreducible) (p.1 : ℝ[X]) ∣
-          aeval (upperRoot p.1.irreducible) f := _root_.map_dvd _ p.1.dvd
-        rw [aeval_upperRoot] at h; exact zero_dvd_iff.mp h),
+    (p.1.irreducible.dvd_iff_aeval_eq_zero (aeval_upperRoot p.1.irreducible)).mpr p.1.dvd,
     upperRoot_im_pos p.1.irreducible p.2⟩
   invFun z :=
     have hint : IsIntegral ℝ (z : ℂ) := Algebra.IsIntegral.isIntegral _

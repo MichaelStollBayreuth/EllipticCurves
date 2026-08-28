@@ -152,10 +152,9 @@ instance : (redCurve (intPrime 5) W₀).IsElliptic := isElliptic_redCurve (by no
 
 /-- The residue field `ℤ ⧸ (p)` of `intPrime p` identified with `ZMod p`, as a `ℤ`-algebra
 isomorphism. -/
-private noncomputable def residueZModAlgEquiv (p : ℕ) [Fact p.Prime] :
+private def residueZModAlgEquiv (p : ℕ) [Fact p.Prime] :
     (ℤ ⧸ (intPrime p).asIdeal) ≃ₐ[ℤ] ZMod p :=
-  AlgEquiv.ofRingEquiv (f := Int.quotientSpanNatEquivZMod p) fun x ↦ by
-    simpa only [algebraMap_int_eq, eq_intCast] using map_intCast _ x
+  (Int.quotientSpanNatEquivZMod p).toIntAlgEquiv
 
 variable {W' : Affine (ZMod p)}
   (hW' : ((W₀.toAffine ⁄ (ZMod p)) : WeierstrassCurve _).toAffine = W')

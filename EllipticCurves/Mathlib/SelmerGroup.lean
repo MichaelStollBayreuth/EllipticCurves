@@ -774,9 +774,8 @@ lemma mem_selmerGroup_iff_unitsNDivisible (u : Kˣ) :
 /-- The surjection from the `n`-divisible units onto the Selmer group. -/
 noncomputable def selmerGroupFromUnits :
     unitsNDivisible (S.integer K) K n →* selmerGroup (R := R) (K := K) (S := S) (n := n) :=
-  ((QuotientGroup.mk' (powMonoidHom n : Kˣ →* Kˣ).range).comp
-    (unitsNDivisible (S.integer K) K n).subtype).codRestrict _
-      (fun u ↦ (mem_selmerGroup_iff_unitsNDivisible K S n (u : Kˣ)).mpr u.2)
+  (QuotientGroup.mk' (powMonoidHom n : Kˣ →* Kˣ).range).restrict
+    fun u hu ↦ (mem_selmerGroup_iff_unitsNDivisible K S n u).mpr hu
 
 @[simp] lemma coe_selmerGroupFromUnits (u : unitsNDivisible (S.integer K) K n) :
     (selmerGroupFromUnits K S n u : Units.modPow K n) = QuotientGroup.mk (u : Kˣ) := rfl
