@@ -154,7 +154,7 @@ the power series ring in the `X`-block of variables. -/
 noncomputable def diffMatrix : Matrix ι ι (MvPowerSeries ι O) :=
   Matrix.of fun i j ↦ MvPowerSeries.subst
     (Sum.elim MvPowerSeries.X fun _ ↦ 0 : ι ⊕ ι → MvPowerSeries ι O)
-    (MvPowerSeries.pderiv (Sum.inr j) (Φ.F i))
+    (MvPowerSeries.pderiv O (Sum.inr j) (Φ.F i))
 
 variable [DecidableEq ι]
 
@@ -168,26 +168,26 @@ theorem diffMatrix_map_constantCoeff [Finite ι] :
   rw [Φ.zero_add' i, MvPowerSeries.pderiv_X] at hch
   have hsum : ∑ t : ι ⊕ ι,
       MvPowerSeries.subst (Sum.elim (fun _ ↦ 0) MvPowerSeries.X : ι ⊕ ι → _)
-        (MvPowerSeries.pderiv t (Φ.F i))
-      * MvPowerSeries.pderiv j
+        (MvPowerSeries.pderiv O t (Φ.F i))
+      * MvPowerSeries.pderiv O j
         ((Sum.elim (fun _ ↦ 0) MvPowerSeries.X : ι ⊕ ι → MvPowerSeries ι O) t)
       = MvPowerSeries.subst (Sum.elim (fun _ ↦ 0) MvPowerSeries.X : ι ⊕ ι → _)
-        (MvPowerSeries.pderiv (Sum.inr j) (Φ.F i)) := by
+        (MvPowerSeries.pderiv O (Sum.inr j) (Φ.F i)) := by
     rw [Fintype.sum_sum_type]
-    simp [MvPowerSeries.pderiv_X, Finset.sum_ite_eq', mul_ite]
+    simp [MvPowerSeries.pderiv_X, Pi.single_apply, mul_ite, Finset.sum_ite_eq']
   rw [hsum] at hch
   have h1 : constantCoeff (Φ.diffMatrix i j)
-      = constantCoeff (MvPowerSeries.pderiv (Sum.inr j) (Φ.F i)) :=
+      = constantCoeff (MvPowerSeries.pderiv O (Sum.inr j) (Φ.F i)) :=
     MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero hasSubst_unitR
       (by rintro (a | a) <;> simp) _
   have h2 : constantCoeff (MvPowerSeries.subst
         (Sum.elim (fun _ ↦ 0) MvPowerSeries.X : ι ⊕ ι → MvPowerSeries ι O)
-        (MvPowerSeries.pderiv (Sum.inr j) (Φ.F i)))
-      = constantCoeff (MvPowerSeries.pderiv (Sum.inr j) (Φ.F i)) :=
+        (MvPowerSeries.pderiv O (Sum.inr j) (Φ.F i)))
+      = constantCoeff (MvPowerSeries.pderiv O (Sum.inr j) (Φ.F i)) :=
     MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero hasSubst_unitL
       (by rintro (a | a) <;> simp) _
   rw [h1, ← h2, ← hch]
-  split <;> simp
+  simp [Pi.single_apply]
 
 /-- The Jacobian matrix of a formal group law is invertible. -/
 theorem isUnit_diffMatrix [Fintype ι] : IsUnit Φ.diffMatrix := by
@@ -286,11 +286,11 @@ theorem diffMatrix_map (f : O →+* O') :
   calc (Φ.map f).diffMatrix i j
       = MvPowerSeries.subst (Sum.elim MvPowerSeries.X (fun _ ↦ 0)
             : ι ⊕ ι → MvPowerSeries ι O')
-          (MvPowerSeries.map f (pderiv (Sum.inr j) (Φ.F i))) := by
+          (MvPowerSeries.map f (pderiv O (Sum.inr j) (Φ.F i))) := by
         rw [MvPowerSeries.map_pderiv]; rfl
     _ = MvPowerSeries.map f (MvPowerSeries.subst
           (Sum.elim MvPowerSeries.X (fun _ ↦ 0) : ι ⊕ ι → MvPowerSeries ι O)
-          (pderiv (Sum.inr j) (Φ.F i))) := by
+          (pderiv O (Sum.inr j) (Φ.F i))) := by
         rw [MvPowerSeries.map_subst hasSubst_unitR, hfam]
     _ = MvPowerSeries.map f (Φ.diffMatrix i j) := rfl
 

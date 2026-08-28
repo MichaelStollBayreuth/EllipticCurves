@@ -14,6 +14,13 @@
 set -euo pipefail
 
 COMPARATOR_BIN="${COMPARATOR_BIN:-$HOME/lean4/comparator/.lake/build/bin/comparator}"
+# Default lean4export: prefer a build matching this project's toolchain (a worktree named
+# ~/lean4/lean4export-<version>, e.g. lean4export-v4.33.1), else the floating checkout.
+TOOLCHAIN_VERSION="$(sed 's/^leanprover\/lean4://' "$(dirname "$0")/../lean-toolchain" 2>/dev/null || true)"
+if [ -z "${COMPARATOR_LEAN4EXPORT:-}" ] \
+    && [ -x "$HOME/lean4/lean4export-$TOOLCHAIN_VERSION/.lake/build/bin/lean4export" ]; then
+  COMPARATOR_LEAN4EXPORT="$HOME/lean4/lean4export-$TOOLCHAIN_VERSION/.lake/build/bin/lean4export"
+fi
 : "${COMPARATOR_LEAN4EXPORT:=$HOME/lean4/lean4export/.lake/build/bin/lean4export}"
 : "${COMPARATOR_LANDRUN:=$HOME/go/bin/landrun}"
 export COMPARATOR_LEAN4EXPORT COMPARATOR_LANDRUN

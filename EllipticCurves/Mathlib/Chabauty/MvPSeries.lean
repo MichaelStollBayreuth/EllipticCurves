@@ -36,9 +36,9 @@ a substitution is evaluation at the evaluated family
 homomorphisms `MvPowerSeries.aeval_unique`), and the evaluated family is itself a
 legitimate evaluation point (`ChabautyColeman.MvPSeries.hasEval_eval`).
 
-The chain rule mentioned in the blueprint node is deferred to the formal-group-law
-items, which set up formal (partial) derivatives; Mathlib currently has none for
-`MvPowerSeries`.
+The chain rule mentioned in the blueprint node is `MvPowerSeries.pderiv_subst` in
+`EllipticCurves.Mathlib.Chabauty.MvPowerSeriesPDeriv`: Mathlib provides the formal partial
+derivative `MvPowerSeries.pderiv`, but no chain rule for `subst`.
 
 For power series whose coefficients *decay* (tend to `0` cofinitely), evaluation
 converges at *any* family of points of `O` — not only those in the maximal ideal —
@@ -131,7 +131,7 @@ theorem decay_one : Tendsto (fun d ↦ coeff d (1 : MvPowerSeries σ O)) cofinit
   refine tendsto_nhds_of_eventually_eq ?_
   rw [eventually_cofinite]
   refine Set.Finite.subset (Set.finite_singleton 0) fun d hd ↦ ?_
-  simp only [Set.mem_setOf_eq] at hd
+  simp only [Set.mem_ofPred_eq] at hd
   simp only [Set.mem_singleton_iff]
   by_contra hne
   exact hd (by rw [coeff_one, if_neg hne])
@@ -150,7 +150,7 @@ theorem decay_rename {τ : Type*} {e : σ → τ} (he : Function.Injective e) [T
   by_cases hxr : x ∈ Set.range (Finsupp.mapDomain e)
   · obtain ⟨d, rfl⟩ := hxr
     refine ⟨d, ?_, rfl⟩
-    rwa [Set.mem_setOf_eq, ← coeff_embDomain_rename ⟨e, he⟩ h d,
+    rwa [Set.mem_ofPred_eq, ← coeff_embDomain_rename ⟨e, he⟩ h d,
       Finsupp.embDomain_eq_mapDomain]
   · rw [coeff_rename_eq_zero e h hxr] at hx
     exact absurd (mem_of_mem_nhds hU) hx
@@ -340,8 +340,8 @@ private theorem summable_subst_terms (z : τ → O) {a : σ → MvPowerSeries τ
     rwa [eventually_cofinite] at h
   refine Set.Finite.subset (hgk.biUnion fun m _ ↦ (hEk m).image (Prod.mk m)) ?_
   rintro ⟨m, e⟩ hp
-  simp only [Set.mem_setOf_eq] at hp
-  simp only [Set.mem_iUnion, Set.mem_image, Set.mem_setOf_eq, Prod.mk.injEq]
+  simp only [Set.mem_ofPred_eq] at hp
+  simp only [Set.mem_iUnion, Set.mem_image, Set.mem_ofPred_eq, Prod.mk.injEq]
   refine ⟨m, fun hmem ↦ hp (Ideal.mul_mem_right _ _ hmem), e,
     fun hmem ↦ hp (Ideal.mul_mem_left _ _ hmem), rfl, rfl⟩
 

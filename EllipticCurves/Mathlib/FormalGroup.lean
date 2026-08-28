@@ -166,7 +166,7 @@ theorem IsDedekindDomain.selmerGroup.fromUnitLift_surjective {B : Type*} [CommRi
     rw [HeightOneSpectrum.valuationOfNeZero_eq_iff] at hyval
     simpa using hyval
   rw [mker_valuation_eq_isUnitSubmonoid] at hymem
-  obtain ⟨b, hb, hby⟩ := hymem
+  obtain ⟨b, (hb : IsUnit b), hby⟩ := hymem
   refine ⟨QuotientGroup.mk hb.unit, ?_⟩
   -- the class of that unit is the given Selmer class
   have h1 : @fromUnitLift B _ _ L _ _ _ n _ (QuotientGroup.mk hb.unit) =

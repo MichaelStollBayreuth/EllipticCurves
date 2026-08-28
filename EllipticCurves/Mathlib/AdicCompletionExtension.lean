@@ -144,7 +144,7 @@ theorem exists_valued_sub_lt_one (x : v.adicCompletionIntegers K) :
     exact ⟨1, fun y hy ↦ by simpa using hy⟩
   obtain ⟨w, hwball, z, rfl⟩ :=
     mem_closure_iff_nhds.mp (denseRange_algebraMap (K := K) v _) _ hball
-  rw [Set.mem_setOf_eq] at hwball
+  rw [Set.mem_ofPred_eq] at hwball
   -- the approximating element is integral at `v`
   have hz1 : v.valuation K z ≤ 1 := by
     rw [show v.valuation K z = Valued.v (algebraMap K (v.adicCompletion K) z) from
@@ -316,7 +316,7 @@ theorem isAdic_maximalIdeal_adicCompletionIntegers :
         (fun x : v.adicCompletionIntegers K ↦ (x : v.adicCompletion K)) ⁻¹'
           {y | Valued.v.restrict y ≤ Valued.v.restrict z} := by
       ext x
-      rw [Set.mem_preimage, Set.mem_setOf, Valuation.restrict_le_iff_le_embedding,
+      rw [Set.mem_preimage, Set.mem_ofPred, Valuation.restrict_le_iff_le_embedding,
         Valuation.embedding_restrict, hz]
       exact v.mem_maximalIdeal_pow_iff (K := K)
     rw [this]
@@ -335,7 +335,7 @@ theorem isAdic_maximalIdeal_adicCompletionIntegers :
     refine ⟨(-m).toNat, fun x hx ↦ hts ?_⟩
     refine Set.mem_preimage.mpr (hγ ?_)
     have h1 := v.mem_maximalIdeal_pow_iff (K := K) |>.mp hx
-    refine Set.mem_setOf.mpr ((Valuation.restrict_lt_iff_lt_embedding (v := Valued.v)).mpr
+    refine Set.mem_ofPred.mpr ((Valuation.restrict_lt_iff_lt_embedding (v := Valued.v)).mpr
       (h1.trans_lt ?_))
     calc exp (-(((-m).toNat : ℤ))) ≤ exp m := exp_le_exp.mpr (by lia)
       _ < _ := hm

@@ -127,7 +127,10 @@ theorem exists_formalPoint_eq_some {x y : v.adicCompletion K} (h : W.Nonsingular
     exact hfixK
   have huniq : W₀.wEval t = r :=
     W₀.eq_of_wPoly_fixed htm (W₀.wEval_mem htm) hrm (W₀.wEval_eq htm) hfixO
-  refine ⟨fun _ ↦ ⟨t, htm⟩, ?_⟩
+  -- naming the point gives it the type `Points` syntactically, so `rw` can pass through
+  -- `formalPoint hW u` (a term of type `Unit → maximalIdeal _` is only defeq to `Points`)
+  set u : W₀.formalGroupLaw.Points := fun _ ↦ ⟨t, htm⟩
+  refine ⟨u, ?_⟩
   rw [formalPoint_of_param_ne_zero hW ht0]
   simp only [Point.some.injEq]
   have hrcoe : ((W₀.wEval t : v.adicCompletionIntegers K) : v.adicCompletion K) = -1 / y := by
@@ -404,7 +407,7 @@ def filtration (hW : W₀.map (algebraMap (v.adicCompletionIntegers K)
   neg_mem' {P} hP := by
     match P with
     | .zero => exact hP
-    | .some x y h => rw [Set.mem_setOf_eq, Point.neg_some]; exact hP
+    | .some x y h => rw [Set.mem_ofPred_eq, Point.neg_some]; exact hP
   add_mem' {P Q} hP hQ := by
     match P, Q with
     | .zero, Q =>
@@ -414,7 +417,7 @@ def filtration (hW : W₀.map (algebraMap (v.adicCompletionIntegers K)
       rw [show (Point.zero : W.Point) = 0 from rfl, add_zero]
       exact hP
     | .some x₁ y₁ h₁, .some x₂ y₂ h₂ =>
-      rw [Set.mem_setOf_eq] at hP hQ
+      rw [Set.mem_ofPred_eq] at hP hQ
       obtain ⟨z, hz⟩ := exists_formalPoint_eq_some hW h₁
         (le_trans (exp_le_exp.mpr (by lia)) hP)
       obtain ⟨z', hz'⟩ := exists_formalPoint_eq_some hW h₂
@@ -449,9 +452,9 @@ def filtration (hW : W₀.map (algebraMap (v.adicCompletionIntegers K)
         rw [formalPoint_add hW, hz, hz']
       have hsm := add_param_mem_pow hzm hzm'
       rcases eq_or_ne (((z + z') ()) : v.adicCompletionIntegers K) 0 with hs0 | hs0
-      · rw [Set.mem_setOf_eq, hsum, formalPoint_of_param_eq_zero hW hs0]
+      · rw [Set.mem_ofPred_eq, hsum, formalPoint_of_param_eq_zero hW hs0]
         trivial
-      · rw [Set.mem_setOf_eq, hsum, formalPoint_of_param_ne_zero hW hs0]
+      · rw [Set.mem_ofPred_eq, hsum, formalPoint_of_param_ne_zero hW hs0]
         exact (param_pow_iff ((z + z') ()).2 hs0 n).mp hsm
 
 variable {hW : W₀.map (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)) = W}
@@ -843,7 +846,7 @@ private lemma exists_finite_integral_cover :
     (fun p ↦ (isOpen_le_ball _ _).prod (isOpen_le_ball _ _))
     (fun q hq ↦ Set.mem_iUnion.mpr ⟨⟨q, hq⟩, by
       refine Set.mem_prod.mpr ⟨?_, ?_⟩ <;>
-        · rw [Set.mem_setOf, sub_self, map_zero]
+        · rw [Set.mem_ofPred, sub_self, map_zero]
           exact zero_le⟩)
   refine ⟨(fun p : ↥Z ↦ (.some p.1.1 p.1.2 (hns p) : W.Point)) '' t,
     t.finite_toSet.image _, fun {x y} h hxI hyI ↦ ?_⟩

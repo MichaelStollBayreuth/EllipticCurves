@@ -65,7 +65,11 @@ lemma irreducible_f : Irreducible E.f := by
     have hdeg : (X ^ 3 + X + 1 : (ZMod 2)[X]).natDegree = 3 := by compute_degree!
     refine irreducible_of_degree_le_three_of_not_isRoot ?_ fun x ↦ ?_
     · rw [hdeg]; decide
-    · fin_cases x <;> simp [IsRoot] <;> decide
+    · -- `fin_cases` would give `Fin.mk` terms, only defeq to `ZMod 2`, which `simp` and `rw`
+      -- no longer see through; evaluate the polynomial first and decide over all of `ZMod 2`
+      simp only [IsRoot.def, eval_add, eval_pow, eval_X, eval_one]
+      revert x
+      decide
   rw [f_eq_map]
   exact hmon.irreducible_map_fraction_map_of_irreducible_map (Int.castRingHom (ZMod 2)) hirr2
 

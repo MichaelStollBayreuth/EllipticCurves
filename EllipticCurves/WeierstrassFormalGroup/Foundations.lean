@@ -504,8 +504,10 @@ private lemma exists_aux_point [CharZero K] {z : W₀.formalGroupLaw.Points}
       u ≠ z ∧ u ≠ W₀.negPoint z ∧ W₀.negPoint u ≠ z ∧ W₀.negPoint u ≠ W₀.negPoint z ∧
       (u () : v.adicCompletionIntegers K) ≠ W₀.iotaEval (u ()) := by
   obtain ⟨s, hsm, hs0, hst, hsιt, hsιs⟩ := exists_aux_param (z ()).2 h0
-  refine ⟨fun _ ↦ ⟨s, hsm⟩, hs0, ne_of_coe_ne hst, ne_of_coe_ne ?_, ne_of_coe_ne ?_,
-    ne_of_coe_ne ?_, hsιs⟩
+  -- naming the point gives it the type `Points` syntactically, so `rw` can pass through
+  -- `negPoint u` (a term of type `Unit → maximalIdeal _` is only defeq to `Points`)
+  set u : W₀.formalGroupLaw.Points := fun _ ↦ ⟨s, hsm⟩
+  refine ⟨u, hs0, ne_of_coe_ne hst, ne_of_coe_ne ?_, ne_of_coe_ne ?_, ne_of_coe_ne ?_, hsιs⟩
   · rw [W₀.negPoint_apply_coe]
     exact hsιt
   · rw [W₀.negPoint_apply_coe]
@@ -793,7 +795,7 @@ private lemma isOpen_le_ball (a : v.adicCompletion K) (m : ℤ) :
   have hset : {b : v.adicCompletion K | Valued.v (b - a) ≤ exp m} = (fun b ↦ b - a) ⁻¹'
       {y | Valued.v.restrict y ≤ Valued.v.restrict z} := by
     ext b
-    rw [Set.mem_preimage, Set.mem_setOf, Set.mem_setOf,
+    rw [Set.mem_preimage, Set.mem_ofPred, Set.mem_ofPred,
       Valuation.restrict_le_iff_le_embedding, Valuation.embedding_restrict, hz]
   rw [hset]
   exact (Valued.isOpen_closedBall _ hr0).preimage (continuous_id.sub continuous_const)
@@ -837,7 +839,7 @@ private lemma isCompact_integerSet [Finite (R ⧸ v.asIdeal)] :
         v.adicCompletion K) = x - ((Quotient.out c : v.adicCompletionIntegers K) :
           v.adicCompletion K) from rfl] at h1
       rwa [← Valuation.map_sub_swap] at h1
-    refine Set.mem_setOf.mpr ((Valuation.restrict_lt_iff_lt_embedding (v := Valued.v)).mpr
+    refine Set.mem_ofPred.mpr ((Valuation.restrict_lt_iff_lt_embedding (v := Valued.v)).mpr
       (lt_of_le_of_lt hval ?_))
     refine lt_of_le_of_lt (exp_le_exp.mpr ?_) hm
     rw [hn]
@@ -860,7 +862,7 @@ private lemma isCompact_integralPoints [Finite (R ⧸ v.asIdeal)] :
           p.2 ^ 2 + W.a₁ * p.1 * p.2 + W.a₃ * p.2 =
             p.1 ^ 3 + W.a₂ * p.1 ^ 2 + W.a₄ * p.1 + W.a₆} := by
       ext p
-      rw [Set.mem_setOf, Set.mem_setOf, W.equation_iff]
+      rw [Set.mem_ofPred, Set.mem_ofPred, W.equation_iff]
     rw [hset]
     exact isClosed_eq (by fun_prop) (by fun_prop)
   have hZeq : {p : (v.adicCompletion K) × (v.adicCompletion K) |
@@ -869,7 +871,7 @@ private lemma isCompact_integralPoints [Finite (R ⧸ v.asIdeal)] :
         {a : v.adicCompletion K | Valued.v a ≤ 1}) ∩
       {p : (v.adicCompletion K) × (v.adicCompletion K) | W.Equation p.1 p.2} := by
     ext p
-    simp only [Set.mem_setOf, Set.mem_inter_iff, Set.mem_prod]
+    simp only [Set.mem_ofPred, Set.mem_inter_iff, Set.mem_prod]
     tauto
   rw [hZeq]
   exact (isCompact_integerSet.prod isCompact_integerSet).inter_right hcl

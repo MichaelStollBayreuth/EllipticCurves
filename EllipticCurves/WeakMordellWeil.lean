@@ -895,7 +895,7 @@ theorem card_ker_nsmul_two :
     Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker =
       Nat.card {x : K // W.f.eval x = 0} + 1 := by
   have hfin : Finite {x : K | W.f.eval x = 0} :=
-    Set.Finite.to_subtype (Polynomial.finite_setOf_isRoot W.f_ne_zero)
+    Set.Finite.to_subtype (Polynomial.finite_setOfPred_isRoot W.f_ne_zero)
   set pt : {x : K | W.f.eval x = 0} → W.Point :=
     fun x ↦ Point.some _ _ (W.nonsingular_of_eval_f_eq_zero x.2)
   have hinj : Function.Injective pt := by
@@ -1182,7 +1182,7 @@ lemma discBadPrimes_eq_empty (R : Type*) [CommRing R] [IsDedekindDomain R] [Alge
     W.discBadPrimes R = ∅ := by
   rw [discBadPrimes, Set.eq_empty_iff_forall_notMem]
   rintro v (((hv | hv) | hv) | hv) <;>
-    simp only [Set.mem_setOf_eq, HeightOneSpectrum.Support, Set.mem_setOf_eq] at hv
+    simp only [Set.mem_ofPred_eq, HeightOneSpectrum.Support, Set.mem_ofPred_eq] at hv
   exacts [hv (hd v), absurd hv (not_lt.mpr (ha₂ v)), absurd hv (not_lt.mpr (ha₄ v)),
     absurd hv (not_lt.mpr (ha₆ v))]
 

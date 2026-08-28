@@ -155,7 +155,7 @@ isomorphism. -/
 private noncomputable def residueZModAlgEquiv (p : ℕ) [Fact p.Prime] :
     (ℤ ⧸ (intPrime p).asIdeal) ≃ₐ[ℤ] ZMod p :=
   AlgEquiv.ofRingEquiv (f := Int.quotientSpanNatEquivZMod p) fun x ↦ by
-    simp only [algebraMap_int_eq, eq_intCast, map_intCast]
+    simpa only [algebraMap_int_eq, eq_intCast] using map_intCast _ x
 
 variable {W' : Affine (ZMod p)}
   (hW' : ((W₀.toAffine ⁄ (ZMod p)) : WeierstrassCurve _).toAffine = W')
@@ -167,8 +167,10 @@ private noncomputable def resPointEquiv : (redCurve (intPrime p) W₀).Point ≃
 private lemma resPointEquiv_red_P [(redCurve (intPrime p) W₀).IsElliptic]
     (h1 : W'.Nonsingular 1 1) :
     resPointEquiv hW' (red (intPrime p) map_W₀ P) = .some 1 1 h1 := by
-  have hone (hx : (1 : ℚ) ∈ ((intPrime p).valuation ℚ).integer) :
-      (intPrime p).residueHom ⟨1, hx⟩ = 1 := map_one _
+  -- stated with `valuation _ 1 ≤ 1`, the spelling `red_some_of_le` produces: the membership
+  -- `1 ∈ (valuation ℚ _).integer` is only defeq to it, and `rw` no longer passes through that
+  have hone (hx : (intPrime p).valuation ℚ 1 ≤ 1) : (intPrime p).residueHom ⟨1, hx⟩ = 1 :=
+    map_one _
   simp only [P]
   rw [red_some_of_le _ map_W₀ (le_of_eq (map_one _)), resPointEquiv, AddEquiv.trans_apply,
     Point.coe_mapEquiv, Point.map_some, Point.congr_some, Point.some.injEq, hone]

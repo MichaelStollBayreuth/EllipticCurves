@@ -163,6 +163,13 @@ private lemma res_a₄ : IsLocalRing.residue _ ⟨W.a₄, valued_a₄ hW⟩ = (a
     Subtype.ext (coe_a₄ hW).symm]
   exact (W₀.map_a₄ (IsLocalRing.residue (v.adicCompletionIntegers K))).symm
 
+-- Rewrite the underlying element of an integral point before reducing. The ascription on the
+-- transported proof is load-bearing: without it the `▸` elaborates against the subtype's
+-- membership predicate, and `rw` no longer sees through the resulting term.
+private lemma res_congr {a b : v.adicCompletion K} (ha : Valued.v a ≤ 1) (h : a = b) :
+    res (⟨a, ha⟩ : v.adicCompletionIntegers K) = res ⟨b, (h ▸ ha : Valued.v b ≤ 1)⟩ :=
+  congrArg _ (Subtype.ext h)
+
 /-- Residue of a difference of integral elements. -/
 private lemma res_sub {a b : v.adicCompletion K} (ha : Valued.v a ≤ 1) (hb : Valued.v b ≤ 1)
     (hab : Valued.v (a - b) ≤ 1) :
@@ -312,8 +319,7 @@ lemma red_slope {x₁ x₂ y₁ y₂ : v.adicCompletion K} (hx₁ : Valued.v x�
     have hYeq : res (⟨y₁, hy₁⟩ : v.adicCompletionIntegers K) = res ⟨y₂, hy₂⟩ :=
       ((adicRedCurve W₀).Y_eq_of_X_eq (Equation.map _ (equation_integral hW hc₁ hx₁ hy₁))
         (Equation.map _ (equation_integral hW hc₂ hx₂ hy₂)) hXeq).resolve_right hYne
-    rw [show (⟨W.slope x₁ x₂ y₁ y₂, hℓ⟩ : v.adicCompletionIntegers K)
-        = ⟨_, W.slope_eq_div hc₁ hc₂ hD0 ▸ hℓ⟩ from Subtype.ext (W.slope_eq_div hc₁ hc₂ hD0),
+    rw [res_congr hℓ (W.slope_eq_div hc₁ hc₂ hD0),
       residue_div' (valued_ficoNum_le hW hx₁ hx₂ hy₁) _ hDu, res_ficoNum hW hx₁ hx₂ hy₁,
       res_sub hy₁ (valued_negY_le hW hx₂ hy₂) _, redCoord_negY hW hx₂ hy₂ _,
       (adicRedCurve W₀).slope_of_Y_ne hXeq hYne, ← hXeq, ← hYeq]
@@ -324,9 +330,7 @@ lemma red_slope {x₁ x₂ y₁ y₂ : v.adicCompletion K} (hx₁ : Valued.v x�
     have hnum : Valued.v (y₁ - y₂) ≤ 1 := valued_sub_le hy₁ hy₂
     have hdenu : res (⟨x₁ - x₂, hden⟩ : v.adicCompletionIntegers K) ≠ 0 := by
       rw [res_sub hx₁ hx₂ hden]; exact sub_ne_zero.mpr hXeq
-    rw [show (⟨W.slope x₁ x₂ y₁ y₂, hℓ⟩ : v.adicCompletionIntegers K)
-        = ⟨(y₁ - y₂) / (x₁ - x₂), W.slope_of_X_ne hxx ▸ hℓ⟩ from
-        Subtype.ext (W.slope_of_X_ne hxx),
+    rw [res_congr hℓ (W.slope_of_X_ne hxx),
       residue_div' hnum hden hdenu, res_sub hx₁ hx₂ hden, res_sub hy₁ hy₂ hnum,
       (adicRedCurve W₀).slope_of_X_ne hXeq]
 

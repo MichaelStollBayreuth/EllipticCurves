@@ -40,8 +40,13 @@ reproduced in the challenge; the challenge and solution statements are literally
 
 Prerequisites (see the Comparator README): a built `comparator` binary, `landrun` built from its
 `main` branch, and — crucially — a `lean4export` built at **the same Lean version as this project**
-(it loads the project's `.olean`s), i.e. the tag matching `lean-toolchain`. Point Comparator at them
-via `COMPARATOR_LANDRUN` / `COMPARATOR_LEAN4EXPORT`, or put them on `PATH`.
+(it loads the project's `.olean`s; a mismatch fails with `incompatible header`), i.e. the tag
+matching `lean-toolchain`. Point Comparator at them via `COMPARATOR_LANDRUN` /
+`COMPARATOR_LEAN4EXPORT`, or put them on `PATH`; the wrapper script also picks up a worktree named
+`~/lean4/lean4export-<toolchain-version>` (e.g. `lean4export-v4.33.1`, created with
+`git -C ~/lean4/lean4export worktree add ~/lean4/lean4export-v4.33.1 v4.33.0` and built with
+`lake build`) automatically. `lean4export` has no tag for every Lean patch release; when the tag
+is missing, check out the nearest one and set its `lean-toolchain` to the project's.
 
 Once installed, the wrapper [`scripts/run-comparator.sh`](../scripts/run-comparator.sh) builds the
 library and runs the check (override binary locations with `COMPARATOR_BIN` /

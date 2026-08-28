@@ -132,6 +132,13 @@ lemma baseChange_discr_f : (W⁄L).toAffine.f.discr = algebraMap K L W.f.discr :
   rw [discr_f, discr_f]
   simp only [map_a₂, map_a₄, map_a₆, map_sub, map_add, map_mul, map_pow, map_ofNat]
 
+/-- Nonsingularity of a `K`-point is preserved and reflected by base change to `L`. This is
+`map_nonsingular` stated for `W⁄L`, so that the proof terms it produces mention the
+base-changed curve in the `W⁄L` spelling. -/
+lemma nonsingular_baseChange {x y : K} :
+    (W⁄L).toAffine.Nonsingular (algebraMap K L x) (algebraMap K L y) ↔ W.Nonsingular x y :=
+  W.map_nonsingular (algebraMap K L).injective x y
+
 /-- The base-change homomorphism `K[X]/(f) →+* L[X]/(f)` of étale algebras, as an instance of
 `AdjoinRoot.map` (so that its API — `map_of`, `map_root`, `map_comp_map`, `mapRingEquiv` —
 applies directly). -/
@@ -217,7 +224,7 @@ lemma pointMap_zero : W.pointMap L 0 = 0 := by
 lemma pointMap_some {x y : K} (h : W.Nonsingular x y) :
     W.pointMap L (Point.some x y h) =
       Point.some (W' := (W⁄L).toAffine) (algebraMap K L x) (algebraMap K L y)
-        ((W.map_nonsingular (algebraMap K L).injective x y).mpr h) := by
+        ((W.nonsingular_baseChange L).mpr h) := by
   rw [pointMap, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom, Point.congr_some,
     Point.map_some]
   rfl
@@ -317,8 +324,7 @@ private lemma range_μ_of_bijective_algebraMap (h : Function.Bijective (algebraM
     · exact ⟨0, W.pointMap_zero L⟩
     · obtain ⟨x', rfl⟩ := h.2 x
       obtain ⟨y', rfl⟩ := h.2 y
-      exact ⟨Point.some x' y'
-        ((W.map_nonsingular (algebraMap K L).injective _ _).mp hP), W.pointMap_some L _⟩
+      exact ⟨Point.some x' y' ((W.nonsingular_baseChange L).mp hP), W.pointMap_some L _⟩
   have hsurj : Function.Surjective (AddMonoidHom.toMultiplicative (W.pointMap L)) :=
     fun P ↦ (hpm P.toAdd).imp fun _ hQ ↦ congrArg Multiplicative.ofAdd hQ
   rw [MonoidHom.map_range, localRes_comp_μ, ← MonoidHom.map_range,
@@ -394,7 +400,7 @@ private lemma eval_projFactor_torsion_ne {x e : ℝ} (hx : W'.f.eval x = 0)
 the values of the `x - T` map `μX` at the real roots to compute the image of `μ` over `ℝ`. -/
 
 -- Finiteness of the real roots and of the quadratic factors of `f`, available throughout.
-instance : Finite 𝓡 := (finite_setOf_isRoot W'.f_ne_zero).to_subtype
+instance : Finite 𝓡 := (finite_setOfPred_isRoot W'.f_ne_zero).to_subtype
 noncomputable instance : Fintype 𝓡 := Fintype.ofFinite _
 instance : Finite W'.f.Factors := Polynomial.Factors.finite W'.f_ne_zero
 noncomputable instance : Fintype W'.f.Factors := Fintype.ofFinite _
@@ -1179,7 +1185,7 @@ private lemma mk_derivative_ne_zero (q : 𝕎[v].f.Factors) :
   rw [Ne, AdjoinRoot.mk_eq_zero]
   intro hdvd
   obtain ⟨a, b, hab⟩ := separable_f 𝕎[v]
-  exact q.prime.not_unit <| isUnit_of_dvd_one <|
+  exact q.prime.not_isUnit <| isUnit_of_dvd_one <|
     hab ▸ dvd_add (q.dvd.mul_left a) (hdvd.mul_left b)
 
 -- Step 1: the product over the factors of the `w`-valuations of `f'(θ)`, weighted by the
@@ -1562,7 +1568,7 @@ theorem card_range_μ_completion_isReal {v : InfinitePlace F} [DecidableEq v.Com
   classical
   set W' := (W⁄v.Completion).toAffine
   let e := InfinitePlace.Completion.ringEquivRealOfIsReal hv
-  letI : Algebra v.Completion ℝ := (e : v.Completion →+* ℝ).toAlgebra
+  let : Algebra v.Completion ℝ := (e : v.Completion →+* ℝ).toAlgebra
   have hbij : Function.Bijective (algebraMap v.Completion ℝ) := e.bijective
   rw [← W'.card_range_μ_of_bijective_algebraMap (L := ℝ) hbij,
     ← W'.card_ker_nsmul_two_baseChange (L := ℝ) hbij]
@@ -1753,7 +1759,7 @@ private lemma two_mul_card_inf_ker_le (h2 : (2 : 𝓞 F) ∉ v.asIdeal) :
       Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅) := by
   have hfinA := W.finite_selmerGroupA_adicCompletionIntegers h2
   -- the norm homomorphism restricted to `A(∅, 2)`
-  set φ := (normM (W := 𝕎[v])).restrict (𝕎[v].selmerGroupA 𝒪_[v] ∅)
+  set φ := (normM (W := 𝕎[v])).domRestrict (𝕎[v].selmerGroupA 𝒪_[v] ∅)
   have hT : Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker :
       Subgroup (Units.modPow 𝕎[v].A 2)) = Nat.card φ.ker := by
     change _ = Nat.card ((normM (W := 𝕎[v])).ker.subgroupOf (𝕎[v].selmerGroupA 𝒪_[v] ∅))

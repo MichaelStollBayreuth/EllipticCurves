@@ -300,7 +300,7 @@ open Finset in
 lemma finrank_etaleTarget (hf : f ≠ 0) (hsq : Squarefree f) :
     Module.finrank ℝ (({x : ℝ // f.eval x = 0} → ℝ) ×
       ({p : f.Factors // (p : ℝ[X]).natDegree = 2} → ℂ)) = f.natDegree := by
-  have : Finite {x : ℝ // f.eval x = 0} := (finite_setOf_isRoot hf).to_subtype
+  have : Finite {x : ℝ // f.eval x = 0} := (finite_setOfPred_isRoot hf).to_subtype
   have : Fintype {x : ℝ // f.eval x = 0} := Fintype.ofFinite _
   have : Finite f.Factors := Factors.finite hf
   have : Fintype f.Factors := Fintype.ofFinite _
@@ -314,7 +314,7 @@ lemma finrank_etaleTarget (hf : f ≠ 0) (hsq : Squarefree f) :
 def etaleEquiv (hf : f ≠ 0) (hsq : Squarefree f) :
     AdjoinRoot f ≃ₐ[ℝ]
       ({x : ℝ // f.eval x = 0} → ℝ) × ({p : f.Factors // (p : ℝ[X]).natDegree = 2} → ℂ) :=
-  have : Finite {x : ℝ // f.eval x = 0} := (finite_setOf_isRoot hf).to_subtype
+  have : Finite {x : ℝ // f.eval x = 0} := (finite_setOfPred_isRoot hf).to_subtype
   have : Fintype {x : ℝ // f.eval x = 0} := Fintype.ofFinite _
   have : Finite f.Factors := Factors.finite hf
   have : Fintype f.Factors := Fintype.ofFinite _

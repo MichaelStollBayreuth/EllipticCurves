@@ -313,9 +313,9 @@ theorem subst_mulSeries_log (m : ℕ) :
 /-- Differentiating the logarithm identity: `(M⁻¹ ∘ ψ_m) · ψ_m′ = m • M⁻¹`. -/
 theorem subst_mulSeries_diffInv_mul_pderiv (m : ℕ) :
     MvPowerSeries.subst (fun _ : Unit ↦ Φ.mulSeries m) (Φ.diffMatrix⁻¹ () ())
-        * pderiv () (Φ.mulSeries m)
+        * pderiv K () (Φ.mulSeries m)
       = m • Φ.diffMatrix⁻¹ () () := by
-  have h := congrArg (pderiv ()) (Φ.subst_mulSeries_log m)
+  have h := congrArg (pderiv K ()) (Φ.subst_mulSeries_log m)
   rw [map_nsmul, pderiv_subst (Φ.hasSubst_mulSeries m), Φ.pderiv_log] at h
   simp only [Finset.univ_unique, Finset.sum_singleton, Φ.pderiv_log] at h
   exact h
@@ -685,7 +685,7 @@ variable [CharZero K]
 /-- The derivative identity `(M⁻¹ ∘ ψ_m) · ψ_m′ = m • M⁻¹`, descended to `𝒪_v`. -/
 private lemma subst_mulSeries_diffInv_mul_pderiv_int (m : ℕ) :
     MvPowerSeries.subst (fun _ : Unit ↦ Φ.mulSeries m) (Φ.diffMatrix⁻¹ () ())
-        * pderiv () (Φ.mulSeries m)
+        * pderiv (v.adicCompletionIntegers K) () (Φ.mulSeries m)
       = m • Φ.diffMatrix⁻¹ () () := by
   have hchar : CharZero (v.adicCompletion K) :=
     charZero_of_injective_algebraMap (algebraMap K (v.adicCompletion K)).injective
@@ -707,7 +707,7 @@ private lemma subst_mulSeries_diffInv_mul_pderiv_int (m : ℕ) :
 
 /-- The coefficients of the derivative of `ψ_m` are divisible by `m`. -/
 private lemma coeff_pderiv_mulSeries_mem (m : ℕ) (e : Unit →₀ ℕ) :
-    coeff e (pderiv () (Φ.mulSeries m)) ∈
+    coeff e (pderiv (v.adicCompletionIntegers K) () (Φ.mulSeries m)) ∈
       Ideal.span {(m : v.adicCompletionIntegers K)} := by
   have hU : IsUnit (MvPowerSeries.subst (fun _ : Unit ↦ Φ.mulSeries m)
       (Φ.diffMatrix⁻¹ () ())) := by
@@ -716,7 +716,8 @@ private lemma coeff_pderiv_mulSeries_mem (m : ℕ) (e : Unit →₀ ℕ) :
         (fun _ ↦ Φ.constantCoeff_mulSeries m), constantCoeff_diffInv Φ]
     exact isUnit_one
   obtain ⟨Uinv, hUinv⟩ := hU.exists_left_inv
-  have hψ : pderiv () (Φ.mulSeries m) = Uinv * (m • Φ.diffMatrix⁻¹ () ()) := by
+  have hψ : pderiv (v.adicCompletionIntegers K) () (Φ.mulSeries m)
+      = Uinv * (m • Φ.diffMatrix⁻¹ () ()) := by
     rw [← subst_mulSeries_diffInv_mul_pderiv_int Φ m, ← mul_assoc, hUinv, one_mul]
   rw [hψ, MvPowerSeries.coeff_mul]
   refine Ideal.sum_mem _ fun x hx ↦ ?_
@@ -745,14 +746,16 @@ theorem coeff_mulSeries_mem_span {p : ℕ} (hp : p.Prime)
     Finsupp.ext fun i ↦ by
       cases i
       simp [Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hne)]
-  have hd2 : (d - Finsupp.single () 1 : Unit →₀ ℕ) () + 1 = d () := by
-    simp [Finsupp.tsub_apply, Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hne)]
+  have hd2 : ((d - Finsupp.single () 1 : Unit →₀ ℕ) () : v.adicCompletionIntegers K) + 1
+      = (d () : v.adicCompletionIntegers K) := by
+    rw [Finsupp.tsub_apply, Finsupp.single_eq_same,
+      Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr hne), Nat.cast_one, sub_add_cancel]
   rw [hd1, hd2] at hstep
   obtain ⟨u, hu⟩ := (isUnit_natCast_of_not_dvd hp hpmem hd).exists_left_inv
   rw [show coeff d (Φ.mulSeries p)
-      = u * ((d () : v.adicCompletionIntegers K) * coeff d (Φ.mulSeries p)) by
-    rw [← mul_assoc, hu, one_mul]]
-  exact Ideal.mul_mem_left _ _ hstep
+      = coeff d (Φ.mulSeries p) * (d () : v.adicCompletionIntegers K) * u by
+    rw [mul_assoc, mul_comm _ u, hu, mul_one]]
+  exact Ideal.mul_mem_right _ _ hstep
 
 end AdicMulSeries
 

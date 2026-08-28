@@ -233,7 +233,7 @@ theorem map_comap_eq (I : Ideal (S.integer K)) :
       zero_mem' := by simp
       add_mem' := fun {a b} ha hb ↦ by simpa [add_mul] using J'.add_mem ha hb
       smul_mem' := fun c {a} ha ↦ by
-        simpa only [smul_eq_mul, Set.mem_setOf_eq, mul_assoc] using J'.mul_mem_left c ha }
+        simpa only [smul_eq_mul, Set.mem_ofPred_eq, mul_assoc] using J'.mul_mem_left c ha }
   have hsub : Ideal.map f (denomIdeal K (x : K)) ≤ K' := Ideal.map_le_iff_le_comap.mpr key
   have hmtop : Ideal.map f (denomIdeal K (x : K)) = ⊤ := map_denomIdeal_eq_top K S x.property
   have h1 : (1 : S.integer K) * x ∈ J' := hsub (hmtop.ge Submodule.mem_top)
@@ -299,11 +299,11 @@ lemma map_asIdeal_ne_top {v : HeightOneSpectrum R} (hv : v ∉ S) :
     { carrier := {x | v.valuation K (x : K) < 1}
       zero_mem' := by simp
       add_mem' := fun {a b} ha hb ↦ by
-        rw [Set.mem_setOf_eq, Subalgebra.coe_add]
+        rw [Set.mem_ofPred_eq, Subalgebra.coe_add]
         exact lt_of_le_of_lt ((v.valuation K).map_add _ _) (max_lt ha hb)
       smul_mem' := fun c {a} ha ↦ by
         have hc : v.valuation K (c : K) ≤ 1 := c.property v hv
-        rw [Set.mem_setOf_eq, smul_eq_mul, Subalgebra.coe_mul, map_mul]
+        rw [Set.mem_ofPred_eq, smul_eq_mul, Subalgebra.coe_mul, map_mul]
         calc v.valuation K (c : K) * v.valuation K (a : K)
             ≤ 1 * v.valuation K (a : K) := by gcongr
           _ = v.valuation K (a : K) := one_mul _
