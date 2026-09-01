@@ -44,8 +44,6 @@ namespace WeierstrassCurve.Affine
 
 -- #43292
 
-variable {R : Type*} [CommRing R] {W' : Affine R}
-
 /-!
 ### `sym2x` and the addition-and-multiplication map
 
