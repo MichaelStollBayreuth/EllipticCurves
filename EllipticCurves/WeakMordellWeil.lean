@@ -504,11 +504,11 @@ noncomputable def μX (x : K) : W.M :=
 
 @[simp] lemma μX_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0) :
     W.μX x = (isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).unit := by
-  simp only [μX, dif_pos hx]
+  simp only [μX, dite_eq_left hx]
 
 @[simp] lemma μX_of_eval_f_ne_zero {x : K} (hx : W.f.eval x ≠ 0) :
     W.μX x = (isUnit_mk_sub_X_of_eval_f_ne_zero hx).unit := by
-  simp only [μX, dif_neg hx]
+  simp only [μX, dite_eq_right hx]
 
 /-- The descent or `x - T` map `μ₀` on the group of points of an affine Weierstrass curve.
 This is a plain map; it is upgraded to a group homomorphism `μ` below. -/

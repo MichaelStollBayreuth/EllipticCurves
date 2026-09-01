@@ -311,7 +311,7 @@ instance isDiscreteValuationRing_integralClosure :
       exact IsUnit.of_mul_eq_one w hw
     exact hπ.not_isUnit (isUnit_of_map_unit _ π this)
   exact ((IsDiscreteValuationRing.TFAE
-    (R := integralClosure (v.adicCompletionIntegers K) L) hnf).out 2 0).mp
+    (R := integralClosure (v.adicCompletionIntegers K) L) hnf).out 3 1).mp
     (inferInstance : IsDedekindDomain (integralClosure (v.adicCompletionIntegers K) L))
 
 /-- Any nonzero element of a discrete valuation ring generates a power of the maximal ideal,

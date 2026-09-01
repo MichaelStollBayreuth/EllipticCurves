@@ -284,7 +284,7 @@ private lemma pderiv_substLeft (i : ι) (k : ι) :
   simp only [hinl, hinr, mul_zero, mul_ite, mul_one, Finset.sum_const_zero, zero_add]
   rw [Finset.sum_ite_eq' Finset.univ k
     fun j ↦ MvPowerSeries.subst (assocLeftFam Φ.F) (pderiv O (Sum.inr j) (Φ.F i)),
-    if_pos (Finset.mem_univ k)]
+    ite_eq_left (Finset.mem_univ k)]
 
 -- `∂_{C_k}` of the embedded second factor
 private lemma pderiv_emb23 (j k : ι) :
@@ -312,7 +312,7 @@ private lemma pderiv_emb23 (j k : ι) :
       (Sum.elim (fun a : ι ↦ X (Sum.inr (Sum.inl a))) fun b : ι ↦ X (Sum.inr (Sum.inr b))
         : ι ⊕ ι → MvPowerSeries (ι ⊕ ι ⊕ ι) O)
       (pderiv O (Sum.inr b) (Φ.F j)),
-    if_pos (Finset.mem_univ k)]
+    ite_eq_left (Finset.mem_univ k)]
 
 -- the `Y`-block embedding commutes with `∂/∂Y`
 lemma pderiv_Yemb (l : ι) (h : MvPowerSeries ι O) :
@@ -330,7 +330,7 @@ lemma pderiv_Yemb (l : ι) (h : MvPowerSeries ι O) :
   rw [Finset.sum_ite_eq' Finset.univ l
     fun t ↦ MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inr s) : MvPowerSeries (ι ⊕ ι) O))
       (pderiv O t h),
-    if_pos (Finset.mem_univ l)]
+    ite_eq_left (Finset.mem_univ l)]
 
 -- `Y := 0` intertwines `∂/∂X_l` on both sides
 private lemma pderiv_unitR (l : ι) (h : MvPowerSeries (ι ⊕ ι) O) :
@@ -354,7 +354,7 @@ private lemma pderiv_unitR (l : ι) (h : MvPowerSeries (ι ⊕ ι) O) :
     fun a ↦ MvPowerSeries.subst
       (Sum.elim MvPowerSeries.X (fun _ ↦ 0) : ι ⊕ ι → MvPowerSeries ι O)
       (pderiv O (Sum.inl a) h),
-    if_pos (Finset.mem_univ l)]
+    ite_eq_left (Finset.mem_univ l)]
 
 -- the linear part of `M` is a mixed second derivative of `F`
 private lemma constantCoeff_pderiv_diffMatrix (i k l : ι) :
@@ -410,7 +410,7 @@ lemma pderiv_Xemb (l : ι) (h : MvPowerSeries ι O) :
   rw [Finset.sum_ite_eq' Finset.univ l
     fun t ↦ MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inl s) : MvPowerSeries (ι ⊕ ι) O))
       (pderiv O t h),
-    if_pos (Finset.mem_univ l)]
+    ite_eq_left (Finset.mem_univ l)]
 
 variable [Fintype ι]
 
@@ -586,7 +586,7 @@ private lemma constantCoeff_pderiv_diffMatrixInv (i k l : ι) :
     split <;> simp
   simp only [map_sum, Derivation.leibniz, smul_eq_mul, map_add, map_mul, hN, hM, hrhs, ite_mul,
     one_mul, zero_mul, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.sum_ite_eq',
-    Finset.mem_univ, if_true] at h
+    Finset.mem_univ, ite_true] at h
   linear_combination h
 
 

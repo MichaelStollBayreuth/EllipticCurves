@@ -626,27 +626,27 @@ private lemma exists_mulSeries_split [CharZero K] {p : ℕ} (hp : p.Prime)
         subst hd0
         rw [MvPowerSeries.coeff_zero_eq_constantCoeff_apply,
           W₀.formalGroupLaw.constantCoeff_mulSeries p,
-          if_neg (show ¬((0 : Unit →₀ ℕ) = Finsupp.single () 1) from fun hc ↦
+          ite_eq_right (show ¬((0 : Unit →₀ ℕ) = Finsupp.single () 1) from fun hc ↦
             one_ne_zero (Finsupp.single_eq_zero.mp hc.symm)),
-          if_neg (show ¬(2 ≤ (0 : Unit →₀ ℕ) () ∧ ¬ p ∣ (0 : Unit →₀ ℕ) ()) from by simp),
-          if_neg (show ¬(2 ≤ (0 : Unit →₀ ℕ) () ∧ p ∣ (0 : Unit →₀ ℕ) ()) from by simp)]
+          ite_eq_right (show ¬(2 ≤ (0 : Unit →₀ ℕ) () ∧ ¬ p ∣ (0 : Unit →₀ ℕ) ()) from by simp),
+          ite_eq_right (show ¬(2 ≤ (0 : Unit →₀ ℕ) () ∧ p ∣ (0 : Unit →₀ ℕ) ()) from by simp)]
         ring
       · have hd1 : d = Finsupp.single () 1 := hd.trans (by rw [h1])
         subst hd1
-        rw [ChabautyColeman.coeff_single_mulSeries, if_pos rfl,
-          if_neg (show ¬(2 ≤ (Finsupp.single () 1 : Unit →₀ ℕ) () ∧
+        rw [ChabautyColeman.coeff_single_mulSeries, ite_eq_left rfl,
+          ite_eq_right (show ¬(2 ≤ (Finsupp.single () 1 : Unit →₀ ℕ) () ∧
             ¬ p ∣ (Finsupp.single () 1 : Unit →₀ ℕ) ()) from by simp),
-          if_neg (show ¬(2 ≤ (Finsupp.single () 1 : Unit →₀ ℕ) () ∧
+          ite_eq_right (show ¬(2 ≤ (Finsupp.single () 1 : Unit →₀ ℕ) () ∧
             p ∣ (Finsupp.single () 1 : Unit →₀ ℕ) ()) from by simp)]
         ring
-    · rw [if_neg (show ¬(d = Finsupp.single () 1) from fun hc ↦ by
+    · rw [ite_eq_right (show ¬(d = Finsupp.single () 1) from fun hc ↦ by
         rw [hc, Finsupp.single_eq_same] at h2; lia), mul_zero]
       rcases Classical.em (p ∣ d ()) with hdvd | hdvd
-      · rw [if_neg (show ¬(2 ≤ d () ∧ ¬ p ∣ d ()) from by tauto),
-          if_pos (⟨h2, hdvd⟩ : 2 ≤ d () ∧ p ∣ d ())]
+      · rw [ite_eq_right (show ¬(2 ≤ d () ∧ ¬ p ∣ d ()) from by tauto),
+          ite_eq_left (⟨h2, hdvd⟩ : 2 ≤ d () ∧ p ∣ d ())]
         ring
-      · rw [if_pos (⟨h2, hdvd⟩ : 2 ≤ d () ∧ ¬ p ∣ d ()),
-          if_neg (show ¬(2 ≤ d () ∧ p ∣ d ()) from by tauto)]
+      · rw [ite_eq_left (⟨h2, hdvd⟩ : 2 ≤ d () ∧ ¬ p ∣ d ()),
+          ite_eq_right (show ¬(2 ≤ d () ∧ p ∣ d ()) from by tauto)]
         ring
   · intro d
     rw [hA]
@@ -655,10 +655,10 @@ private lemma exists_mulSeries_split [CharZero K] {p : ℕ} (hp : p.Prime)
     · exact zero_mem _
   · intro d hlow
     rw [hdeg] at hlow
-    rw [hA, if_neg fun hc ↦ absurd hc.1 (by omega)]
+    rw [hA, ite_eq_right fun hc ↦ absurd hc.1 (by omega)]
   · intro d hlow
     rw [hdeg] at hlow
-    rw [hB, if_neg fun hc ↦ absurd (Nat.le_of_dvd (by omega) hc.2) (by omega)]
+    rw [hB, ite_eq_right fun hc ↦ absurd (Nat.le_of_dvd (by omega) hc.2) (by omega)]
 
 /-- The absolute ramification index of the residue characteristic: `v(p) = exp(-e)` with
 `1 ≤ e`, and `e ≤ p - 2` under the ramification condition `p ∉ 𝔪^(p-1)`. -/

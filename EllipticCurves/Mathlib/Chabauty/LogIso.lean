@@ -139,7 +139,7 @@ theorem decay_X (i : ι) :
   refine (Set.finite_singleton (Finsupp.single i 1)).subset fun d hd ↦ ?_
   simp only [Set.mem_ofPred_eq] at hd
   simp only [Set.mem_singleton_iff]
-  by_contra hne; exact hd (by rw [coeff_X, if_neg hne])
+  by_contra hne; exact hd (by rw [coeff_X, ite_eq_right hne])
 
 set_option linter.unusedSectionVars false in
 set_option linter.unusedFintypeInType false in

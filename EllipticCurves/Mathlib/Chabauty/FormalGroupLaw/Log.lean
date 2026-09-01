@@ -100,16 +100,16 @@ theorem coeff_single_log (i j : ι) :
         = MvPowerSeries.monomial (Finsupp.single l 1) 1 := rfl
     by_cases hl : l = j
     · subst hl
-      rw [if_pos rfl, hX, MvPowerSeries.coeff_mul_monomial, if_pos le_rfl]
+      rw [ite_eq_left rfl, hX, MvPowerSeries.coeff_mul_monomial, ite_eq_left le_rfl]
       simp
-    · rw [if_neg hl, hX, MvPowerSeries.coeff_mul_monomial, if_neg]
+    · rw [ite_eq_right hl, hX, MvPowerSeries.coeff_mul_monomial, ite_eq_right]
       intro hle
       have h1 := Finsupp.le_def.mp hle l
       rw [Finsupp.single_eq_same, Finsupp.single_eq_of_ne hl] at h1
       exact absurd h1 (by lia)
   rw [Finset.sum_congr rfl fun l _ ↦ hterm l,
     Finset.sum_ite_eq' Finset.univ j (fun l ↦ constantCoeff (Φ.diffMatrix⁻¹ i l)),
-    if_pos (Finset.mem_univ j)]
+    ite_eq_left (Finset.mem_univ j)]
   have h2 : (Φ.diffMatrix⁻¹.map (constantCoeff (R := K))) i j
       = (1 : Matrix ι ι K) i j := by
     rw [Φ.diffMatrixInv_map_constantCoeff]
@@ -154,8 +154,8 @@ theorem log_sub_X_order (i : ι) (e : ι →₀ ℕ) (he : e.degree ≤ 1) :
     rw [Φ.coeff_single_log, coeff_X]
     rcases eq_or_ne i j with rfl | hij
     · simp
-    · rw [if_neg hij, if_neg (fun h ↦ hij (Finsupp.single_left_injective one_ne_zero h).symm),
-        sub_zero]
+    · rw [ite_eq_right hij,
+        ite_eq_right (fun h ↦ hij (Finsupp.single_left_injective one_ne_zero h).symm), sub_zero]
 
 /-- The formal exponential of a formal group law: the compositional inverse of the
 logarithm. -/
@@ -182,7 +182,7 @@ private lemma pderiv_log_row (i k : ι) :
     simp only [Pi.single_apply, mul_ite, mul_one, mul_zero]
   rw [Finset.sum_congr rfl fun j _ ↦ hterm j, Finset.sum_add_distrib,
     Finset.sum_ite_eq' Finset.univ k fun j ↦ Φ.diffMatrix⁻¹ i j,
-    if_pos (Finset.mem_univ k)]
+    ite_eq_left (Finset.mem_univ k)]
 
 variable [CharZero K]
 

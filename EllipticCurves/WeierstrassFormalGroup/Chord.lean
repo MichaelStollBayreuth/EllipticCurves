@@ -173,7 +173,7 @@ theorem coeff_wSeries_three : coeff 3 W.wSeries = 1 := by
     simp only [wStep, wStepAt]
     ring
   have h0 : coeff 3 (W.wStep W.wSeries - X ^ 3) = 0 := X_pow_dvd_iff.mp h4 3 (by lia)
-  rw [map_sub, coeff_X_pow, if_pos rfl, sub_eq_zero] at h0
+  rw [map_sub, coeff_X_pow, ite_eq_left rfl, sub_eq_zero] at h0
   rw [W.wSeries_eq_wStep, h0]
 
 /-- The defining fixed-point equation of `wSeries`, i.e. the Weierstrass equation in the
@@ -792,10 +792,10 @@ private lemma coeff_single_eq_one_of_subst_eq_X {f : MvPowerSeries (Unit ⊕ Uni
     · rw [hfam s h, map_zero]
   have h := congrArg (MvPowerSeries.coeff (Finsupp.single () 1)) hsubst
   rw [MvPowerSeries.coeff_subst hS, show (PowerSeries.X : PowerSeries O) =
-    MvPowerSeries.X () from rfl, MvPowerSeries.coeff_X, if_pos rfl] at h
+    MvPowerSeries.X () from rfl, MvPowerSeries.coeff_X, ite_eq_left rfl] at h
   rw [finsum_eq_single _ (Finsupp.single s₀ 1) (fun d hd ↦ ?_)] at h
   · rwa [Finsupp.prod_single_index (h := fun s e ↦ fam s ^ e) (pow_zero _), hfam₀, pow_one,
-      MvPowerSeries.coeff_X, if_pos rfl, smul_eq_mul, mul_one] at h
+      MvPowerSeries.coeff_X, ite_eq_left rfl, smul_eq_mul, mul_one] at h
   · rcases Classical.em (∃ s ≠ s₀, d s ≠ 0) with ⟨s, hs, hds⟩ | hd0
     · rw [Finsupp.prod, Finset.prod_eq_zero (Finsupp.mem_support_iff.mpr hds)
         (by rw [hfam s hs, zero_pow hds]), map_zero, smul_zero]
@@ -807,7 +807,7 @@ private lemma coeff_single_eq_one_of_subst_eq_X {f : MvPowerSeries (Unit ⊕ Uni
       have hne1 : d s₀ ≠ 1 := fun h1 ↦ hd (by rw [hd', h1])
       rw [hd', Finsupp.prod_single_index (h := fun s e ↦ fam s ^ e) (pow_zero _), hfam₀,
         MvPowerSeries.X_pow_eq () (d s₀), MvPowerSeries.coeff_monomial,
-        if_neg (by simpa using fun h ↦ absurd h.symm hne1), smul_zero]
+        ite_eq_right (by simpa using fun h ↦ absurd h.symm hne1), smul_zero]
 
 /-- The linear coefficient of the addition series in the first variable is `1`. -/
 theorem coeff_single_inl_addSeries :

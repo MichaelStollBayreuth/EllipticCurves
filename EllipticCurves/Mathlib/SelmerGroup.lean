@@ -447,7 +447,7 @@ theorem Units.card_ker_powMonoidHom_two (R : Type*) [CommRing R] [IsDomain R]
       calc ((-1 : Rˣ) ^ k) ^ 2 = ((-1 : Rˣ) ^ 2) ^ k := by group
         _ = 1 := by simp
   have h1 : orderOf (-1 : Rˣ) = 2 := by
-    rw [← orderOf_units, Units.val_neg, Units.val_one, orderOf_neg_one, if_neg h2]
+    rw [← orderOf_units, Units.val_neg, Units.val_one, orderOf_neg_one, ite_eq_right h2]
   rw [hker, Nat.card_zpowers, h1]
 
 open Module in
@@ -635,9 +635,9 @@ lemma exists_sUnit_valuation_single (v : S) :
     exact congrArg Neg.neg (if_congr eq_comm rfl rfl)
   refine ⟨⟨Units.mk0 (algebraMap R K π) hπK, hmem⟩, -(h : ℤ),
     neg_ne_zero.mpr (Int.natCast_ne_zero.mpr hpos.ne'), ?_, fun w hne ↦ ?_⟩
-  · exact Multiplicative.toAdd.injective (by rw [toAdd_ofAdd, hval v, if_pos rfl])
+  · exact Multiplicative.toAdd.injective (by rw [toAdd_ofAdd, hval v, ite_eq_left rfl])
   · exact Multiplicative.toAdd.injective (by
-      rw [toAdd_one, hval w, if_neg (fun hc ↦ hne (Subtype.ext hc)), neg_zero])
+      rw [toAdd_one, hval w, ite_eq_right (fun hc ↦ hne (Subtype.ext hc)), neg_zero])
 
 open Module in
 /-- The range of `sUnitLog` has full rank `|S|`: it contains the diagonal family of `S`-units
@@ -651,13 +651,13 @@ lemma finrank_range_sUnitLog (hS : S.Finite) :
   have hψx (v w : S) : sUnitLog K S (Additive.ofMul (x v)) w = if w = v then n v else 0 := by
     rw [sUnitLog_apply]
     rcases eq_or_ne w v with rfl | hne
-    · rw [if_pos rfl, toMul_ofMul, hxv w, toAdd_ofAdd]
-    · rw [if_neg hne, toMul_ofMul, hxw v w hne, toAdd_one]
+    · rw [ite_eq_left rfl, toMul_ofMul, hxv w, toAdd_ofAdd]
+    · rw [ite_eq_right hne, toMul_ofMul, hxw v w hne, toAdd_one]
   have hfam : LinearIndependent ℤ fun v : S ↦ sUnitLog K S (Additive.ofMul (x v)) := by
     refine linearIndependent_of_diagonal (fun v ↦ ?_) (fun v w hne ↦ ?_)
-    · rw [hψx v v, if_pos rfl]
+    · rw [hψx v v, ite_eq_left rfl]
       exact hn v
-    · rw [hψx v w, if_neg hne]
+    · rw [hψx v w, ite_eq_right hne]
   rw [← Nat.card_coe_set_eq, Nat.card_eq_fintype_card]
   refine le_antisymm ?_ ?_
   · have h := Submodule.finrank_le (LinearMap.range (sUnitLog K S))

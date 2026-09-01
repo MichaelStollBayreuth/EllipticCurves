@@ -331,7 +331,7 @@ theorem exp_bounded (hp : p.Prime) (hpmem : (p : O) ∈ maximalIdeal O) (hfp : f
     · exact ⟨1, by simp⟩
     · exact IntLevel.zero 0
   · have hXd : coeff d (X j : MvPowerSeries ι K) = 0 := by
-      rw [coeff_X, if_neg]
+      rw [coeff_X, ite_eq_right]
       intro h; have hd1 : d.degree = 1 := by rw [h, Finsupp.degree_single]
       lia
     have hcoeff : coeff d (G.exp j) = -coeff d (subst G.exp (G.log j - X j)) := by
@@ -345,7 +345,7 @@ theorem exp_bounded (hp : p.Prime) (hpmem : (p : O) ∈ maximalIdeal O) (hfp : f
     · rw [h0, zero_mul]; exact IntLevel.zero _
     · have hm2 : 2 ≤ m.degree := by by_contra hc; exact h0 (ha j m (by lia))
       have hgm : coeff m (G.log j - X j) = coeff m (G.log j) := by
-        rw [map_sub, coeff_X, if_neg, sub_zero]
+        rw [map_sub, coeff_X, ite_eq_right, sub_zero]
         intro h; rw [h, Finsupp.degree_single] at hm2; lia
       rw [hgm]
       rcases lt_or_ge d.degree m.degree with hmd | hmd

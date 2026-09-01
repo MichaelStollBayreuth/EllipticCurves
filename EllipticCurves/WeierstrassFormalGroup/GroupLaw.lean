@@ -164,10 +164,10 @@ private lemma interceptSeries_ne_zero : W.interceptSeries ≠ 0 := by
   have h1 := congrArg (MvPowerSeries.coeff
     (Finsupp.single (Sum.inl ()) 2 + Finsupp.single (Sum.inr ()) 1)) h
   rw [map_zero, interceptSeries, map_sub, coeff_rename_single,
-    if_neg (by rw [eq_single_iff']; simp),
+    ite_eq_right (by rw [eq_single_iff']; simp),
     show (MvPowerSeries.X (Sum.inl ()) : MvPowerSeries (Unit ⊕ Unit) O) =
       MvPowerSeries.monomial (Finsupp.single (Sum.inl ()) 1) 1 from rfl,
-    MvPowerSeries.coeff_mul_monomial, if_pos (by
+    MvPowerSeries.coeff_mul_monomial, ite_eq_left (by
       refine Finsupp.le_def.mpr fun s ↦ ?_
       rcases s with u | u <;> simp),
     W.coeff_slopeSeries] at h1

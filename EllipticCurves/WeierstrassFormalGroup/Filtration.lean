@@ -56,12 +56,12 @@ noncomputable def formalPoint (z : W₀.formalGroupLaw.Points) : W.Point :=
 @[simp]
 lemma formalPoint_of_param_eq_zero {z : W₀.formalGroupLaw.Points}
     (h0 : (z () : v.adicCompletionIntegers K) = 0) : formalPoint hW z = 0 :=
-  dif_pos h0
+  dite_eq_left h0
 
 lemma formalPoint_of_param_ne_zero {z : W₀.formalGroupLaw.Points}
     (h0 : (z () : v.adicCompletionIntegers K) ≠ 0) :
     formalPoint hW z = .some _ _ (formalPoint_nonsingular hW (z ()).2 h0) :=
-  dif_neg h0
+  dite_eq_right h0
 
 /-- The parametrization of the kernel of reduction is injective. -/
 theorem formalPoint_injective : Function.Injective (formalPoint hW) := by

@@ -54,10 +54,13 @@ def realSign : ℝˣ →* Multiplicative (ZMod 2) where
     refine congrArg _ ?_
     rw [Units.val_mul]
     rcases lt_or_gt_of_ne u.ne_zero with hu | hu <;> rcases lt_or_gt_of_ne v.ne_zero with hv | hv
-    · rw [if_neg (asymm hu), if_neg (asymm hv), if_pos (mul_pos_of_neg_of_neg hu hv)]; decide
-    · rw [if_neg (asymm hu), if_pos hv, if_neg (asymm (mul_neg_of_neg_of_pos hu hv))]; decide
-    · rw [if_pos hu, if_neg (asymm hv), if_neg (asymm (mul_neg_of_pos_of_neg hu hv))]; decide
-    · rw [if_pos hu, if_pos hv, if_pos (mul_pos hu hv)]; decide
+    · rw [ite_eq_right (asymm hu), ite_eq_right (asymm hv),
+        ite_eq_left (mul_pos_of_neg_of_neg hu hv)]; decide
+    · rw [ite_eq_right (asymm hu), ite_eq_left hv,
+        ite_eq_right (asymm (mul_neg_of_neg_of_pos hu hv))]; decide
+    · rw [ite_eq_left hu, ite_eq_right (asymm hv),
+        ite_eq_right (asymm (mul_neg_of_pos_of_neg hu hv))]; decide
+    · rw [ite_eq_left hu, ite_eq_left hv, ite_eq_left (mul_pos hu hv)]; decide
 
 lemma realSign_surjective : Function.Surjective realSign := by
   have key : ∀ y : Multiplicative (ZMod 2), y ≠ 1 → Multiplicative.ofAdd (1 : ZMod 2) = y := by
@@ -66,7 +69,7 @@ lemma realSign_surjective : Function.Surjective realSign := by
   rcases eq_or_ne y 1 with rfl | hy
   · exact ⟨1, map_one _⟩
   · refine ⟨-1, ?_⟩
-    rw [realSign, MonoidHom.coe_mk, OneHom.coe_mk, if_neg (by norm_num)]
+    rw [realSign, MonoidHom.coe_mk, OneHom.coe_mk, ite_eq_right (by norm_num)]
     exact key y hy
 
 variable {n : ℕ}
@@ -84,7 +87,7 @@ lemma range_powMonoidHom_real_eq_ker_realSign (hn : n ≠ 0) (he : Even n) :
   · intro h
     have hu : 0 < (u : ℝ) := by
       by_contra hc
-      rw [realSign, MonoidHom.coe_mk, OneHom.coe_mk, if_neg hc, ofAdd_eq_one] at h
+      rw [realSign, MonoidHom.coe_mk, OneHom.coe_mk, ite_eq_right hc, ofAdd_eq_one] at h
       exact one_ne_zero h
     refine ⟨Units.mk0 ((u : ℝ) ^ (n⁻¹ : ℝ)) (Real.rpow_pos_of_pos hu _).ne', ?_⟩
     apply Units.ext

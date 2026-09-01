@@ -179,13 +179,13 @@ lemma red_some_of_le {x y : K} {h : E.Nonsingular x y} (hx : v.valuation K x ≤
       = .some (residueHom v ⟨x, hx⟩)
           (residueHom v ⟨y, valuation_le_one_of_equation v hE h.left hx⟩)
           (nonsingular_residueHom v hE h.left hx (valuation_le_one_of_equation v hE h.left hx)) :=
-  dif_pos hx
+  dite_eq_left hx
 
 include hE in
 /-- Unfolding lemma for `red` at a point with a pole at `v`. -/
 lemma red_some_of_not_le {x y : K} {h : E.Nonsingular x y} (hx : ¬ v.valuation K x ≤ 1) :
     red v hE (.some x y h) = 0 :=
-  dif_neg hx
+  dite_eq_right hx
 
 end
 

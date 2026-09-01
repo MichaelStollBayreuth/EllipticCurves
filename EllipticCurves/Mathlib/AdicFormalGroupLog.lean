@@ -470,7 +470,7 @@ private lemma coeff_single_of_isScaledLog (hl : IsScaledLog e π Φ lhat) :
   have h := hl (Finsupp.single () 1)
   rw [Finsupp.degree_single, Nat.sub_self, mul_zero, pow_zero, one_mul,
     coeff_single_log] at h
-  simp only [if_pos] at h
+  simp only [ite_eq_left] at h
   exact Subtype.ext (by push_cast; exact h)
 
 /-- The scaled logarithm has trivial coefficients in degrees `≤ 1` apart from the linear
@@ -482,7 +482,7 @@ private lemma sub_X_of_isScaledLog (hl : IsScaledLog e π Φ lhat) (i : Unit)
   · rw [map_sub, coeff_zero_eq_constantCoeff_apply, coeff_zero_eq_constantCoeff_apply,
       constantCoeff_of_isScaledLog hl, constantCoeff_X, sub_zero]
   · rw [map_sub, coeff_single_of_isScaledLog hl, MvPowerSeries.coeff_X,
-      if_pos (by cases i; rfl), sub_self]
+      ite_eq_left (by cases i; rfl), sub_self]
 
 open FormalGroupLaw in
 /-- The additivity of the divided scaled logarithm for the `π^e`-scaled formal group

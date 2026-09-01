@@ -138,7 +138,7 @@ private theorem pderiv_subst_coe {τ : Type*} [Fintype τ] {a : τ → MvPowerSe
       · rw [← MvPowerSeries.coe_substAlgHom ha, map_one, mul_one]
       · rw [← MvPowerSeries.coe_substAlgHom ha, map_zero, mul_zero]
     simp only [hexp, add_mul, ite_mul, zero_mul, Finset.sum_add_distrib,
-      Finset.sum_ite_eq, Finset.mem_univ, if_true, Finset.mul_sum]
+      Finset.sum_ite_eq, Finset.mem_univ, ite_true, Finset.mul_sum]
     congr 1
     refine Finset.sum_congr rfl fun t _ ↦ ?_
     ring
@@ -187,11 +187,11 @@ theorem coeff_X_mul_pderiv (s : σ) (f : MvPowerSeries σ R) (d : σ →₀ ℕ)
   rw [mul_comm, show (X s : MvPowerSeries σ R) = monomial (Finsupp.single s 1) 1 from rfl,
     coeff_mul_monomial]
   rcases eq_or_ne (d s) 0 with h0 | h0
-  · rw [if_neg fun hle ↦ by simpa [h0] using Finsupp.single_le_iff.mp hle, h0]
+  · rw [ite_eq_right fun hle ↦ by simpa [h0] using Finsupp.single_le_iff.mp hle, h0]
     simp
   · have hle : Finsupp.single s 1 ≤ d :=
       Finsupp.single_le_iff.mpr (Nat.one_le_iff_ne_zero.mpr h0)
-    rw [if_pos hle, mul_one, coeff_pderiv, tsub_add_cancel_of_le hle, Finsupp.tsub_apply,
+    rw [ite_eq_left hle, mul_one, coeff_pderiv, tsub_add_cancel_of_le hle, Finsupp.tsub_apply,
       Finsupp.single_eq_same, Nat.cast_sub (Nat.one_le_iff_ne_zero.mpr h0)]
     ring
 

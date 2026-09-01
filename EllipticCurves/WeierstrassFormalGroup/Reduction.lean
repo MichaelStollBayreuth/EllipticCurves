@@ -433,7 +433,7 @@ include hW in
 /-- Unfolding lemma for `adicRed` on a kernel point. -/
 lemma adicRed_some_of_mem {x y : v.adicCompletion K} {h : W.Nonsingular x y}
     (hx : exp (2 : ℤ) ≤ Valued.v x) : adicRed hW (.some x y h) = 0 :=
-  dif_pos hx
+  dite_eq_left hx
 
 include hW in
 /-- Unfolding lemma for `adicRed` on an integral (non-kernel) point. -/
@@ -444,7 +444,7 @@ lemma adicRed_some_of_not_mem {x y : v.adicCompletion K} {h : W.Nonsingular x y}
           (IsLocalRing.residue _ ⟨y, (integral_of_not_mem hW h.left hx).2⟩)
           (adicRed_nonsingular hW h.left (integral_of_not_mem hW h.left hx).1
             (integral_of_not_mem hW h.left hx).2) :=
-  dif_neg hx
+  dite_eq_right hx
 
 include hW in
 /-- `adicRed` commutes with negation. -/

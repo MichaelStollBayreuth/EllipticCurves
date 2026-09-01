@@ -111,7 +111,7 @@ theorem evalT_C (z : σ → O) (r : O) : evalT z (C r) = r := by
   rw [evalT_eq_tsum, tsum_eq_single 0]
   · simp
   · intro d hd
-    rw [coeff_C, if_neg hd, zero_mul]
+    rw [coeff_C, ite_eq_right hd, zero_mul]
 
 @[simp]
 theorem evalT_X (z : σ → O) (s : σ) : evalT z (X s : MvPowerSeries σ O) = z s := by
@@ -119,7 +119,7 @@ theorem evalT_X (z : σ → O) (s : σ) : evalT z (X s : MvPowerSeries σ O) = z
   rw [evalT_eq_tsum, tsum_eq_single (Finsupp.single s 1)]
   · simp [coeff_X, Finsupp.prod_single_index]
   · intro d hd
-    rw [coeff_X, if_neg hd, zero_mul]
+    rw [coeff_X, ite_eq_right hd, zero_mul]
 
 @[simp]
 theorem evalT_one (z : σ → O) : evalT z (1 : MvPowerSeries σ O) = 1 := by
@@ -134,7 +134,7 @@ theorem decay_one : Tendsto (fun d ↦ coeff d (1 : MvPowerSeries σ O)) cofinit
   simp only [Set.mem_ofPred_eq] at hd
   simp only [Set.mem_singleton_iff]
   by_contra hne
-  exact hd (by rw [coeff_one, if_neg hne])
+  exact hd (by rw [coeff_one, ite_eq_right hne])
 
 /-- Coefficient decay is preserved by renaming the variables along an injection. -/
 theorem decay_rename {τ : Type*} {e : σ → τ} (he : Function.Injective e) [TendstoCofinite e]
