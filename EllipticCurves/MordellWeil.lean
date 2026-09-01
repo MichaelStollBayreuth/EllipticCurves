@@ -42,6 +42,8 @@ than using projective points.
 
 namespace WeierstrassCurve.Affine
 
+-- #43292
+
 variable {R : Type*} [CommRing R] {W' : Affine R}
 
 /-!
@@ -61,12 +63,13 @@ Here `W` is an arbitrary Weierstrass curve; the formulas are expressed in terms 
 
 open MvPolynomial Nat
 
+variable {R : Type*} [CommRing R] {W' : Affine R}
 variable {F : Type*} [Field F] {W : Affine F}
 
 /-- `sym2x` in terms of the projective `xRep` coordinates. Mathlib provides only the
 per-constructor `@[simp]` lemmas and does not `@[expose]` `sym2x`, so this general unfolding is
 stated here (a Mathlib-upstreaming candidate). -/
-lemma Point.sym2x_eq (P Q : W.Point) :
+lemma Point.sym2x_eq (P Q : W'.Point) :
     P.sym2x Q = ![P.xRep 0 * Q.xRep 0, P.xRep 0 * Q.xRep 1 + P.xRep 1 * Q.xRep 0,
       P.xRep 1 * Q.xRep 1] := by
   match P, Q with
@@ -75,8 +78,8 @@ lemma Point.sym2x_eq (P Q : W.Point) :
   | .some x y h, 0 => simp [Point.xRep_zero, Point.xRep_some]
   | .some x y h, .some x' y' h' => simp [Point.xRep_some]
 
-private lemma Point.sym2x_P_P_eq_addSubMap (P : W.Point) :
-    sym2x P P = fun i ↦ (addSubMap W i).eval <| P.sym2x 0 := by
+private lemma Point.sym2x_P_P_eq_addSubMap (P : W'.Point) :
+    sym2x P P = fun i ↦ (addSubMap W' i).eval <| P.sym2x 0 := by
   match P with
   | 0 =>
     simp only [sym2x_zero_zero, succ_eq_add_one, reduceAdd, addSubMap, Fin.isValue]
@@ -149,6 +152,8 @@ lemma Point.sym2x_add_sub_eq_addSubMap_sym2x (P Q : W.Point) :
     fin_cases i <;> simp [field] <;> grobner
 
 end Decidable
+
+-- end #43292
 
 /-!
 ### The naïve height
