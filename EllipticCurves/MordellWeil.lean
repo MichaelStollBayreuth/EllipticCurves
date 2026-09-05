@@ -153,6 +153,8 @@ end Decidable
 
 -- end #43292
 
+-- #43463
+
 /-!
 ### The naïve height
 -/
@@ -243,6 +245,8 @@ number field `K` is finite. -/
 theorem finite_torsion : Finite (AddCommGroup.torsion W.Point) := by
   obtain ⟨C, hC⟩ := approx_parallelogram_law W
   exact AddCommGroup.finite_torsion_of_descent' hC
+
+-- end #43463
 
 /-- **The Mordell-Weil Theorem**, general version: `E(K)` is finitely generated, for an
 elliptic curve `E` given by an equation `y² = f(x)` with a monic cubic `f` (`a₁ = a₃ = 0`)
