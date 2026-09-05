@@ -1978,7 +1978,7 @@ theorem two_mul_card_selmerGroup₂_le [Fintype W.f.Factors]
         W.card_selmerGroupA_le_prod (𝓞 F) ∅ Set.finite_empty
     _ ≤ ∏ p : W.f.Factors,
           2 ^ (finrank ℤ (Additive (W.ringOfIntegersFactor (𝓞 F) p)ˣ) + 1) :=
-        Finset.prod_le_prod (fun _ _ ↦ Nat.zero_le _) fun p _ ↦ h5 p
+        Finset.prod_le_prod fun p _ ↦ h5 p
 
 end NumberField
 
