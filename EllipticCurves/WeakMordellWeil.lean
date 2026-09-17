@@ -82,17 +82,6 @@ namespace WeierstrassCurve.Affine
 
 variable {K : Type*} [Field K] (W : Affine K)
 
-lemma ringChar_ne_two [W.IsElliptic] [W.IsCharNeTwoNF] : ringChar K ≠ 2 := by
-  have h := W.isUnit_Δ.ne_zero
-  contrapose! h
-  have h2 : (2 : K) = 0 := by
-    have := ringChar.Nat.cast_ringChar (R := K)
-    rw [h] at this
-    exact_mod_cast this
-  rw [Δ_of_isCharNeTwoNF W]
-  linear_combination (-32 * W.a₂ ^ 3 * W.a₆ + 8 * W.a₂ ^ 2 * W.a₄ ^ 2 - 32 * W.a₄ ^ 3
-    - 216 * W.a₆ ^ 2 + 144 * W.a₂ * W.a₄ * W.a₆) * h2
-
 /-!
 ### Step 1: define `A`
 -/
@@ -129,6 +118,12 @@ lemma Δ_eq_discr_f [W.IsCharNeTwoNF] : W.Δ = 16 * W.f.discr := by
 
 lemma discr_f_ne_zero [W.IsElliptic] [W.IsCharNeTwoNF] : W.f.discr ≠ 0 := fun h ↦
   W.isUnit_Δ.ne_zero (by rw [W.Δ_eq_discr_f, h, mul_zero])
+
+/-- The base field of an elliptic curve in the normal form `a₁ = a₃ = 0` has characteristic
+different from `2`: its discriminant is `16` times the discriminant of
+`WeierstrassCurve.Affine.f`. -/
+protected lemma two_ne_zero [W.IsElliptic] [W.IsCharNeTwoNF] : (2 : K) ≠ 0 := fun h2 ↦
+  W.isUnit_Δ.ne_zero <| by rw [Δ_eq_discr_f]; grind [W.discr_f_ne_zero]
 
 lemma derivative_f : derivative W.f = C 3 * X ^ 2 + C (2 * W.a₂) * X + C W.a₄ := by
   simp [f, C_ofNat]
@@ -707,7 +702,7 @@ private lemma exists_eq_two_smul_of_identities {x y ξ l m : K} (h : W.Nonsingul
   have hy₀ : l * ξ + m ≠ 0 := fun h0 ↦ W.deriv_f_ne_zero (x := ξ)
     (by rw [eval_f]; linear_combination ξ ^ 2 * H₂ - ξ * H₁ + H₀ + (l * ξ + m) * h0)
     (by linear_combination 2 * ξ * H₂ - H₁ + 2 * l * h0)
-  have h2y : 2 * (l * ξ + m) ≠ 0 := mul_ne_zero (Ring.two_ne_zero <| ringChar_ne_two W) hy₀
+  have h2y : 2 * (l * ξ + m) ≠ 0 := mul_ne_zero W.two_ne_zero hy₀
   have hy : l * ξ + m ≠ W.negY ξ (l * ξ + m) :=
     sub_ne_zero.mp <| by rwa [negY_of_isCharNeTwoNF, sub_neg_eq_add, ← two_mul]
   have hsl : W.slope ξ ξ (l * ξ + m) (l * ξ + m) = l := by
@@ -844,7 +839,7 @@ lemma two_nsmul_some_eq_zero {x : K} (hx : W.f.eval x = 0) :
 lemma y_eq_zero_of_two_nsmul_eq_zero {x y : K} (h : W.Nonsingular x y)
     (h2 : (2 : ℕ) • (Point.some _ _ h : W.Point) = 0) :
     y = 0 := by
-  have h20 : (2 : K) ≠ 0 := Ring.two_ne_zero <| ringChar_ne_two W
+  have h20 : (2 : K) ≠ 0 := W.two_ne_zero
   rw [two_nsmul, add_eq_zero_iff_eq_neg, Point.neg_some, Point.some.injEq] at h2
   have hy : 2 * y = 0 := by linear_combination h2.2.trans (negY_of_isCharNeTwoNF ..)
   rcases mul_eq_zero.mp hy with h' | h'
@@ -1162,8 +1157,7 @@ def badPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFra
 element of `K` is finite. -/
 lemma finite_badPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
     [IsFractionRing R K] [W.IsElliptic] [W.IsCharNeTwoNF] : (W.badPrimes R).Finite :=
-  have h2 : (2 : K) ≠ 0 := Ring.two_ne_zero (ringChar_ne_two W)
-  ((((HeightOneSpectrum.finite_setOf_valuation_ne_one h2).union
+  ((((HeightOneSpectrum.finite_setOf_valuation_ne_one W.two_ne_zero).union
     (HeightOneSpectrum.finite_setOf_valuation_ne_one W.isUnit_Δ.ne_zero)).union
       (HeightOneSpectrum.Support.finite R W.a₂)).union
         (HeightOneSpectrum.Support.finite R W.a₄)).union
@@ -1201,7 +1195,7 @@ lemma finite_discBadPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebr
 lemma finite_badPrimes₂ (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
     [IsFractionRing R K] [W.IsElliptic] [W.IsCharNeTwoNF] : (W.badPrimes₂ R).Finite :=
   (W.finite_discBadPrimes R).union <|
-    HeightOneSpectrum.finite_setOf_valuation_ne_one <| Ring.two_ne_zero (ringChar_ne_two W)
+    HeightOneSpectrum.finite_setOf_valuation_ne_one <| W.two_ne_zero
 
 /-- The norm of the class of `-1` in the étale algebra is the class of `-1`: the algebra has
 odd rank `3` over `K`. -/
