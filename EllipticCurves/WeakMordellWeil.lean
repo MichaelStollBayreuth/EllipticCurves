@@ -541,7 +541,10 @@ end μ₀
 ### Step 3: show that `μ` is a homomorphism `Multiplicative W.Point → M`
 -/
 
-lemma Point.some_add_some_add_some_eq_zero {xP yP xQ yQ xR yR : K}
+/-- If `P + Q + R = 0` for three affine points `P`, `Q`, `R` on `W`, then their
+`x`-coordinates are the roots of `W.f - ℓ ^ 2` for a polynomial `ℓ` of degree at most `1`
+(the line through the three points). -/
+lemma Point.exists_eq_f_sub_sq_of_add_add_eq_zero {xP yP xQ yQ xR yR : K}
     (hP : W.Nonsingular xP yP) (hQ : W.Nonsingular xQ yQ) (hR : W.Nonsingular xR yR)
     (hPQR : some xP yP hP + some xQ yQ hQ + some xR yR hR = 0) :
     ∃ pol, (X - C xP) * (X - C xQ) * (X - C xR) = W.f - pol ^ 2 ∧ pol.natDegree ≤ 1 := by
@@ -579,7 +582,7 @@ private lemma f_eq_prod_of_eval_f_eq_zero {xP yP xQ yQ xR yR : K} (hP : W.Nonsin
     (h₂ : W.f.eval xQ = 0) :
     W.f = (X - C xP) * (X - C xQ) * (X - C xR) := by
   have hPQ : xQ ≠ xP := xQ_ne_xP_of_eval_f_eq_zero hP hQ hR hPQR h₁
-  obtain ⟨pol, hpol, hpol₁⟩ := Point.some_add_some_add_some_eq_zero hP hQ hR hPQR
+  obtain ⟨pol, hpol, hpol₁⟩ := Point.exists_eq_f_sub_sq_of_add_add_eq_zero hP hQ hR hPQR
   have hpol₀ : pol = 0 := by
     refine pol.eq_zero_of_natDegree_lt_card_of_eval_eq_zero' {xP, xQ} (fun x hx ↦ ?_) ?_
     · simp only [Finset.mem_insert, Finset.mem_singleton] at hx
@@ -601,7 +604,7 @@ private lemma exists_pol_of_eq_two_smul {x y : K} (h : W.Nonsingular x y) {P : W
     rw [← sub_eq_zero, sub_eq_add_neg, two_smul, neg_add, ← add_assoc, add_rotate,
       Point.neg_some] at hP
     have H : W.Nonsingular ξ (W.negY ξ η) := (nonsingular_neg ξ η).mpr h'
-    obtain ⟨pol, hpol, hpol₁⟩ := Point.some_add_some_add_some_eq_zero H H h hP
+    obtain ⟨pol, hpol, hpol₁⟩ := Point.exists_eq_f_sub_sq_of_add_add_eq_zero H H h hP
     rw [← sq] at hpol
     obtain ⟨l, m, rfl⟩ := exists_eq_X_add_C_of_natDegree_le_one hpol₁
     exact ⟨_, _, _, hpol⟩
@@ -644,7 +647,7 @@ private lemma μX_mul_mul_eq_one_of_eval_f_eq_zero_of_ne_of_ne (h : W.f.eval xP 
     W.μX xP * W.μX xQ * W.μX xR = 1 := by
   rw [μX_of_eval_f_eq_zero h, μX_of_eval_f_ne_zero hQ₀, μX_of_eval_f_ne_zero hR₀,
     Units.modPow.unit_mul_unit_mul_unit_eq_one_iff]
-  obtain ⟨pol, hpol, hpol₁⟩ := Point.some_add_some_add_some_eq_zero hP hQ hR hPQR
+  obtain ⟨pol, hpol, hpol₁⟩ := Point.exists_eq_f_sub_sq_of_add_add_eq_zero hP hQ hR hPQR
   obtain ⟨γ, rfl⟩ : ∃ γ, pol = C γ * (X - C xP) := by
     apply_fun (·.eval xP) at hpol
     rw [eval_sub, h] at hpol
@@ -685,7 +688,7 @@ lemma μX_mul_mul_eq_one : W.μX xP * W.μX xQ * W.μX xR = 1 := by
     exact μX_mul_mul_eq_one_of_eval_f_eq_zero hR hP hQ hPQR HR
   rw [μX_of_eval_f_ne_zero HP, μX_of_eval_f_ne_zero HQ, μX_of_eval_f_ne_zero HR,
     Units.modPow.unit_mul_unit_mul_unit_eq_one_iff]
-  obtain ⟨pol, hpol, hpol₁⟩ := Point.some_add_some_add_some_eq_zero hP hQ hR hPQR
+  obtain ⟨pol, hpol, hpol₁⟩ := Point.exists_eq_f_sub_sq_of_add_add_eq_zero hP hQ hR hPQR
   simp only [← map_mul, hpol, neg_sub,
     show (C xP - X) * (C xQ - X) * (C xR - X) = -((X - C xP) * (X - C xQ) * (X - C xR))
       by algebra]
