@@ -141,19 +141,31 @@ lemma derivative_f : derivative W.f = C 3 * X ^ 2 + C (2 * W.a₂) * X + C W.a�
 lemma natDegree_derivative_f (h3 : (3 : K) ≠ 0) : (derivative W.f).natDegree = 2 :=
   W.derivative_f ▸ natDegree_quadratic h3
 
+/-- The Bézout identity between the cubic `f` and its derivative, with the discriminant on the
+right: `f * d + f' * c = disc f` for an explicit linear `d` and quadratic `c`, stated in an
+arbitrary `K`-algebra. The coefficients of `c` and `d` are integer polynomials in `a₂`, `a₄`,
+`a₆`, so they are integral wherever the coefficients of `W` are. -/
+lemma aeval_f_mul_add_aeval_derivative_f_mul_eq_discr {A : Type*} [CommRing A] [Algebra K A]
+    (t : A) :
+    aeval t W.f * ((18 * algebraMap K A W.a₄ - 6 * algebraMap K A W.a₂ ^ 2) * t
+        + (15 * algebraMap K A W.a₂ * algebraMap K A W.a₄ - 4 * algebraMap K A W.a₂ ^ 3
+          - 27 * algebraMap K A W.a₆))
+      + aeval t (derivative W.f) * ((2 * algebraMap K A W.a₂ ^ 2 - 6 * algebraMap K A W.a₄) * t ^ 2
+        + (2 * algebraMap K A W.a₂ ^ 3 - 7 * algebraMap K A W.a₂ * algebraMap K A W.a₄
+          + 9 * algebraMap K A W.a₆) * t
+        + (algebraMap K A W.a₂ ^ 2 * algebraMap K A W.a₄ - 4 * algebraMap K A W.a₄ ^ 2
+          + 3 * algebraMap K A W.a₂ * algebraMap K A W.a₆)) = algebraMap K A W.f.discr := by
+  rw [derivative_f, discr_f]
+  simp only [f, map_add, map_mul, map_pow, map_sub, map_ofNat, aeval_C, aeval_X]
+  ring
+
 lemma separable_f [W.IsElliptic] [W.IsCharNeTwoNF] : W.f.Separable := by
-  have hΔ : W.Δ ≠ 0 := W.isUnit_Δ.ne_zero
-  rw [separable_def', derivative_f, f]
-  refine ⟨C (W.Δ)⁻¹ * (C (288 * W.a₄ - 96 * W.a₂ ^ 2) * X
-      + C (240 * W.a₂ * W.a₄ - 64 * W.a₂ ^ 3 - 432 * W.a₆)),
-    C (W.Δ)⁻¹ * (C (32 * W.a₂ ^ 2 - 96 * W.a₄) * X ^ 2
-      + C (32 * W.a₂ ^ 3 - 112 * W.a₂ * W.a₄ + 144 * W.a₆) * X
-      + C (16 * W.a₂ ^ 2 * W.a₄ - 64 * W.a₄ ^ 2 + 48 * W.a₂ * W.a₆)), ?_⟩
-  rw [mul_assoc, mul_assoc (C (W.Δ)⁻¹), ← mul_add]
-  refine mul_left_cancel₀ (C_ne_zero.mpr hΔ) ?_
-  rw [← mul_assoc, ← map_mul, mul_inv_cancel₀ hΔ, Δ_of_isCharNeTwoNF]
-  simp only [C_eq_algebraMap]
-  algebra
+  have h := W.aeval_f_mul_add_aeval_derivative_f_mul_eq_discr (X : K[X])
+  simp only [aeval_X_left, AlgHom.id_apply, algebraMap_eq] at h
+  obtain ⟨d, c, h⟩ : ∃ d c : K[X], W.f * d + derivative W.f * c = C W.f.discr := ⟨_, _, h⟩
+  refine ⟨C W.f.discr⁻¹ * d, C W.f.discr⁻¹ * c, ?_⟩
+  rw [mul_assoc, mul_assoc, ← mul_add, mul_comm d, mul_comm c, h, ← C_mul,
+    inv_mul_cancel₀ W.discr_f_ne_zero, C_1]
 
 lemma squarefree_f [W.IsElliptic] [W.IsCharNeTwoNF] : Squarefree W.f :=
   (separable_f W).squarefree
@@ -262,15 +274,15 @@ lemma fCofactor_eq_of_f_eq {xP xQ xR : K} (hf : W.f = (X - C xP) * (X - C xQ) * 
     rw [← h, W.f_eq_mul_of_eval_eq_zero h₀, mul_comm]
   exact ⟨key <| by rw [hf]; ring, key <| by rw [hf]; ring, key <| by rw [hf]; ring⟩
 
+/-- `f'` does not vanish at a root of `f`: evaluating the Bézout identity
+`WeierstrassCurve.Affine.aeval_f_mul_add_aeval_derivative_f_mul_eq_discr` there leaves
+`f'(x) * c(x) = disc f ≠ 0`. -/
 lemma deriv_f_ne_zero [W.IsElliptic] [W.IsCharNeTwoNF] {x : K} (hx : W.f.eval x = 0) :
     3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ ≠ 0 := by
-  rw [eval_f] at hx
-  have := W.Δ_of_isCharNeTwoNF ▸ W.isUnit_Δ |>.ne_zero
-  contrapose! this
-  linear_combination ((288 * W.a₄ - 96 * W.a₂ ^ 2) * x
-      + (240 * W.a₂ * W.a₄ - 64 * W.a₂ ^ 3 - 432 * W.a₆)) * hx
-    + ((32 * W.a₂ ^ 2 - 96 * W.a₄) * x ^ 2 + (32 * W.a₂ ^ 3 - 112 * W.a₂ * W.a₄ + 144 * W.a₆) * x
-      + (16 * W.a₂ ^ 2 * W.a₄ - 64 * W.a₄ ^ 2 + 48 * W.a₂ * W.a₆)) * this
+  have h := W.aeval_f_mul_add_aeval_derivative_f_mul_eq_discr x
+  simp only [coe_aeval_eq_eval, Algebra.algebraMap_self, RingHom.id_apply, hx, zero_mul, zero_add,
+    derivative_f, eval_add, eval_mul, eval_C, eval_X, eval_pow] at h
+  exact left_ne_zero_of_mul (h ▸ W.discr_f_ne_zero)
 
 /-- The étale algebra associated to a Weierstrass curve with `a₁ = a₃ = 0`. -/
 abbrev A : Type _ := AdjoinRoot W.f
@@ -716,19 +728,10 @@ private lemma exists_eq_two_smul_of_identities {x y ξ l m : K} (h : W.Nonsingul
     (H₀ : x * ξ ^ 2 = -W.a₆ + m ^ 2) :
     ∃ P, Point.some x y h = 2 • P := by
   have h20 : (2 : K) ≠ 0 := Ring.two_ne_zero <| ringChar_ne_two W
-  have hy₀ : l * ξ + m ≠ 0 := by
-    have hΔ := W.isUnit_Δ.ne_zero
-    rw [Δ_of_isCharNeTwoNF W] at hΔ
-    contrapose! hΔ
-    -- the Bézout certificate for `Δ`, evaluated at `ξ`, where `f ξ = (lξ+m)²` and
-    -- `f' ξ = 2l(lξ+m)` vanish by `hΔ` and the coefficient identities
-    linear_combination
-      (((288 * W.a₄ - 96 * W.a₂ ^ 2) * ξ + (240 * W.a₂ * W.a₄ - 64 * W.a₂ ^ 3 - 432 * W.a₆)) *
-          ((l * ξ + m) * hΔ + ξ ^ 2 * H₂ - ξ * H₁ + H₀))
-        + (((32 * W.a₂ ^ 2 - 96 * W.a₄) * ξ ^ 2
-            + (32 * W.a₂ ^ 3 - 112 * W.a₂ * W.a₄ + 144 * W.a₆) * ξ
-            + (16 * W.a₂ ^ 2 * W.a₄ - 64 * W.a₄ ^ 2 + 48 * W.a₂ * W.a₆)) *
-          (2 * l * hΔ + 2 * ξ * H₂ - H₁))
+  -- if `lξ + m = 0`, then `ξ` is a root of `f` at which `f' ξ = 2l(lξ + m)` vanishes too
+  have hy₀ : l * ξ + m ≠ 0 := fun h0 ↦ W.deriv_f_ne_zero (x := ξ)
+    (by rw [eval_f]; linear_combination ξ ^ 2 * H₂ - ξ * H₁ + H₀ + (l * ξ + m) * h0)
+    (by linear_combination 2 * ξ * H₂ - H₁ + 2 * l * h0)
   have hy : l * ξ + m ≠ W.negY ξ (l * ξ + m) := by
     rw [negY_of_isCharNeTwoNF]
     grind
@@ -1408,24 +1411,21 @@ lemma root_cubic_eq_zero (p : W.f.Factors) :
     AdjoinRoot.mk_eq_zero.mpr p.dvd
   simpa [f, AdjoinRoot.algebraMap_eq] using hz
 
-/-- The Bézout identity behind `separable_f` at the level of `disc f`, evaluated at `θ`:
-`f′(θ)` times an explicit quadratic in `θ` with integral coefficients equals `disc f`.
-(The classical identity with `Δ` on the right is `16` times this one; this version stays
-useful at even places.) -/
+/-- The Bézout identity `WeierstrassCurve.Affine.aeval_f_mul_add_aeval_derivative_f_mul_eq_discr`
+evaluated at `θ`, where `f` vanishes: `f′(θ)` times an explicit quadratic in `θ` with integral
+coefficients equals `disc f`. (The classical identity with `Δ` on the right is `16` times this
+one; this version stays useful at even places.) -/
 lemma deriv_root_mul_eq_discr_f (p : W.f.Factors) :
     (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄)
         * ((2 * ι p W.a₂ ^ 2 - 6 * ι p W.a₄) * θ p ^ 2
           + (2 * ι p W.a₂ ^ 3 - 7 * ι p W.a₂ * ι p W.a₄ + 9 * ι p W.a₆) * θ p
           + (ι p W.a₂ ^ 2 * ι p W.a₄ - 4 * ι p W.a₄ ^ 2 + 3 * ι p W.a₂ * ι p W.a₆)) =
       ι p W.f.discr := by
-  have hd : ι p W.f.discr = ι p W.a₂ ^ 2 * ι p W.a₄ ^ 2 - 4 * ι p W.a₄ ^ 3
-      - 4 * ι p W.a₂ ^ 3 * ι p W.a₆ - 27 * ι p W.a₆ ^ 2
-      + 18 * ι p W.a₂ * ι p W.a₄ * ι p W.a₆ := by
-    rw [W.discr_f]
-    simp only [map_sub, map_add, map_mul, map_pow, map_ofNat]
-  rw [hd]
-  linear_combination (-(18 * ι p W.a₄ - 6 * ι p W.a₂ ^ 2) * θ p
-    - (15 * ι p W.a₂ * ι p W.a₄ - 4 * ι p W.a₂ ^ 3 - 27 * ι p W.a₆)) * W.root_cubic_eq_zero p
+  have h := W.aeval_f_mul_add_aeval_derivative_f_mul_eq_discr (θ p)
+  rw [AdjoinRoot.aeval_eq, AdjoinRoot.aeval_eq, AdjoinRoot.mk_eq_zero.mpr p.dvd, zero_mul,
+    zero_add, derivative_f] at h
+  simpa only [map_add, map_mul, map_pow, map_ofNat, AdjoinRoot.mk_C, AdjoinRoot.mk_X,
+    AdjoinRoot.algebraMap_eq] using h
 
 /-- The cofactor `f / (X - x)`, computed in the field factor `K[X]/(p)`. -/
 lemma mk_fCofactor_eq (p : W.f.Factors) (x : K) :
