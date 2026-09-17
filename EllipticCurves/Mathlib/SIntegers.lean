@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Michael Stoll. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Michael Stoll
+-/
 module
 
 public import EllipticCurves.Mathlib.Basic
@@ -33,10 +38,11 @@ integral ideal `𝔞` in the class of `v` the fractional ideal `𝔞 * v⁻¹` i
 some `x` with `v x < 1` and `w x ≤ 1` for `w ≠ v`. So `𝒪_S` has to be handled as a general
 overring of `R`, not as a ring of fractions.
 
-The classical statement in the appropriate generality is that *every* overring of a Dedekind
-domain (i.e. every ring between `R` and `K`) is a Dedekind domain. The proofs below use the
-`S`-integer description directly (via the denominator-ideal argument in `map_comap_eq`), which
-keeps them short; upstreaming to Mathlib might instead aim for the general overring statement.
+The classical statement in the appropriate generality is that *every* overring of a Dedekind domain
+(i.e. every ring between `R` and `K`) is a Dedekind domain. The proofs below use the `S`-integer
+description directly (via the denominator-ideal argument in
+`IsDedekindDomain.SInteger.map_comap_eq`), which keeps them short; upstreaming to Mathlib might
+instead aim for the general overring statement.
 
 ## Implementation notes
 
@@ -50,9 +56,11 @@ domain.
 * `IsDedekindDomain.SInteger.isIntegrallyClosed`: `𝒪_S` is integrally closed.
 * `IsDedekindDomain.SInteger.isDedekindDomain`: `𝒪_S` is a Dedekind domain.
 * `IsDedekindDomain.SInteger.heightOneSpectrumEquiv`: the primes of `𝒪_S` are the `v ∉ S`, and
-  `valuation_heightOneSpectrumEquiv`: the valuations restrict those of `R`.
-* `IsDedekindDomain.SInteger.extendedHom_surjective` and `finite_classGroup`: extension of ideals
-  `Cl(R) → Cl(𝒪_S)` is surjective, so `Cl(𝒪_S)` is finite whenever `Cl(R)` is.
+  `IsDedekindDomain.SInteger.valuation_heightOneSpectrumEquiv`: the valuations restrict those of
+  `R`.
+* `IsDedekindDomain.SInteger.extendedHom_surjective` and
+  `IsDedekindDomain.SInteger.finite_classGroup`: extension of ideals `Cl(R) → Cl(𝒪_S)` is
+  surjective, so `Cl(𝒪_S)` is finite whenever `Cl(R)` is.
 * `IsDedekindDomain.SInteger.classGroupEquiv`: `Cl(𝒪_S) ≃* Cl(R) ⧸ ⟨[v] : v ∈ S⟩`.
 
 -/
@@ -164,9 +172,9 @@ lemma map_asIdeal_eq_top {v : HeightOneSpectrum R} (hv : v ∈ S) :
 
 Let `I` be an ideal of `𝒪_S` and `J = I ∩ R` its contraction. For `x ∈ I` the denominator ideal
 `𝔡 x = {r : R | r * x ∈ R}` is divisible only by primes in `S`, because `x` is `w`-integral for
-`w ∉ S`. Hence `𝔡 x * 𝒪_S = ⊤` by `map_asIdeal_eq_top`, so `1 = ∑ dᵢ cᵢ` with `dᵢ ∈ 𝔡 x` and
-`cᵢ ∈ 𝒪_S`, and `x = ∑ (dᵢ * x) * cᵢ` exhibits `x` as an element of `J * 𝒪_S`, since
-`dᵢ * x ∈ R ∩ I = J`.
+`w ∉ S`. Hence `𝔡 x * 𝒪_S = ⊤` by `IsDedekindDomain.SInteger.map_asIdeal_eq_top`, so `1 = ∑ dᵢ cᵢ`
+with `dᵢ ∈ 𝔡 x` and `cᵢ ∈ 𝒪_S`, and `x = ∑ (dᵢ * x) * cᵢ` exhibits `x` as an element of `J * 𝒪_S`,
+since `dᵢ * x ∈ R ∩ I = J`.
 
 Noetherianity is immediate from this: `J` is finitely generated as `R` is Noetherian, hence so
 is its extension `I`.
@@ -189,7 +197,8 @@ lemma denomIdeal_ne_bot (x : K) : denomIdeal K x ≠ (⊥ : Ideal R) := by
   simpa [h0] using this
 
 /-- The denominator ideal of an `S`-integer extends to the unit ideal of `𝒪_S`: all its prime
-factors lie in `S`, and each of those extends to the unit ideal by `map_asIdeal_eq_top`. -/
+factors lie in `S`, and each of those extends to the unit ideal by
+`IsDedekindDomain.SInteger.map_asIdeal_eq_top`. -/
 lemma map_denomIdeal_eq_top {x : K} (hx : x ∈ S.integer K) :
     Ideal.map (algebraMap R (S.integer K)) (denomIdeal K x) = ⊤ := by
   by_contra h
@@ -225,7 +234,7 @@ theorem map_comap_eq (I : Ideal (S.integer K)) :
 -/
 
 /-- The ring of `S`-integers is Noetherian: every ideal is extended from the Noetherian
-ring `R` by `map_comap_eq`. -/
+ring `R` by `IsDedekindDomain.SInteger.map_comap_eq`. -/
 instance isNoetherianRing : IsNoetherianRing (S.integer K) := by
   refine (isNoetherianRing_iff_ideal_fg _).mpr fun I ↦ ?_
   rw [← map_comap_eq K S I]
@@ -233,14 +242,15 @@ instance isNoetherianRing : IsNoetherianRing (S.integer K) := by
     (algebraMap R (S.integer K))
 
 /-- The contraction to `R` of a nonzero prime of `𝒪_S` is a nonzero prime: if it were zero, the
-prime would be `map ⊥ = ⊥` by `map_comap_eq`. -/
+prime would be `map ⊥ = ⊥` by `IsDedekindDomain.SInteger.map_comap_eq`. -/
 lemma comap_ne_bot {P : Ideal (S.integer K)} (hP : P ≠ ⊥) :
     P.comap (algebraMap R (S.integer K)) ≠ ⊥ := by
   intro h0
   exact hP (by rw [← map_comap_eq K S P, h0, Ideal.map_bot])
 
-/-- The ring of `S`-integers has Krull dimension at most `1`: the contraction to `R` of a
-nonzero prime is maximal, and equalities of ideals lift back through `map_comap_eq`. -/
+/-- The ring of `S`-integers has Krull dimension at most `1`: the contraction to `R` of a nonzero
+prime is maximal, and equalities of ideals lift back through
+`IsDedekindDomain.SInteger.map_comap_eq`. -/
 instance dimensionLEOne : Ring.DimensionLEOne (S.integer K) := by
   refine ⟨fun {P} hP hPp ↦ ?_⟩
   set f := algebraMap R (S.integer K) with hf
@@ -413,7 +423,7 @@ instance : Module.IsTorsionFree R (S.integer K) := by
   exact FaithfulSMul.algebraMap_injective R (S.integer K)
 
 /-- Extension of ideals `Cl(R) → Cl(𝒪_S)` is surjective: every ideal of `𝒪_S` is extended from
-`R` (`map_comap_eq`). -/
+`R` (`IsDedekindDomain.SInteger.map_comap_eq`). -/
 lemma extendedHom_surjective :
     Function.Surjective (ClassGroup.extendedHom R (S.integer K)) := by
   intro c
@@ -436,7 +446,7 @@ instance subsingleton_classGroup [Subsingleton (ClassGroup R)] :
   (extendedHom_surjective K S).subsingleton
 
 /-- Divisibility by prime powers transfers along extension to `𝒪_S` and back, for primes off
-`S` (`comap_map_pow` for the reverse direction). -/
+`S` (`IsDedekindDomain.SInteger.comap_map_pow` for the reverse direction). -/
 lemma map_le_map_pow_iff {v : HeightOneSpectrum R} (hv : v ∉ S) (J : Ideal R) (k : ℕ) :
     Ideal.map (algebraMap R (S.integer K)) J ≤ (primeOfNotMem K S hv).asIdeal ^ k ↔
       J ≤ v.asIdeal ^ k := by
@@ -481,11 +491,11 @@ lemma closure_le_ker_extendedHom :
   rw [map_asIdeal_eq_top K S hv]
   exact ⟨1, by simp⟩
 
-/-- The kernel of extension of ideal classes to `𝒪_S` is contained in the subgroup generated by
-the classes of the primes in `S`: if `map J = (x)` is principal, then `J` and the principal
-fractional ideal `(x)` of `R` have the same valuations off `S` (`count_map_coeIdeal`,
-`count_spanSingleton_primeOfNotMem`), so the class of `J` is a product of classes of primes in
-`S` (`FractionalIdeal.mk0_mem_closure_of_count_eq`). -/
+/-- The kernel of extension of ideal classes to `𝒪_S` is contained in the subgroup generated by the
+classes of the primes in `S`: if `map J = (x)` is principal, then `J` and the principal fractional
+ideal `(x)` of `R` have the same valuations off `S` (`IsDedekindDomain.SInteger.count_map_coeIdeal`,
+`IsDedekindDomain.SInteger.count_spanSingleton_primeOfNotMem`), so the class of `J` is a product of
+classes of primes in `S` (`FractionalIdeal.mk0_mem_closure_of_count_eq`). -/
 lemma ker_extendedHom_le :
     (ClassGroup.extendedHom R (S.integer K)).ker ≤
       Subgroup.closure (HeightOneSpectrum.classGroupMk '' S) := by

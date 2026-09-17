@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Michael Stoll. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Michael Stoll
+-/
 module
 
 public import EllipticCurves.Mathlib.Basic
@@ -9,48 +14,58 @@ public import Mathlib
 /-!
 # The Weak Mordell-Weil Theorem
 
-The goal of this file is to show that `E(K)/2E(K)` is finite, where `E` is an elliptic curve
-given by a Weierstrass equation `y² = x³ + a₂x² + a₄x + a₆ =: f(x)` (so with `a₁ = a₃ = 0`,
-which is always achievable when the characteristic is not `2`)
-over the fraction field `K` of a Dedekind domain `R`, under finiteness hypotheses — finite
-class group and finitely generated unit group for the rings of integers of the field factors
-of `K[X]/⟨f⟩` — that are theorems when `K` is a number field.
+Let `E` be an elliptic curve given by a Weierstrass equation `y² = x³ + a₂x² + a₄x + a₆ =: f(x)`
+(so with `a₁ = a₃ = 0`, which is always achievable when the characteristic is not `2`) over the
+fraction field `K` of a Dedekind domain `R`. This file shows that `E(K)/2E(K)` is finite under
+finiteness hypotheses — finite class group and finitely generated unit group for the rings of
+integers of the field factors of `K[X]/⟨f⟩` — that are theorems when `K` is a number field. The
+proof is the classical `x - T` map argument; the general-purpose material developed along the way
+lives in `EllipticCurves.Mathlib.Basic`.
 
-We use the `x-T` map approach.
+## Main definitions
 
-The general-purpose material developed along the way, which has nothing to do with elliptic
-curves, lives in `EllipticCurves.Mathlib.Basic`.
+* `WeierstrassCurve.Affine.f`: the cubic `X ^ 3 + a₂ X ^ 2 + a₄ X + a₆`, and
+  `WeierstrassCurve.Affine.A`: the étale algebra `K[X]/⟨f⟩`.
+* `WeierstrassCurve.Affine.M`: the group `Aˣ/(Aˣ)²` of square classes, and
+  `WeierstrassCurve.Affine.μ : Multiplicative E(K) →* M`, the `x - T` map: `μ (x, y)` is the
+  class of `x - T` if `f x ≠ 0` and the class of `f' T` otherwise (the underlying plain map is
+  `WeierstrassCurve.Affine.μ₀`).
+* `WeierstrassCurve.Affine.badPrimes`: the primes of `R` dividing `2` or `Δ` or occurring in a
+  denominator of a coefficient, and `WeierstrassCurve.Affine.selmerGroupA`: the subgroup `A(S,2)`
+  of `M` of the classes whose valuation is even at every prime of a field factor of `A` not lying
+  above `S`.
 
-1. Let `A := K[X]/⟨f(X)⟩` be the étale algebra defined by `f`.
-   => done.
-2. Define `M := Aˣ⧸squares` and the map `μ : E(K) → M` given by `μ 0 = 1`,
-   `μ (x, y) = (x-θ) mod squares` if `f(x) ≠ 0`, else `f'(θ) mod squares`.
-   => done (the bare map is defined as `μ₀`).
-3. Show that `μ` is a group homomorphism.
-   => done.
-4. Show that `ker μ = 2E(K)`.
-   => done.
-5. Show that `im μ` is contained in the kernel of the norm map on square classes.
-   => done, via `AdjoinRoot.norm_mk_eq_resultant`, which says that the norm of
-   `AdjoinRoot.mk g p` for monic `g` is the resultant of `g` and `p`
-   (in `EllipticCurves.Mathlib.Basic`).
-   Note that this step is *not* needed for the finiteness result (Steps 6 and 7 do not use
-   it); it is included because the norm condition cuts down the Selmer group in explicit
-   computations.
-6. Show that `im μ ⊆ A(S,2)` for a suitable finite set `S` of "bad" primes.
-   => done, as `range_μ_le_selmerGroupA` at the end of the file, for `E` over the fraction field
-   of a Dedekind domain and for *any* `S` outside which the coefficients of the cubic are
-   integral and `disc f` is a unit. Such sets are provided by `badPrimes` (primes dividing `2`
-   or `Δ`, or occurring in a coefficient denominator); the refined sets `discBadPrimes` and
-   `badPrimes₂` defined alongside it feed the sharpened Selmer-group bound of
-   `EllipticCurves.SelmerGroup`.
-7. Show that `A(S,2)` is finite, and conclude that `E(K)/2E(K)` is finite.
-   => done, as `finite_index_range_nsmulAddMonoidHom_two` at the end of the file. The
-   finiteness of the `2`-Selmer group of each field factor is
-   `IsDedekindDomain.finite_selmerGroup` (in `EllipticCurves.Mathlib.SelmerGroup`); it requires
-   the class group of the factor's ring of integers to be finite and its unit group to be finitely
-   generated, which are taken as hypotheses (for number fields they are the class number
-   theorem and Dirichlet's unit theorem, both in Mathlib).
+## Main statements
+
+* `WeierstrassCurve.Affine.ker_μ_eq`: the kernel of `μ` is `2E(K)`.
+* `WeierstrassCurve.Affine.range_μ_le_ker_normM`: the image of `μ` lies in the kernel of the
+  norm map on square classes (not needed for finiteness, but it cuts down the Selmer group in
+  explicit computations).
+* `WeierstrassCurve.Affine.range_μ_le_selmerGroupA`: `im μ ⊆ A(S,2)` for every `S` outside of
+  which the coefficients of `f` are integral and `disc f` is a unit.
+* `WeierstrassCurve.Affine.finite_selmerGroupA`: `A(S,2)` is finite for finite `S`, given that
+  the ring of integers of each field factor has finite class group and finitely generated unit
+  group, and `WeierstrassCurve.Affine.finite_index_range_nsmulAddMonoidHom_two`: **the weak
+  Mordell-Weil theorem**, `2E(K)` has finite index in `E(K)`.
+
+## Outline of the proof
+
+1. `A := K[X]/⟨f⟩` is a finite étale `K`-algebra, as `f` is separable
+   (`WeierstrassCurve.Affine.separable_f`).
+2. `M := Aˣ/(Aˣ)²`, and the plain map `μ₀ : E(K) → M`.
+3. `μ₀` is multiplicative (`WeierstrassCurve.Affine.μ₀_mul_mul_eq_one_of_add_add_eq_zero`, from
+   the collinearity of three points summing to `0`), so it is a group homomorphism `μ`.
+4. `ker μ = 2E(K)` (`WeierstrassCurve.Affine.exists_eq_two_smul_iff` and
+   `WeierstrassCurve.Affine.eq_two_smul_of_μ_eq_one`).
+5. `im μ ⊆ ker (norm)`, via `AdjoinRoot.norm_mk_eq_resultant`.
+6. `im μ ⊆ A(S,2)`, checked factor by factor by a valuation computation inside each field factor
+   `K[X]/⟨p⟩` (`WeierstrassCurve.Affine.even_valuationOfNeZero_sub_root`).
+7. `A(S,2)` is finite: the `2`-Selmer group of each field factor is finite by
+   `IsDedekindDomain.finite_selmerGroup` (in `EllipticCurves.Mathlib.SelmerGroup`).
+
+The refined sets of primes `WeierstrassCurve.Affine.discBadPrimes` and
+`WeierstrassCurve.Affine.badPrimes₂` feed the sharpened Selmer-group bound of
+`EllipticCurves.SelmerGroup`.
 -/
 
 /-!
@@ -491,7 +506,7 @@ noncomputable def μX (x : K) : W.M :=
   simp only [μX, dite_eq_right hx]
 
 /-- The descent or `x - T` map `μ₀` on the group of points of an affine Weierstrass curve.
-This is a plain map; it is upgraded to a group homomorphism `μ` below. -/
+This is a plain map; `WeierstrassCurve.Affine.μ` is the same map as a group homomorphism. -/
 noncomputable def μ₀ : W.Point → W.M
   | 0 => 1
   | .some x _ _ => W.μX x
@@ -898,15 +913,14 @@ Writing `f = (X - θ₁) * (X - θ₂) * (X - θ₃)` over a splitting field, th
 * if `f x ≠ 0`, then `N (x - θ) = ∏ᵢ (x - θᵢ) = f x = y²`, a square;
 * if `f x = 0`, then `N (f' θ) = (f' x)²`, again a square.
 
-Both are instances of `AdjoinRoot.norm_mk_eq_resultant`: the norm of `AdjoinRoot.mk g p` for
-monic `g` is the resultant of `g` and `p`. See `norm_mk_C_sub_X` and
-`norm_mk_C_sub_X_add_fCofactor` in Step 1 above, which deduce them from it by resultant algebra;
-in the second case the factorization `f = fCofactor x * (X - C x)` splits the resultant into two
-factors, each equal to `(W.fCofactor x).eval x = f' x`.
+Both are instances of `AdjoinRoot.norm_mk_eq_resultant`: the norm of `AdjoinRoot.mk g p` for monic
+`g` is the resultant of `g` and `p`. `WeierstrassCurve.Affine.norm_mk_C_sub_X` and
+`WeierstrassCurve.Affine.norm_mk_C_sub_X_add_fCofactor` (Step 1) deduce them from it by resultant
+algebra; in the second case the factorization `f = fCofactor x * (X - C x)` splits the resultant
+into two factors, each equal to `(W.fCofactor x).eval x = f' x`.
 
 `AdjoinRoot.norm_mk_eq_resultant` is proved in `EllipticCurves.Mathlib.Basic`; it is a general fact
-about
-`AdjoinRoot g` for monic `g` and looks worth upstreaming.
+about `AdjoinRoot g` for monic `g` and looks worth upstreaming.
 -/
 
 section Step5
@@ -945,8 +959,8 @@ end WeierstrassCurve.Affine
 
 The right level of generality is: `R` a Dedekind domain, `K = Frac R`, and `E/K` given by a
 Weierstrass equation with `a₁ = a₃ = 0`. Everything Step 6 needs — a height-one spectrum,
-the `v`-adic
-valuations, and unique factorization of fractional ideals — is exactly the Dedekind package.
+the `v`-adic valuations, and unique factorization of fractional ideals — is exactly the Dedekind
+package.
 Number fields are *not* needed until Step 7.
 
 `Mathlib.RingTheory.DedekindDomain.SelmerGroup` already defines, for a Dedekind domain `R` with
@@ -971,8 +985,9 @@ With that in hand:
   Dedekind domain (`IsIntegralClosure.isDedekindDomain`, applicable thanks to
   `AdjoinRoot.isSeparable_of_separable`) with fraction field `AdjoinRoot p`, so
   `IsDedekindDomain.selmerGroup` applies to it;
-* `A(S,2)` (`selmerGroupA`) is the preimage under the above isomorphism of the product of the
-  `selmerGroupFactor R p`, the `2`-Selmer groups relative to the primes above `S`;
+* `A(S,2)` (`WeierstrassCurve.Affine.selmerGroupA`) is the preimage under the above isomorphism of
+  the product of the `selmerGroupFactor R p`, the `2`-Selmer groups relative to the primes above
+  `S`;
 * the containment `im μ ⊆ A(S,2)` is checked factor by factor: for `P = (x, y)` and `w` a prime
   of `ringOfIntegersFactor R p` not above `S`, the valuation `w (x - θ)` is even, where `θ` is
   the root of `p`. If `x` has a pole at `w`, the leading term of the cubic dominates and
@@ -987,17 +1002,17 @@ factor, which needs the primes above `S` to be finite in number, the class group
 `ringOfIntegersFactor R p` to be finite, and its unit group to be finitely generated — i.e.
 number fields. Mathlib lists finiteness of `selmerGroup` as a TODO.
 
-Note that the valuation computation stays inside the single field factor `K[X]/(p)`; no
-splitting field is needed. That `f' θ` is a unit at every good prime
-(`valuation_deriv_root_eq_one`) needs exactly that the coefficients of the cubic are integral
-and `disc f` is a unit there — which is what `Δ ∈ badPrimes` buys, via the Bézout identity
-behind `separable_f`.
+Note that the valuation computation stays inside the single field factor `K[X]/(p)`; no splitting
+field is needed. That `f' θ` is a unit at every good prime
+(`WeierstrassCurve.Affine.valuation_deriv_root_eq_one`) needs exactly that the coefficients of the
+cubic are integral and `disc f` is a unit there — which is what `Δ ∈ badPrimes` buys, via the Bézout
+identity behind `WeierstrassCurve.Affine.separable_f`.
 
-All of this is carried out below: `badPrimes` (`S`) and its finiteness,
-`AdjoinRoot.isSeparable_of_separable` (so that `IsIntegralClosure.isDedekindDomain` applies to
-each factor), `IsDedekindDomain.HeightOneSpectrum.primesAbove` (the `S i`),
-`IsDedekindDomain.selmerGroupAbove`, `selmerGroupA` (`A(S,2)`, as a subgroup of `W.M`), and
-finally `range_μ_le_selmerGroupA`.
+In this file: `WeierstrassCurve.Affine.badPrimes` (`S`) and its finiteness,
+`AdjoinRoot.isSeparable_of_separable` (so that `IsIntegralClosure.isDedekindDomain` applies to each
+factor), `IsDedekindDomain.HeightOneSpectrum.primesAbove` (the `S i`),
+`IsDedekindDomain.selmerGroupAbove`, `WeierstrassCurve.Affine.selmerGroupA` (`A(S,2)`, as a subgroup
+of `W.M`), and finally `WeierstrassCurve.Affine.range_μ_le_selmerGroupA`.
 -/
 
 section Cubic
@@ -1173,14 +1188,14 @@ def discBadPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
     HeightOneSpectrum.Support R W.a₄ ∪ HeightOneSpectrum.Support R W.a₆
 
 /-- The places where the local condition genuinely constrains the 2-Selmer group: the
-degenerate places of `discBadPrimes` together with all even places. -/
+degenerate places of `WeierstrassCurve.Affine.discBadPrimes` together with all even places. -/
 def badPrimes₂ (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
     [IsFractionRing R K] : Set (HeightOneSpectrum R) :=
   W.discBadPrimes R ∪ {v | v.valuation K 2 ≠ 1}
 
 open WithZero in
-/-- There are only finitely many places in `discBadPrimes`: where `exp (-1) ≤ v(disc f)`
-fails, in particular `v(disc f) ≠ 1`, and `disc f` is nonzero. -/
+/-- There are only finitely many places in `WeierstrassCurve.Affine.discBadPrimes`: where
+`exp (-1) ≤ v(disc f)` fails, in particular `v(disc f) ≠ 1`, and `disc f` is nonzero. -/
 lemma finite_discBadPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
     [IsFractionRing R K] [W.IsElliptic] [W.IsCharNeTwoNF] : (W.discBadPrimes R).Finite :=
   have h : {v : HeightOneSpectrum R | ¬ exp (-1 : ℤ) ≤ v.valuation K W.f.discr} ⊆
@@ -1191,7 +1206,7 @@ lemma finite_discBadPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebr
       (HeightOneSpectrum.Support.finite R W.a₄)).union
         (HeightOneSpectrum.Support.finite R W.a₆)
 
-/-- There are only finitely many places in `badPrimes₂`. -/
+/-- There are only finitely many places in `WeierstrassCurve.Affine.badPrimes₂`. -/
 lemma finite_badPrimes₂ (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
     [IsFractionRing R K] [W.IsElliptic] [W.IsCharNeTwoNF] : (W.badPrimes₂ R).Finite :=
   (W.finite_discBadPrimes R).union <|
@@ -1217,9 +1232,10 @@ lemma normM_neg_one_ne_one (h : ¬ IsSquare (-1 : K)) :
   simpa using h
 
 open WithZero in
-/-- `discBadPrimes` is empty when the coefficients of the cubic are everywhere integral and
-its discriminant vanishes at most to first order everywhere — e.g. for a global integral model
-with squarefree `disc f` (`IsDedekindDomain.HeightOneSpectrum.notMem_pow_two_of_squarefree`). -/
+/-- `WeierstrassCurve.Affine.discBadPrimes` is empty when the coefficients of the cubic are
+everywhere integral and its discriminant vanishes at most to first order everywhere — e.g. for a
+global integral model with squarefree `disc f`
+(`IsDedekindDomain.HeightOneSpectrum.notMem_pow_two_of_squarefree`). -/
 lemma discBadPrimes_eq_empty (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
     [IsFractionRing R K] (ha₂ : ∀ v : HeightOneSpectrum R, v.valuation K W.a₂ ≤ 1)
     (ha₄ : ∀ v : HeightOneSpectrum R, v.valuation K W.a₄ ≤ 1)
@@ -1311,7 +1327,7 @@ lemma valuation_two_eq_one_of_notMem_badPrimes₂ (hv : v ∉ W.badPrimes₂ R) 
     v.valuation K 2 = 1 :=
   not_not.mp fun hne ↦ hv (.inr hne)
 
-/-- Away from `badPrimes₂`, the residue characteristic is odd. -/
+/-- Away from `WeierstrassCurve.Affine.badPrimes₂`, the residue characteristic is odd. -/
 lemma two_notMem_asIdeal_of_notMem_badPrimes₂ (hv : v ∉ W.badPrimes₂ R) :
     (2 : R) ∉ v.asIdeal := by
   have h := W.valuation_two_eq_one_of_notMem_badPrimes₂ R hv
@@ -1322,8 +1338,8 @@ lemma discBadPrimes_subset_badPrimes₂ : W.discBadPrimes R ⊆ W.badPrimes₂ R
   Set.subset_union_left
 
 open WithZero in
-/-- The refined bad set is contained in the old one: away from `badPrimes`, both `2` and
-`disc f` are `v`-adic units and the coefficients are `v`-integral. -/
+/-- The refined bad set is contained in the old one: away from `WeierstrassCurve.Affine.badPrimes`,
+both `2` and `disc f` are `v`-adic units and the coefficients are `v`-integral. -/
 lemma badPrimes₂_subset_badPrimes [W.IsCharNeTwoNF] : W.badPrimes₂ R ⊆ W.badPrimes R := by
   refine fun v hv ↦ by_contra fun hb ↦ ?_
   rcases hv with (((hd | h) | h) | h) | h2
@@ -1516,9 +1532,10 @@ include ha₂ ha₄ ha₆ hd in
 /-- If the coefficients of the cubic are integral and `disc f` is a unit at the prime below
 `w`, then `f' θ = 3 θ ^ 2 + 2 a₂ θ + a₄` is a `w`-unit.
 
-Evaluating the Bézout identity behind `separable_f` at `θ` gives `f'(θ) * c(θ) = disc f`
-(`deriv_root_mul_eq_discr_f`) for an explicit quadratic `c` with `w`-integral coefficients.
-Both factors are integral at `w` and the product is a unit, so both are units. -/
+Evaluating the Bézout identity behind `WeierstrassCurve.Affine.separable_f` at `θ` gives
+`f'(θ) * c(θ) = disc f` (`WeierstrassCurve.Affine.deriv_root_mul_eq_discr_f`) for an explicit
+quadratic `c` with `w`-integral coefficients. Both factors are integral at `w` and the product is a
+unit, so both are units. -/
 lemma valuation_deriv_root_eq_one :
     w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1 :=
   Valuation.map_cubic_deriv_eq_one _ (W.valuation_algebraMap_le_one R p w ha₂)
@@ -1547,9 +1564,9 @@ Both `x` and `θ` are roots of `f`, so `x - θ` times the cofactor is `0` and, `
 one of the two factors vanishes. If `x = θ` the component is `f'(x)`; if the cofactor vanishes
 the component is `x - θ` and `f'(x) = (x - θ)(2x + θ + a₂)`. Either way `hdx` makes it a unit.
 
-At a good prime, `hdx` is supplied by `valuation_deriv_eval_eq_one`; at an odd prime with
-`v(disc f) = exp (-1)` the same lemma applies, so the `2`-torsion representative is unramified
-there as well. -/
+At a good prime, `hdx` is supplied by `WeierstrassCurve.Affine.valuation_deriv_eval_eq_one`; at an
+odd prime with `v(disc f) = exp (-1)` the same lemma applies, so the `2`-torsion representative is
+unramified there as well. -/
 lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0)
     (hdx : (w.below R).valuation K (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1) :
     w.valuation (𝕃 p) (ι p x - θ p + AdjoinRoot.mk (p : K[X]) (W.fCofactor x)) = 1 := by
@@ -1709,18 +1726,18 @@ lemma mem_selmerGroupA_iff (m : W.M) :
 
 Write `θ` for `AdjoinRoot.root p`, the image of the root `T` in the field factor `K[X]/(p)`,
 and `𝓞` for the integral closure of `R` in `K[X]/(p)`, a Dedekind domain by
-`isDedekindDomain_ringOfIntegersFactor` (an instance, in the `RingOfIntegers` section above).
+`WeierstrassCurve.Affine.isDedekindDomain_ringOfIntegersFactor` (an instance).
 
 The `p`-component of `μX x` is the square class of the reduction mod `p` of the `x - T`
-representative, computed by `projFactor_mk_C_sub_X` and
-`projFactor_mk_C_sub_X_add_fCofactor` below: it is `x - θ` in the generic case and
+representative, computed by `WeierstrassCurve.Affine.projFactor_mk_C_sub_X` and
+`WeierstrassCurve.Affine.projFactor_mk_C_sub_X_add_fCofactor`: it is `x - θ` in the generic case and
 `x - θ + fCofactor x` when `x` is a root of `f`.
 
 What has to be shown is that this class lies in the `2`-Selmer group of `K[X]/(p)`, i.e. that
 `w (x - θ)` is even for every prime `w` of `𝓞` not lying above a prime of `S`; away from `S`,
 the coefficients of the cubic are integral and `disc f` is a unit, by hypothesis.
-The two cases are split off as `mem_selmerGroupFactor_of_eval_f_ne_zero` and
-`mem_selmerGroupFactor_of_eval_f_eq_zero`.
+The two cases are split off as `WeierstrassCurve.Affine.mem_selmerGroupFactor_of_eval_f_ne_zero` and
+`WeierstrassCurve.Affine.mem_selmerGroupFactor_of_eval_f_eq_zero`.
 -/
 
 /-- Membership of the class of a unit in the `2`-Selmer group of a field factor: its valuation
@@ -1780,9 +1797,9 @@ lemma mem_selmerGroupFactor_of_eval_f_ne_zero {x y : K} (h : W.Equation x y)
 include hSa₂ hSa₄ hSa₆ hSd in
 /-- `2`-torsion case of the arithmetic input: `f x = 0`.
 
-By `projFactor_mk_C_sub_X_add_fCofactor` the `p`-component of `μX x` is `x - θ + fCofactor x`,
-which by `valuation_projFactor_torsion_eq_one` is a unit at every prime `w` not lying above
-`S`. Its valuation is therefore `0`, in particular even. -/
+By `WeierstrassCurve.Affine.projFactor_mk_C_sub_X_add_fCofactor` the `p`-component of `μX x` is
+`x - θ + fCofactor x`, which by `WeierstrassCurve.Affine.valuation_projFactor_torsion_eq_one` is a
+unit at every prime `w` not lying above `S`. Its valuation is therefore `0`, in particular even. -/
 lemma mem_selmerGroupFactor_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0)
     (p : W.f.Factors) :
     (((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
@@ -1842,7 +1859,7 @@ class group
 of the factor's ring of integers to be finite and its unit group to be finitely generated;
 these are taken as hypotheses here (for `K` a number field they are the class number theorem
 and Dirichlet's unit theorem). The relevant set of primes, those above `S`, is finite by
-`HeightOneSpectrum.primesAbove_finite` whenever `S` is. -/
+`IsDedekindDomain.HeightOneSpectrum.primesAbove_finite` whenever `S` is. -/
 
 section Step7
 
@@ -1888,7 +1905,7 @@ the normal form `y² = x³ + a₂x² + a₄x + a₆` over the fraction field `K`
 `K[X]/(p)` has finite class group and finitely generated unit group.
 
 This is the input to the descent argument (`AddCommGroup.fg_of_descent'`) in the proof of the
-Mordell-Weil theorem, `fg_point` in `EllipticCurves.MordellWeil`. -/
+Mordell-Weil theorem, `WeierstrassCurve.Affine.fg_point` in `EllipticCurves.MordellWeil`. -/
 theorem finite_index_range_nsmulAddMonoidHom_two :
     (nsmulAddMonoidHom (α := W.Point) 2).range.FiniteIndex := by
   rw [finite_index_range_nsmulAddMonoidHom_two_iff]

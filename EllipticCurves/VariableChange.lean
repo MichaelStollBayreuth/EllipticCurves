@@ -1,5 +1,5 @@
 /-
-Copyright (c) 2026 Kevin Buzzard. All rights reserved.
+Copyright (c) 2026 Michael Stoll. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Michael Stoll, Claude
 -/
@@ -51,7 +51,7 @@ lemma variableChange_negY (x y : F) :
   field
 
 /-- The image of a pair of points under the change of variables satisfies the `y₁ = -y₂`
-degeneracy condition (`negY`) only if the original pair does. -/
+degeneracy condition (`WeierstrassCurve.Affine.negY`) only if the original pair does. -/
 lemma variableChange_negY_ne {x₁ x₂ y₁ y₂ : F}
     (hxy : ¬(x₁ = x₂ ∧ y₁ = (C • W).toAffine.negY x₂ y₂)) :
     ¬((C.u : F) ^ 2 * x₁ + C.r = (C.u : F) ^ 2 * x₂ + C.r ∧

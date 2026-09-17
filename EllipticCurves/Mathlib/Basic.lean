@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Michael Stoll. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Michael Stoll
+-/
 module
 
 public import Mathlib
@@ -17,20 +22,23 @@ that have nothing to do with elliptic curves and look like candidates for Mathli
   `Valuation.eq_one_of_mul_eq_one`: a factor of a unit is a unit, provided both factors are
   integral.
 * `IsDedekindDomain.HeightOneSpectrum.finite_setOf_valuation_ne_one`,
-  `.below` (the prime lying below a prime of an integral extension), `.primesAbove` and its
-  finiteness `.primesAbove_finite`,
-  `IsDedekindDomain.selmerGroupAbove`, `.valuationOfNeZero_eq_iff`,
-  `.dvd_toAdd_valuationOfNeZero`, `.valuationOfNeZeroMod_mk` and
-  `.valuationOfNeZeroMod_mk_eq_one_iff`, which turns the Selmer condition into a
-  divisibility of valuations; `Set.integer_mono` and `Set.unit_mono`, monotonicity of the
-  `S`-integers and `S`-units in `S`. (`Mathlib.RingTheory.DedekindDomain.SelmerGroup` has a
-  `TODO` about the `Multiplicative`/`Additive` defeq abuse in `valuationOfNeZeroMod`
-  and provides no API for it.)
+  `IsDedekindDomain.HeightOneSpectrum.below` (the prime lying below a prime of an integral
+  extension), `IsDedekindDomain.HeightOneSpectrum.primesAbove` and its finiteness
+  `IsDedekindDomain.HeightOneSpectrum.primesAbove_finite`, `IsDedekindDomain.selmerGroupAbove`,
+  `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero_eq_iff`,
+  `IsDedekindDomain.HeightOneSpectrum.dvd_toAdd_valuationOfNeZero`,
+  `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZeroMod_mk` and
+  `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZeroMod_mk_eq_one_iff`, which turns the Selmer
+  condition into a divisibility of valuations; `Set.integer_mono` and `Set.unit_mono`, monotonicity
+  of the `S`-integers and `S`-units in `S`. (`Mathlib.RingTheory.DedekindDomain.SelmerGroup` has a
+  `TODO` about the `Multiplicative`/`Additive` defeq abuse in
+  `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZeroMod` and provides no API for it.)
 * `Units.modPow`, the group of `n`-th power classes of units, which
   `Mathlib.RingTheory.DedekindDomain.SelmerGroup` has only as a local notation, together
   with `map`, `congr` and `piEquiv`.
 * Division with remainder by a monic polynomial: `Polynomial.Monic.divByMonic_mul_add`,
-  `.modByMonic_mul_add`, `modByMonic_mem_degreeLT`, `divByMonic_mem_degreeLT`.
+  `Polynomial.Monic.modByMonic_mul_add`, `Polynomial.modByMonic_mem_degreeLT`,
+  `Polynomial.divByMonic_mem_degreeLT`.
 * `isIntegralClosure_int_integralClosure`, `NumberField.finite_classGroup_integralClosure` and
   `NumberField.fg_units_integralClosure`: the class number theorem and the finite generation of
   the unit group for the integral closure of `𝓞 K` in a finite extension of a number field `K`;
@@ -39,7 +47,8 @@ that have nothing to do with elliptic curves and look like candidates for Mathli
   group and the unit rank from `𝓞 L`.
 * `AdjoinRoot.discr_powerBasis_eq_discr`, `NumberField.exists_eq_discr_mul_sq`,
   `RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le` and
-  `RingOfIntegers.finrank_additive_units_of_discr_neg`/`_pos`: the discriminant of the power
+  `RingOfIntegers.finrank_additive_units_of_discr_neg` and
+  `RingOfIntegers.finrank_additive_units_of_discr_pos`: the discriminant of the power
   basis of `K[X]/(f)` is `f.discr`; the field discriminant is any integral power-basis
   discriminant divided by a square; a cubic field with `|discr| ≤ 49` has trivial class group
   (Minkowski bound), and the sign of its discriminant determines the unit rank (Dirichlet).
@@ -487,7 +496,8 @@ lemma IsDedekindDomain.HeightOneSpectrum.dvd_toAdd_valuationOfNeZero (v : Height
 /-- The image of the class of a unit `u` under the `v`-adic valuation mod `n` is the class in
 `ZMod n` of the `v`-adic order of `u`. This is the computation rule that
 `Mathlib.RingTheory.DedekindDomain.SelmerGroup` lacks; it holds by definition, but the
-`Multiplicative`/`Additive` defeq abuse in `valuationOfNeZeroMod` blocks unfolding it by hand. -/
+`Multiplicative`/`Additive` defeq abuse in `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZeroMod`
+blocks unfolding it by hand. -/
 lemma IsDedekindDomain.HeightOneSpectrum.valuationOfNeZeroMod_mk (v : HeightOneSpectrum R)
     (n : ℕ) (u : Kˣ) :
     v.valuationOfNeZeroMod n (QuotientGroup.mk u) =
@@ -879,9 +889,9 @@ Taking `p = 1` gives a map `Ψ : (u, v) ↦ g * v + u`, which is a linear *equiv
 monic (its inverse is `q ↦ (q %ₘ g, q /ₘ g)`), and `det Ψ = resultant g 1 m n = 1`.
 
 Now `S = Ψ ∘ₗ B` where `B := Ψ⁻¹ ∘ₗ S` is the endomorphism
-`(u, v) ↦ ((p * u) %ₘ g, v + (p * u) /ₘ g)` of `R[X]_m × R[X]_n`, by `modByMonic_add_div`.
-In the block decomposition the matrix of `B` is lower triangular with diagonal blocks
-`mulModByMonic hg p` and `1`, so `det B = det (mulModByMonic hg p)`.
+`(u, v) ↦ ((p * u) %ₘ g, v + (p * u) /ₘ g)` of `R[X]_m × R[X]_n`, by
+`Polynomial.modByMonic_add_div`. In the block decomposition the matrix of `B` is lower triangular
+with diagonal blocks `mulModByMonic hg p` and `1`, so `det B = det (mulModByMonic hg p)`.
 
 Finally `mk g : R[X]_m ≃ₗ AdjoinRoot g` conjugates `mulModByMonic hg p` into multiplication by
 `mk g p`, whose determinant is by definition `Algebra.norm R (mk g p)`.
@@ -1190,7 +1200,8 @@ variable {K : Type*} [Field K] {f : K[X]}
 /-- The distinct monic irreducible factors of `f`, as an index type.
 
 Note that this is *not* defined via `normalizedFactors` (which would require `DecidableEq K`);
-membership in `normalizedFactors f` is characterized by `Factors.mem_normalizedFactors_iff`. -/
+membership in `normalizedFactors f` is characterized by
+`Polynomial.Factors.mem_normalizedFactors_iff`. -/
 abbrev Factors (f : K[X]) : Type _ := {p : K[X] // p.Monic ∧ Irreducible p ∧ p ∣ f}
 
 namespace Factors
@@ -1396,7 +1407,8 @@ noncomputable def modPowEquivPiFactors (hf : f ≠ 0) (hsq : Squarefree f) (n : 
   (Units.modPow.congr (equivPiFactors hf hsq).toMulEquiv n).trans <|
     Units.modPow.piEquiv (fun p : f.Factors ↦ AdjoinRoot (p : K[X])) n
 
-/-- On the class of a unit, `modPowEquivPiFactors` is componentwise projection to the factors. -/
+/-- On the class of a unit, `AdjoinRoot.modPowEquivPiFactors` is componentwise projection to the
+factors. -/
 @[simp]
 lemma modPowEquivPiFactors_unit (hf : f ≠ 0) (hsq : Squarefree f) (n : ℕ) {a : AdjoinRoot f}
     (ha : IsUnit a) (p : f.Factors) :
@@ -1408,8 +1420,8 @@ lemma modPowEquivPiFactors_unit (hf : f ≠ 0) (hsq : Squarefree f) (n : ℕ) {a
     QuotientGroup.mulEquivPiModRangePowMonoidHom_apply]
   exact congrArg _ (Units.ext rfl)
 
-/-- On the class of a unit, `modPowEquivPiFactors` is componentwise projection to the factors
-(`Units.map` version of `modPowEquivPiFactors_unit`). -/
+/-- On the class of a unit, `AdjoinRoot.modPowEquivPiFactors` is componentwise projection to the
+factors (`Units.map` version of `AdjoinRoot.modPowEquivPiFactors_unit`). -/
 @[simp]
 lemma modPowEquivPiFactors_mk (hf : f ≠ 0) (hsq : Squarefree f) (n : ℕ)
     (u : (AdjoinRoot f)ˣ) (p : f.Factors) :

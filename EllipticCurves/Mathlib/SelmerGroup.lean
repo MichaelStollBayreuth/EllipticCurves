@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Michael Stoll. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Michael Stoll
+-/
 module
 
 public import EllipticCurves.Mathlib.Basic
@@ -52,18 +57,17 @@ Note that `[NeZero n]` cannot be dropped: `K(S,0) = Kˣ`.
 
 The `S`-class group is realized as `ClassGroup (S.integer K)`, the class group of the ring
 `𝒪_S = Set.integer S K` of `S`-integers, which `EllipticCurves.Mathlib.SIntegers` shows to be a
-Dedekind domain
-with fraction field `K`, height one spectrum `{v | v ∉ S}` (valuation-compatibly) and finite
-class group whenever `Cl(R)` is finite. Via this dictionary the Selmer condition on a class
-`u(Kˣ)ⁿ ∈ K(S,n)` says exactly that the principal fractional ideal `(u)` of `𝒪_S` has all its
-valuations divisible by `n` (`mem_selmerGroup_iff_unitsNDivisible`), so the `n`-th-root class
-map of `EllipticCurves.Mathlib.FractionalIdeal` (`FractionalIdeal.nthRootClass`, built from the
-isomorphism of
-the group of fractional ideals with the free abelian group on the primes) descends to the
-right-hand map `toSClassGroup : K(S,n) →* Cl(𝒪_S)` of the fundamental exact sequence.
+Dedekind domain with fraction field `K`, height one spectrum `{v | v ∉ S}` (valuation-compatibly)
+and finite class group whenever `Cl(R)` is finite. Via this dictionary the Selmer condition on a
+class `u(Kˣ)ⁿ ∈ K(S,n)` says exactly that the principal fractional ideal `(u)` of `𝒪_S` has all its
+valuations divisible by `n` (`IsDedekindDomain.mem_selmerGroup_iff_unitsNDivisible`), so the
+`n`-th-root class map of `EllipticCurves.Mathlib.FractionalIdeal` (`FractionalIdeal.nthRootClass`,
+built from the isomorphism of the group of fractional ideals with the free abelian group on the
+primes) descends to the right-hand map `toSClassGroup : K(S,n) →* Cl(𝒪_S)` of the fundamental exact
+sequence.
 
-Note that `toSClassGroup` is *not* surjective onto `Cl(𝒪_S)` in general: its image is the
-`n`-torsion subgroup (`range_toSClassGroup`), as the sequence above says.
+Note that `IsDedekindDomain.toSClassGroup` is *not* surjective onto `Cl(𝒪_S)` in general: its image
+is the `n`-torsion subgroup (`IsDedekindDomain.range_toSClassGroup`), as the sequence above says.
 
 ## Main definitions
 
@@ -77,8 +81,9 @@ Note that `toSClassGroup` is *not* surjective onto `Cl(𝒪_S)` in general: its 
 
 ## Main statements
 
-* `IsDedekindDomain.fg_sUnit`: finite generation of the `S`-unit group, and `finrank_sUnit`:
-  its rank is `rank Rˣ + |S|` when moreover the class group of `R` is finite.
+* `IsDedekindDomain.fg_sUnit`: finite generation of the `S`-unit group, and
+  `IsDedekindDomain.finrank_sUnit`: its rank is `rank Rˣ + |S|` when moreover the class group of `R`
+  is finite.
 * `IsDedekindDomain.ker_toSClassGroup`: exactness of the fundamental sequence in the middle.
 * `IsDedekindDomain.range_toSClassGroup`: exactness on the right; the image is the `n`-torsion
   of the class group.
@@ -488,7 +493,8 @@ lemma sUnitValuation_apply (x : S.unit K) (v : S) :
     sUnitValuation K S x v = (v : HeightOneSpectrum R).valuationOfNeZero (x : Kˣ) :=
   rfl
 
-/-- The kernel of `sUnitValuation` consists of the `∅`-units, i.e. of the units of `R`. -/
+/-- The kernel of `IsDedekindDomain.sUnitValuation` consists of the `∅`-units, i.e. of the units of
+`R`. -/
 theorem ker_sUnitValuation :
     (sUnitValuation K S).ker =
       ((∅ : Set (HeightOneSpectrum R)).unit K).subgroupOf (S.unit K) := by
@@ -520,10 +526,10 @@ lemma coe_unitsEquivEmptyUnit (a : Rˣ) :
 /-- **Dirichlet's `S`-unit theorem**, weak form: if `Rˣ` is finitely generated and `S` is finite,
 then the group of `S`-units is finitely generated.
 
-The map `sUnitValuation` has finitely generated image (a subgroup of the free abelian group
-`ℤ^S` of finite rank) and kernel isomorphic to `Rˣ` (`ker_sUnitValuation`,
-`unitsEquivEmptyUnit`), and an extension of a finitely generated group by a finitely generated
-group is finitely generated. -/
+The map `IsDedekindDomain.sUnitValuation` has finitely generated image (a subgroup of the free
+abelian group `ℤ^S` of finite rank) and kernel isomorphic to `Rˣ`
+(`IsDedekindDomain.ker_sUnitValuation`, `IsDedekindDomain.unitsEquivEmptyUnit`), and an extension of
+a finitely generated group by a finitely generated group is finitely generated. -/
 theorem fg_sUnit [Group.FG Rˣ] (hS : S.Finite) : Group.FG (S.unit K) := by
   have : Finite S := hS.to_subtype
   refine Group.fg_of_fg_ker_of_fg_range (sUnitValuation K S) ?_ (Subgroup.fg_of_commGroup_fg _)
@@ -539,12 +545,12 @@ theorem fg_sUnit [Group.FG Rˣ] (hS : S.Finite) : Group.FG (S.unit K) := by
 /-!
 ### The rank of the `S`-unit group
 
-Strengthening `fg_sUnit`: if moreover the class group of `R` is finite, then the rank of the
-`S`-unit group is exactly `rank Rˣ + |S|` (**Dirichlet's `S`-unit theorem**, rank version).
-The point is that the valuation map `sUnitValuation` then has full-rank image: for each
-`v ∈ S`, some power `v ^ n` is principal (`HeightOneSpectrum.exists_pow_eq_span`), and its
-generator is an `S`-unit whose valuation vector is a nonzero multiple of the `v`-th standard
-basis vector.
+Strengthening `IsDedekindDomain.fg_sUnit`: if moreover the class group of `R` is finite, then the
+rank of the `S`-unit group is exactly `rank Rˣ + |S|` (**Dirichlet's `S`-unit theorem**, rank
+version). The point is that the valuation map `IsDedekindDomain.sUnitValuation` then has full-rank
+image: for each `v ∈ S`, some power `v ^ n` is principal
+(`IsDedekindDomain.HeightOneSpectrum.exists_pow_eq_span`), and its generator is an `S`-unit whose
+valuation vector is a nonzero multiple of the `v`-th standard basis vector.
 -/
 
 section Rank
@@ -552,7 +558,8 @@ section Rank
 open Module
 
 /-- The logarithmic valuation map on `S`-units, with values in `ℤ ^ S`: the additive form of
-`sUnitValuation`. This is the `S`-unit analogue of `NumberField.Units.logEmbedding`. -/
+`IsDedekindDomain.sUnitValuation`. This is the `S`-unit analogue of
+`NumberField.Units.logEmbedding`. -/
 noncomputable def sUnitLog : Additive (S.unit K) →ₗ[ℤ] (S → ℤ) :=
   AddMonoidHom.toIntLinearMap
     { toFun := fun x w ↦ Multiplicative.toAdd (sUnitValuation K S (Additive.toMul x) w)
@@ -564,7 +571,8 @@ lemma sUnitLog_apply (x : Additive (S.unit K)) (w : S) :
     sUnitLog K S x w = Multiplicative.toAdd (sUnitValuation K S (Additive.toMul x) w) :=
   rfl
 
-/-- The kernel of `sUnitLog` is the kernel of `sUnitValuation`, i.e. the `∅`-units. -/
+/-- The kernel of `IsDedekindDomain.sUnitLog` is the kernel of `IsDedekindDomain.sUnitValuation`,
+i.e. the `∅`-units. -/
 lemma mem_ker_sUnitLog_iff (x : Additive (S.unit K)) :
     x ∈ LinearMap.ker (sUnitLog K S) ↔
       Additive.toMul x ∈ MonoidHom.ker (sUnitValuation K S) := by
@@ -579,7 +587,7 @@ lemma mem_ker_sUnitLog_iff (x : Additive (S.unit K)) :
     rw [hx]
     rfl
 
-/-- The kernel of `sUnitLog` is (additively) the unit group of `R`. -/
+/-- The kernel of `IsDedekindDomain.sUnitLog` is (additively) the unit group of `R`. -/
 noncomputable def sUnitLogKerEquiv : ↥(LinearMap.ker (sUnitLog K S)) ≃ₗ[ℤ] Additive Rˣ :=
   have ekermul : ↥(MonoidHom.ker (sUnitValuation K S)) ≃* Rˣ :=
     ((unitsEquivEmptyUnit R K).trans <|
@@ -628,8 +636,8 @@ lemma exists_sUnit_valuation_single (v : S) :
       rw [toAdd_one, hval w, ite_eq_right (fun hc ↦ hne (Subtype.ext hc)), neg_zero])
 
 open Module in
-/-- The range of `sUnitLog` has full rank `|S|`: it contains the diagonal family of `S`-units
-provided by `exists_sUnit_valuation_single`. -/
+/-- The range of `IsDedekindDomain.sUnitLog` has full rank `|S|`: it contains the diagonal family of
+`S`-units provided by `IsDedekindDomain.exists_sUnit_valuation_single`. -/
 lemma finrank_range_sUnitLog (hS : S.Finite) :
     finrank ℤ ↥(LinearMap.range (sUnitLog K S)) = S.ncard := by
   classical
@@ -757,8 +765,8 @@ lemma selmerGroupFromUnits_surjective :
   | H u =>
     exact ⟨⟨u, (mem_selmerGroup_iff_unitsNDivisible K S n u).mp hc⟩, rfl⟩
 
-/-- The kernel of `selmerGroupFromUnits` is contained in that of the `n`-th-root class map:
-an `n`-th power has principal `n`-th root. -/
+/-- The kernel of `IsDedekindDomain.selmerGroupFromUnits` is contained in that of the `n`-th-root
+class map: an `n`-th power has principal `n`-th root. -/
 lemma ker_selmerGroupFromUnits_le [NeZero n] :
     (selmerGroupFromUnits K S n).ker ≤ (nthRootClass (S.integer K) K n).ker := by
   intro u hu
@@ -771,7 +779,7 @@ lemma ker_selmerGroupFromUnits_le [NeZero n] :
 /-- The right-hand map of the fundamental exact sequence: a Selmer class is sent to the ideal
 class of the `n`-th root of the principal ideal `(u)` of any representative `u`, in the class
 group of the ring of `S`-integers. Obtained by descending `FractionalIdeal.nthRootClass` along
-`selmerGroupFromUnits`. -/
+`IsDedekindDomain.selmerGroupFromUnits`. -/
 noncomputable def toSClassGroup [NeZero n] :
     selmerGroup (R := R) (K := K) (S := S) (n := n) →* ClassGroup (S.integer K) :=
   (QuotientGroup.lift _ (nthRootClass (S.integer K) K n)
@@ -810,9 +818,9 @@ theorem ker_toSClassGroup [NeZero n] :
   simp only [MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv, coe_unitEquivUnitsInteger_symm,
     eq_comm]
 
-/-- Exactness of the fundamental exact sequence on the right: the image of `toSClassGroup` is
-the `n`-torsion of the class group of the `S`-integers. (Surjectivity onto the full class group
-fails in general.) -/
+/-- Exactness of the fundamental exact sequence on the right: the image of
+`IsDedekindDomain.toSClassGroup` is the `n`-torsion of the class group of the `S`-integers.
+(Surjectivity onto the full class group fails in general.) -/
 theorem range_toSClassGroup [NeZero n] :
     (toSClassGroup K S n).range =
       (powMonoidHom n : ClassGroup (S.integer K) →* ClassGroup (S.integer K)).ker := by
@@ -851,10 +859,11 @@ variable (R) in
 /-- **The Selmer group `K(S,n)` is finite**, provided that the class group of `R` is finite, that
 `Rˣ` is finitely generated, that `S` is finite and that `n ≠ 0`.
 
-The image of `sUnitModPowToSelmer` is finite, since its source is the quotient of a finitely
-generated commutative group (`fg_sUnit`) by its `n`-th powers (`CommGroup.finite_modPow`).
-By `ker_toSClassGroup` that image is the kernel of `toSClassGroup`, whose target
-`ClassGroup (S.integer K)` is finite by `SInteger.finite_classGroup`. -/
+The image of `IsDedekindDomain.sUnitModPowToSelmer` is finite, since its source is the quotient of a
+finitely generated commutative group (`IsDedekindDomain.fg_sUnit`) by its `n`-th powers
+(`CommGroup.finite_modPow`). By `IsDedekindDomain.ker_toSClassGroup` that image is the kernel of
+`IsDedekindDomain.toSClassGroup`, whose target `ClassGroup (S.integer K)` is finite by
+`IsDedekindDomain.SInteger.finite_classGroup`. -/
 theorem finite_selmerGroup [Finite (ClassGroup R)] [Group.FG Rˣ] (hS : S.Finite) [NeZero n] :
     Finite (selmerGroup (K := K) (S := S) (n := n)) := by
   have := fg_sUnit K S hS
@@ -911,7 +920,7 @@ A finite étale algebra `A` over `K` is a finite product of finite separable fie
 `L i (S i, n)` under the induced isomorphism. It is finite as soon as each factor's Selmer group
 is.
 
-The decomposition `e` is an input rather than something derived from an `Algebra.IsEtale`
+The decomposition `e` is an input rather than something derived from an `Algebra.Etale`
 hypothesis: Mathlib does not currently provide the splitting of an étale algebra into fields, and
 in the application (`EllipticCurves.WeakMordellWeil`) the decomposition is explicitly
 available as

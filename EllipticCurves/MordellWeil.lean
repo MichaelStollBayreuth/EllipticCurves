@@ -1,3 +1,8 @@
+/-
+Copyright (c) 2026 Michael Stoll. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: Michael Stoll
+-/
 module
 
 public import Mathlib
@@ -13,15 +18,15 @@ The goal of this file is the **Mordell-Weil Theorem**: the group `E(K)` of `K`-r
 points of an elliptic curve `E` over a number field `K` is finitely generated. It comes in
 three versions:
 
-* `fg_point`: for `E` given by an equation `y² = x³ + a₂x² + a₄x + a₆` (that is, with
-  `a₁ = a₃ = 0`) over the fraction field `K` of a Dedekind domain, where `K` has admissible
+* `WeierstrassCurve.Affine.fg_point`: for `E` given by an equation `y² = x³ + a₂x² + a₄x + a₆` (that
+  is, with `a₁ = a₃ = 0`) over the fraction field `K` of a Dedekind domain, where `K` has admissible
   absolute values satisfying the Northcott property and the needed class-group and unit-group
   finiteness statements are taken as hypotheses;
-* `fg_point_of_variableChange`: for an arbitrary `E` over such a `K` with `2` invertible,
-  by completing the square and transferring along the isomorphism of point groups from
-  `EllipticCurves.VariableChange`;
-* `fg_point_of_numberField`: for an arbitrary `E` over a number field, where all hypotheses
-  are theorems.
+* `WeierstrassCurve.Affine.fg_point_of_variableChange`: for an arbitrary `E` over such a `K` with
+  `2` invertible, by completing the square and transferring along the isomorphism of point groups
+  from `EllipticCurves.VariableChange`;
+* `WeierstrassCurve.Affine.fg_point_of_numberField`: for an arbitrary `E` over a number field, where
+  all hypotheses are theorems.
 
 The proof is by descent (`AddCommGroup.fg_of_descent'`, in Mathlib): the Weak Mordell-Weil
 Theorem of `EllipticCurves.WeakMordellWeil` provides the finiteness of `E(K)/2E(K)`, and the
@@ -54,7 +59,7 @@ over a field `K` such that
 * for each irreducible factor `p` of `f`, the integral closure of `R` in `K[X]/(p)` has
   finite class group and finitely generated unit group.
 
-For `K` a number field all of these hold; see `fg_point_of_numberField`.
+For `K` a number field all of these hold; see `WeierstrassCurve.Affine.fg_point_of_numberField`.
 
 Note that the per-factor hypotheses cannot be replaced by the corresponding hypotheses on `R`
 itself: by a theorem of Claborn, refined by Leedham-Green and by Clark
@@ -74,11 +79,11 @@ theorem fg_point (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R F]
   obtain ⟨C, hC⟩ := approx_parallelogram_law W
   exact AddCommGroup.fg_of_descent' (W.finite_index_range_nsmulAddMonoidHom_two R) H₂ hC
 
-/-- **The Mordell-Weil Theorem** for an arbitrary Weierstrass curve: `E(K)` is finitely
-generated, given an admissible change of variables `C` bringing `E` into the normal form
-`y² = cubic` (i.e., `a₁ = a₃ = 0`), together with the finiteness hypotheses of `fg_point`
-for the model `C • E`. The result is transferred along the isomorphism of point groups
-`Point.equivVariableChange`.
+/-- **The Mordell-Weil Theorem** for an arbitrary Weierstrass curve: `E(K)` is finitely generated,
+given an admissible change of variables `C` bringing `E` into the normal form `y² = cubic` (i.e.,
+`a₁ = a₃ = 0`), together with the finiteness hypotheses of `WeierstrassCurve.Affine.fg_point` for
+the model `C • E`. The result is transferred along the isomorphism of point groups
+`WeierstrassCurve.Affine.Point.equivVariableChange`.
 
 Such a `C` exists whenever `2` is invertible in `K`
 (`WeierstrassCurve.exists_variableChange_isCharNeTwoNF`, completing the square). -/
@@ -105,9 +110,9 @@ variable {F : Type*} [Field F] [NumberField F] [DecidableEq F] {W : Affine F}
 /-- **The Mordell-Weil Theorem**: the group `E(K)` of `K`-rational points of an elliptic
 curve `E` over a number field `K` is finitely generated.
 
-The square on the left-hand side is completed by an admissible change of variables (possible
-since `K` has characteristic `0`), and the finiteness hypotheses of `fg_point` for the
-resulting model are the class number theorem and Dirichlet's unit theorem. -/
+The square on the left-hand side is completed by an admissible change of variables (possible since
+`K` has characteristic `0`), and the finiteness hypotheses of `WeierstrassCurve.Affine.fg_point` for
+the resulting model are the class number theorem and Dirichlet's unit theorem. -/
 theorem fg_point_of_numberField : AddGroup.FG W.Point := by
   have := invertibleOfNonzero (two_ne_zero (α := F))
   obtain ⟨C, hC⟩ := exists_variableChange_isCharNeTwoNF (W := W)
