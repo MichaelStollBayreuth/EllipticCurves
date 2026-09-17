@@ -491,10 +491,6 @@ end
 /-- The group of square classes of units of `W.A`. -/
 abbrev M : Type _ := Units.modPow W.A 2
 
-/- `inferInstance` succeeds here, but instance search does not find this instance at the use
-sites (e.g., for `mul_right_comm` below) unless it is declared. -/
-noncomputable instance : CommGroup W.M := inferInstance
-
 lemma M.sq_eq_one (m : W.M) : m ^ 2 = 1 := Units.modPow.pow_eq_one m
 
 lemma M.mul_self (m : W.M) : m * m = 1 := by rw [← sq, sq_eq_one]
