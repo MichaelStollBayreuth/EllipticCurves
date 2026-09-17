@@ -89,13 +89,13 @@ theorem constantCoeff_subst_of_constantCoeff_zero {τ : Type*}
         rw [map_pow, ha' s, zero_pow (Nat.pos_of_ne_zero
           (Finsupp.mem_support_iff.mp hs)).ne']), mul_zero]
 
-/-- `pderiv R s` is continuous for the product topology: each coefficient of the derivative is
+/-- `pderiv s` is continuous for the product topology: each coefficient of the derivative is
 a fixed multiple of a single coefficient of the argument. This is what carries the calculus
 from polynomials to power series by density. -/
 theorem continuous_pderiv [TopologicalSpace R] [IsTopologicalSemiring R] (s : σ) :
-    Continuous (pderiv R s : MvPowerSeries σ R → MvPowerSeries σ R) := by
+    Continuous (pderiv s : MvPowerSeries σ R → MvPowerSeries σ R) := by
   refine continuous_pi fun d ↦ ?_
-  change Continuous fun h : MvPowerSeries σ R ↦ coeff d (pderiv R s h)
+  change Continuous fun h : MvPowerSeries σ R ↦ coeff d (pderiv s h)
   simp only [coeff_pderiv]
   exact (WithPiTopology.continuous_coeff R _).mul continuous_const
 
@@ -103,8 +103,8 @@ theorem continuous_pderiv [TopologicalSpace R] [IsTopologicalSemiring R] (s : σ
 -- the induction is on the polynomial, so it cannot be run on a power series directly.
 private theorem pderiv_subst_coe {τ : Type*} [Fintype τ] {a : τ → MvPowerSeries σ R}
     (ha : HasSubst a) (s : σ) (p : MvPolynomial τ R) :
-    pderiv R s (subst a (p : MvPowerSeries τ R))
-      = ∑ t : τ, subst a (pderiv R t (p : MvPowerSeries τ R)) * pderiv R s (a t) := by
+    pderiv s (subst a (p : MvPowerSeries τ R))
+      = ∑ t : τ, subst a (pderiv t (p : MvPowerSeries τ R)) * pderiv s (a t) := by
   classical
   induction p using MvPolynomial.induction_on with
   | C c =>
@@ -128,9 +128,9 @@ private theorem pderiv_subst_coe {τ : Type*} [Fintype τ] {a : τ → MvPowerSe
     push_cast
     rw [MvPowerSeries.subst_mul ha, MvPowerSeries.subst_X ha, Derivation.leibniz, smul_eq_mul,
       smul_eq_mul, ih]
-    have hexp (t : τ) : subst a (pderiv R t ((p : MvPowerSeries τ R) * X i))
+    have hexp (t : τ) : subst a (pderiv t ((p : MvPowerSeries τ R) * X i))
         = (if i = t then subst a (p : MvPowerSeries τ R) else 0)
-          + a i * subst a (pderiv R t (p : MvPowerSeries τ R)) := by
+          + a i * subst a (pderiv t (p : MvPowerSeries τ R)) := by
       rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul, pderiv_X, Pi.single_apply,
         MvPowerSeries.subst_add ha, MvPowerSeries.subst_mul ha,
         MvPowerSeries.subst_mul ha, MvPowerSeries.subst_X ha]
@@ -146,21 +146,21 @@ private theorem pderiv_subst_coe {τ : Type*} [Fintype τ] {a : τ → MvPowerSe
 /-- The chain rule for formal partial derivatives of a substitution. -/
 theorem pderiv_subst {τ : Type*} [Fintype τ] {a : τ → MvPowerSeries σ R}
     (ha : HasSubst a) (s : σ) (f : MvPowerSeries τ R) :
-    pderiv R s (subst a f) = ∑ t : τ, subst a (pderiv R t f) * pderiv R s (a t) := by
+    pderiv s (subst a f) = ∑ t : τ, subst a (pderiv t f) * pderiv s (a t) := by
   let : UniformSpace R := ⊥
   let : DiscreteTopology R := ⟨rfl⟩
   have key := MvPowerSeries.WithPiTopology.denseRange_toMvPowerSeries (σ := τ) (R := R)
-  have h1 : Continuous fun f : MvPowerSeries τ R ↦ pderiv R s (subst a f) :=
+  have h1 : Continuous fun f : MvPowerSeries τ R ↦ pderiv s (subst a f) :=
     (continuous_pderiv s).comp (continuous_subst' ha)
   have h2 : Continuous fun f : MvPowerSeries τ R ↦
-      ∑ t : τ, subst a (pderiv R t f) * pderiv R s (a t) :=
+      ∑ t : τ, subst a (pderiv t f) * pderiv s (a t) :=
     continuous_finsetSum _ fun t _ ↦
       ((continuous_subst' ha).comp (continuous_pderiv t)).mul_const _
   exact congrFun (key.equalizer h1 h2 (funext (pderiv_subst_coe ha s))) f
 
 /-- Formal partial derivatives commute. -/
 theorem pderiv_comm (s t : σ) (h : MvPowerSeries σ R) :
-    pderiv R s (pderiv R t h) = pderiv R t (pderiv R s h) := by
+    pderiv s (pderiv t h) = pderiv t (pderiv s h) := by
   ext d
   rw [coeff_pderiv, coeff_pderiv, coeff_pderiv, coeff_pderiv,
     add_right_comm d (Finsupp.single s 1) (Finsupp.single t 1)]
@@ -175,14 +175,14 @@ theorem pderiv_comm (s t : σ) (h : MvPowerSeries σ R) :
 
 /-- A substitution whose family is annihilated by `∂_s` is annihilated by `∂_s`. -/
 theorem pderiv_subst_eq_zero {τ : Type*} [Finite τ] {a : τ → MvPowerSeries σ R}
-    (ha : HasSubst a) (s : σ) (hz : ∀ t, pderiv R s (a t) = 0) (f : MvPowerSeries τ R) :
-    pderiv R s (subst a f) = 0 := by
+    (ha : HasSubst a) (s : σ) (hz : ∀ t, pderiv s (a t) = 0) (f : MvPowerSeries τ R) :
+    pderiv s (subst a f) = 0 := by
   cases nonempty_fintype τ
   rw [pderiv_subst ha]
   exact Finset.sum_eq_zero fun t _ ↦ by rw [hz t, mul_zero]
 
 theorem coeff_X_mul_pderiv (s : σ) (f : MvPowerSeries σ R) (d : σ →₀ ℕ) :
-    coeff d (X s * pderiv R s f) = ((d s : ℕ) : R) * coeff d f := by
+    coeff d (X s * pderiv s f) = ((d s : ℕ) : R) * coeff d f := by
   classical
   rw [mul_comm, show (X s : MvPowerSeries σ R) = monomial (Finsupp.single s 1) 1 from rfl,
     coeff_mul_monomial]
@@ -198,7 +198,7 @@ theorem coeff_X_mul_pderiv (s : σ) (f : MvPowerSeries σ R) (d : σ →₀ ℕ)
 /-- The Euler identity for formal power series: the operator `∑ s, X s * ∂/∂X s` acts on
 the degree-`n` homogeneous part as multiplication by `n`. -/
 theorem coeff_sum_X_mul_pderiv [Fintype σ] (f : MvPowerSeries σ R) (d : σ →₀ ℕ) :
-    coeff d (∑ s, X s * pderiv R s f) = ((d.degree : ℕ) : R) * coeff d f := by
+    coeff d (∑ s, X s * pderiv s f) = ((d.degree : ℕ) : R) * coeff d f := by
   rw [map_sum, Finset.sum_congr rfl fun s _ ↦ coeff_X_mul_pderiv s f d, ← Finset.sum_mul,
     Finsupp.degree_eq_sum]
   push_cast
@@ -220,7 +220,7 @@ theorem coeff_rename_equiv {τ : Type*} (e : σ ≃ τ) (f : MvPowerSeries σ R)
 
 /-- Formal partial derivatives commute with variable renaming along an equivalence. -/
 theorem rename_pderiv {τ : Type*} (e : σ ≃ τ) (s : σ) (f : MvPowerSeries σ R) :
-    rename (⇑e) (pderiv R s f) = pderiv R (e s) (rename (⇑e) f) := by
+    rename (⇑e) (pderiv s f) = pderiv (e s) (rename (⇑e) f) := by
   ext d
   rw [coeff_pderiv, coeff_rename_equiv, coeff_rename_equiv, coeff_pderiv]
   have h1 : Finsupp.equivMapDomain e.symm (d + Finsupp.single (e s) 1)
@@ -233,7 +233,7 @@ theorem rename_pderiv {τ : Type*} (e : σ ≃ τ) (s : σ) (f : MvPowerSeries �
 
 /-- Formal partial derivatives commute with a coefficient ring homomorphism. -/
 theorem map_pderiv {S : Type*} [CommRing S] (f : R →+* S) (s : σ) (g : MvPowerSeries σ R) :
-    map f (pderiv R s g) = pderiv S s (map f g) := by
+    map f (pderiv s g) = pderiv s (map f g) := by
   ext d
   rw [coeff_map, coeff_pderiv, coeff_pderiv, coeff_map, map_mul, map_add, map_natCast, map_one]
 

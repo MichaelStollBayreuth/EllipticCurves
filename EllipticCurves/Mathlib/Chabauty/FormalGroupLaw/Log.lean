@@ -171,11 +171,11 @@ theorem exp_comp_log (i : ι) : subst Φ.log (Φ.exp i) = X i :=
 
 -- `∂_k` of the invariant differential row, rewritten with closedness
 private lemma pderiv_log_row (i k : ι) :
-    pderiv K k (∑ j, Φ.diffMatrix⁻¹ i j * MvPowerSeries.X j)
-      = (∑ j, MvPowerSeries.X j * pderiv K j (Φ.diffMatrix⁻¹ i k)) + Φ.diffMatrix⁻¹ i k := by
+    pderiv k (∑ j, Φ.diffMatrix⁻¹ i j * MvPowerSeries.X j)
+      = (∑ j, MvPowerSeries.X j * pderiv j (Φ.diffMatrix⁻¹ i k)) + Φ.diffMatrix⁻¹ i k := by
   rw [map_sum]
-  have hterm (j : ι) : pderiv K k (Φ.diffMatrix⁻¹ i j * MvPowerSeries.X j)
-      = MvPowerSeries.X j * pderiv K j (Φ.diffMatrix⁻¹ i k)
+  have hterm (j : ι) : pderiv k (Φ.diffMatrix⁻¹ i j * MvPowerSeries.X j)
+      = MvPowerSeries.X j * pderiv j (Φ.diffMatrix⁻¹ i k)
         + if j = k then Φ.diffMatrix⁻¹ i j else 0 := by
     rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul, pderiv_X,
       Φ.pderiv_diffMatrixInv_symm i j k, add_comm]
@@ -189,8 +189,7 @@ variable [CharZero K]
 /-- The differential of the formal logarithm is the invariant differential:
 `∂_k Λ_i = (M⁻¹)_{ik}`. This is where characteristic zero is used: the Euler operator
 plus one is invertible on coefficients. -/
-theorem pderiv_log (i k : ι) :
-    pderiv K k (Φ.log i) = Φ.diffMatrix⁻¹ i k := by
+theorem pderiv_log (i k : ι) : pderiv k (Φ.log i) = Φ.diffMatrix⁻¹ i k := by
   ext d
   have hdeg : (d + Finsupp.single k 1).degree = d.degree + 1 := by
     rw [map_add, Finsupp.degree_single]
@@ -204,15 +203,15 @@ theorem pderiv_log (i k : ι) :
 
 -- `∂/∂Y_k` of both sides of the additivity identity agree
 private lemma pderiv_inr_log_subst (i k : ι) :
-    pderiv K (Sum.inr k) (MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.log i))
-      = pderiv K (Sum.inr k)
+    pderiv (Sum.inr k) (MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.log i))
+      = pderiv (Sum.inr k)
           (MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inl s) : MvPowerSeries (ι ⊕ ι) K))
               (Φ.log i)
             + MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inr s) : MvPowerSeries (ι ⊕ ι) K))
               (Φ.log i)) := by
-  have hsum : pderiv K (Sum.inr k) (MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.log i))
+  have hsum : pderiv (Sum.inr k) (MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.log i))
       = ∑ a, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
-          * pderiv K (Sum.inr k) (Φ.F a) := by
+          * pderiv (Sum.inr k) (Φ.F a) := by
     rw [pderiv_subst (hasSubst_F Φ)]
     exact Finset.sum_congr rfl fun a _ ↦ by rw [Φ.pderiv_log i a]
   rw [map_add, hsum, diffMatrixInv_subst_F Φ i k, pderiv_Yemb, Φ.pderiv_log i k,
@@ -220,15 +219,15 @@ private lemma pderiv_inr_log_subst (i k : ι) :
 
 -- `∂/∂X_k` of both sides of the additivity identity agree
 private lemma pderiv_inl_log_subst (i k : ι) :
-    pderiv K (Sum.inl k) (MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.log i))
-      = pderiv K (Sum.inl k)
+    pderiv (Sum.inl k) (MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.log i))
+      = pderiv (Sum.inl k)
           (MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inl s) : MvPowerSeries (ι ⊕ ι) K))
               (Φ.log i)
             + MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inr s) : MvPowerSeries (ι ⊕ ι) K))
               (Φ.log i)) := by
-  have hsum : pderiv K (Sum.inl k) (MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.log i))
+  have hsum : pderiv (Sum.inl k) (MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.log i))
       = ∑ a, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
-          * pderiv K (Sum.inl k) (Φ.F a) := by
+          * pderiv (Sum.inl k) (Φ.F a) := by
     rw [pderiv_subst (hasSubst_F Φ)]
     exact Finset.sum_congr rfl fun a _ ↦ by rw [Φ.pderiv_log i a]
   rw [map_add, hsum, diffMatrixInv_subst_F_inl Φ i k, pderiv_Xemb, Φ.pderiv_log i k,

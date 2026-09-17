@@ -566,7 +566,7 @@ def IsDedekindDomain.HeightOneSpectrum.below [Algebra.IsIntegral R B] (w : Heigh
     HeightOneSpectrum R where
   asIdeal := w.asIdeal.under R
   isPrime := Ideal.IsPrime.under R w.asIdeal
-  ne_bot := Ideal.IsIntegral.comap_ne_bot R w.ne_bot
+  ne_bot := Ideal.IsIntegral.under_ne_bot R w.ne_bot
 
 @[simp]
 lemma IsDedekindDomain.HeightOneSpectrum.below_asIdeal [Algebra.IsIntegral R B]

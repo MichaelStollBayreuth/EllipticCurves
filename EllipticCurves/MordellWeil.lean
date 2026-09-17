@@ -24,15 +24,10 @@ three versions:
   are theorems.
 
 The proof is by descent (`AddCommGroup.fg_of_descent'`, in Mathlib): the Weak Mordell-Weil
-Theorem of `EllipticCurves.WeakMordellWeil` provides the finiteness of `E(K)/2E(K)`,
-and the naïve height `h(P) = logHeight (x(P))` provides the required height function. The
-main technical step on the way, and the bulk of this file, is the *approximate parallelogram
-law* `∃ C, ∀ P Q : E(K), |h(P+Q) + h(P-Q) - 2*h(P) - 2*h(Q)| ≤ C`
-(`approx_parallelogram_law`), proved via the addition-and-multiplication map on
-`x`-coordinates and the bounds on heights of images under tuples of homogeneous polynomials.
-Together with the Northcott property it also yields the
-finiteness of sets of points of bounded naïve height (`finite_naiveHeight_le`) and of the
-torsion subgroup of `E(K)` (`finite_torsion`).
+Theorem of `EllipticCurves.WeakMordellWeil` provides the finiteness of `E(K)/2E(K)`, and the
+naïve height `WeierstrassCurve.Affine.Point.naiveHeight` provides the required height
+function, via the *approximate parallelogram law*
+`WeierstrassCurve.Affine.approx_parallelogram_law` and the Northcott property.
 -/
 
 /-
@@ -44,113 +39,12 @@ namespace WeierstrassCurve.Affine
 
 variable {F : Type*} [Field F] {W : Affine F}
 
--- #43463
-
-variable {R : Type*} [CommRing R] {W' : Affine R} in
-/-- `sym2x` in terms of the projective `xRep` coordinates. Mathlib provides only the
-per-constructor `@[simp]` lemmas and does not `@[expose]` `sym2x`, so this general unfolding is
-stated here. -/
-lemma Point.sym2x_eq (P Q : W'.Point) :
-    P.sym2x Q = ![P.xRep 0 * Q.xRep 0, P.xRep 0 * Q.xRep 1 + P.xRep 1 * Q.xRep 0,
-      P.xRep 1 * Q.xRep 1] := by
-  match P, Q with
-  | 0, 0 => simp [Point.xRep_zero]
-  | 0, .some x y h => simp [Point.xRep_zero, Point.xRep_some]
-  | .some x y h, 0 => simp [Point.xRep_zero, Point.xRep_some]
-  | .some x y h, .some x' y' h' => simp [Point.xRep_some]
-
-/-!
-### The naïve height
--/
-
-section AAV
-
-open Height
-
-variable [AdmissibleAbsValues F]
-
-/-- The naïve logarithmic height of an affine point on `W`. -/
-noncomputable def Point.naiveHeight (P : W.Point) : ℝ :=
-  logHeight P.xRep
-
-lemma Point.naiveHeight_eq_logHeight (P : W.Point) : P.naiveHeight = logHeight P.xRep :=
-  rfl
-
-lemma Point.naiveHeight_eq_logHeight₁ {P : W.Point} :
-    P.naiveHeight = logHeight₁ (P.xRep 0) := by
-  match P with
-  | 0 => simp [naiveHeight, xRep]
-  | some .. => simpa [naiveHeight] using (logHeight₁_eq_logHeight _).symm
-
-variable (W)
-
-lemma abs_logHeight_sym2x_sub_le :
-    ∃ C, ∀ P Q : W.Point, |logHeight (P.sym2x Q) - (P.naiveHeight + Q.naiveHeight)| ≤ C := by
-  obtain ⟨C, hC⟩ := abs_logHeight_sym2_sub_le F
-  refine ⟨C, fun P Q ↦ ?_⟩
-  rw [P.naiveHeight_eq_logHeight, Q.naiveHeight_eq_logHeight, Point.sym2x_eq]
-  have H₁ := logHeight_fun_mul_eq P.xRep_ne_zero Q.xRep_ne_zero
-  have H (v : Fin 2 → F) : ![v 0, v 1] = v := by ext i : 1; fin_cases i <;> simp
-  have h₀ (P : W.Point) : ![P.xRep 0, P.xRep 1] ≠ 0 := H P.xRep ▸ P.xRep_ne_zero
-  specialize hC (h₀ P) (h₀ Q)
-  rw [H P.xRep, H Q.xRep] at *
-  grind only [= abs.eq_1, = max_def]
-
-variable [W.toAffine.IsElliptic]
-
-/-- The "approximate parallelogram law" for the naïve height on an elliptic curve. -/
-theorem approx_parallelogram_law [DecidableEq F] :
-    ∃ C, ∀ (P Q : W.Point),
-      |(P + Q).naiveHeight + (P - Q).naiveHeight - 2 * (P.naiveHeight + Q.naiveHeight)| ≤ C := by
-  obtain ⟨C₁, hC₁⟩ := abs_logHeight_sym2x_sub_le W
-  obtain ⟨C₂, hC₂⟩ := abs_logHeight_addSubMap_sub_two_mul_logHeight_le W
-  refine ⟨3 * C₁ + C₂, fun P Q ↦ ?_⟩
-  obtain ⟨t, ht₀, ht⟩ := Point.sym2x_add_sub_eq_addSubMap_sym2x P Q
-  replace ht := congrArg logHeight ht
-  rw [Height.logHeight_smul_eq_logHeight _ ht₀] at ht
-  have hPQ := hC₁ P Q
-  have haddsub := hC₁ (P + Q) (P - Q)
-  have hC := ht ▸ hC₂ (P.sym2x Q)
-  -- speed up `grind` below by reducing to the essentials
-  generalize (P + Q).naiveHeight + (P - Q).naiveHeight = A at haddsub ⊢
-  generalize logHeight ((P + Q).sym2x (P - Q)) = B at hC haddsub
-  generalize logHeight (P.sym2x Q) = B' at hPQ hC
-  generalize P.naiveHeight + Q.naiveHeight = A' at hPQ ⊢
-  grind only [= abs.eq_1, = max_def]
-
-end AAV
-
 section Northcott
 
 open Height
 
-variable [AdmissibleAbsValues F]
-
-instance [Northcott (logHeight₁ (K := F))] : Northcott (Point.naiveHeight (F := F) (W := W)) := by
-  eta_expand
-  simp only [Point.naiveHeight_eq_logHeight₁]
-  rw [← Function.comp_def]
-  have : Filter.TendstoCofinite fun P : W.Point ↦ P.xRep 0 :=
-    (Filter.tendstoCofinite_iff_finite_preimage_singleton _).mpr finite_preimage_xRep0
-  exact Northcott.comp_of_finite_fibers ..
-
-variable [Northcott (logHeight₁ (K := F))]
-
-variable (W) in
-/-- The set of `K`-points on `W` with naïve height bounded by `B` is finite.
-This is an important ingredient for the *Mordell-Weil Theorem*. -/
-lemma finite_naiveHeight_le (B : ℝ) : {P : W.Point | P.naiveHeight ≤ B}.Finite :=
-  Northcott.finite_le B
-
-variable [DecidableEq F] [W.toAffine.IsElliptic]
-
-/-- The torsion subgroup of the group of `K`-rational point on an elliptic curve over a
-number field `K` is finite. -/
-theorem finite_torsion : Finite (AddCommGroup.torsion W.Point) := by
-  obtain ⟨C, hC⟩ := approx_parallelogram_law W
-  exact AddCommGroup.finite_torsion_of_descent' hC
-
--- end #43463
+variable [AdmissibleAbsValues F] [Northcott (logHeight₁ (K := F))] [DecidableEq F]
+  [W.toAffine.IsElliptic]
 
 /-- **The Mordell-Weil Theorem**, general version: `E(K)` is finitely generated, for an
 elliptic curve `E` given by an equation `y² = f(x)` with a monic cubic `f` (`a₁ = a₃ = 0`)

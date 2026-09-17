@@ -258,8 +258,7 @@ include hz₀ in
 /-- Taylor expansion to second order: the formal derivative gives the first-order
 behaviour of evaluation, with an explicit second-order remainder. -/
 theorem eval_deriv {w : O} (hw : w ∈ maximalIdeal O) (h : O⟦X⟧) :
-    ∃ r : O, eval (z₀ + w) h
-      = eval z₀ h + eval z₀ (PowerSeries.derivative O h) * w + r * w ^ 2 := by
+    ∃ r : O, eval (z₀ + w) h = eval z₀ h + eval z₀ (PowerSeries.derivative h) * w + r * w ^ 2 := by
   set c : ℕ → O := fun n ↦
     ∑ j ∈ Finset.range (n - 1), n.choose j * z₀ ^ j * w ^ (n - 2 - j) with hc
   -- the tail coefficients lie in high powers of the maximal ideal, so `∑ aₙ cₙ` converges
@@ -276,15 +275,15 @@ theorem eval_deriv {w : O} (hw : w ∈ maximalIdeal O) (h : O⟦X⟧) :
   refine ⟨r, ?_⟩
   -- identify the three convergent series
   have hB := hasSum_eval hz₀ h
-  have hD := hasSum_eval hz₀ (PowerSeries.derivative O h)
+  have hD := hasSum_eval hz₀ (PowerSeries.derivative h)
   have hD' : HasSum (fun (n : ℕ) ↦ (n : O) * coeff n h * z₀ ^ (n - 1) * w)
-      (eval z₀ (PowerSeries.derivative O h) * w) := by
+      (eval z₀ (PowerSeries.derivative h) * w) := by
     have h0 : (fun (n : ℕ) ↦ (n : O) * coeff n h * z₀ ^ (n - 1) * w) 0 = 0 := by simp
     rw [← hasSum_nat_add_iff' 1]
     simpa [Finset.sum_range_one, h0, PowerSeries.coeff_derivative, mul_comm, mul_assoc,
       mul_left_comm] using hD.mul_right w
   have hsum : HasSum (fun n ↦ coeff n h * (z₀ + w) ^ n)
-      (eval z₀ h + eval z₀ (PowerSeries.derivative O h) * w + r * w ^ 2) := by
+      (eval z₀ h + eval z₀ (PowerSeries.derivative h) * w + r * w ^ 2) := by
     have := (hB.add hD').add ((hr.mul_right (w ^ 2)))
     convert this using 2 with n
     rw [add_pow_eq]

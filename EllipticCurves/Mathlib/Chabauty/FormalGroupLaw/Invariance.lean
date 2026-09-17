@@ -63,7 +63,7 @@ private lemma subst_zero' {τ : Type*} {a : τ → MvPowerSeries (ι ⊕ ι) O}
 -- `Y := 0` sends `∂_{Y_k} F a` to the corresponding entry of the Jacobian matrix
 private lemma subst_unitR_pderiv_F (a k : ι) :
     MvPowerSeries.subst (Sum.elim MvPowerSeries.X (fun _ ↦ 0) : ι ⊕ ι → MvPowerSeries ι O)
-        (pderiv O (Sum.inr k) (Φ.F a))
+        (pderiv (Sum.inr k) (Φ.F a))
       = Φ.diffMatrix a k := rfl
 
 -- renaming by the block swap fixes `F` (commutativity)
@@ -131,8 +131,8 @@ private lemma subst_C0_assocLeft (h : MvPowerSeries (ι ⊕ ι) O) :
 private lemma subst_F_diffMatrix (i k : ι) :
     MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix i k)
       = MvPowerSeries.subst (Sum.elim (fun j : ι ↦ Φ.F j) fun _ ↦ 0)
-          (pderiv O (Sum.inr k) (Φ.F i)) := by
-  change MvPowerSeries.subst _ (MvPowerSeries.subst _ (pderiv O (Sum.inr k) (Φ.F i))) = _
+          (pderiv (Sum.inr k) (Φ.F i)) := by
+  change MvPowerSeries.subst _ (MvPowerSeries.subst _ (pderiv (Sum.inr k) (Φ.F i))) = _
   rw [subst_comp_subst_apply hasSubst_unitR (hasSubst_F Φ)]
   congr 1
   funext t
@@ -202,11 +202,11 @@ private lemma subst_C0_emb23_pderiv (j k : ι) :
         (MvPowerSeries.subst
           (Sum.elim (fun a : ι ↦ X (Sum.inr (Sum.inl a))) fun b : ι ↦ X (Sum.inr (Sum.inr b))
             : ι ⊕ ι → MvPowerSeries (ι ⊕ ι ⊕ ι) O)
-          (pderiv O (Sum.inr k) (Φ.F j)))
+          (pderiv (Sum.inr k) (Φ.F j)))
       = MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inr s) : MvPowerSeries (ι ⊕ ι) O))
           (Φ.diffMatrix j k) := by
   rw [subst_comp_subst_apply hasSubst_emb23 hasSubst_C0]
-  change _ = MvPowerSeries.subst _ (MvPowerSeries.subst _ (pderiv O (Sum.inr k) (Φ.F j)))
+  change _ = MvPowerSeries.subst _ (MvPowerSeries.subst _ (pderiv (Sum.inr k) (Φ.F j)))
   rw [subst_comp_subst_apply hasSubst_unitR hasSubst_Yemb]
   congr 1
   funext t
@@ -267,42 +267,41 @@ private lemma coeff_F_symm (i k l : ι) :
 
 -- `∂_{C_k}` of the left associated substitution
 private lemma pderiv_substLeft (i : ι) (k : ι) :
-    pderiv O (Sum.inr (Sum.inr k)) (MvPowerSeries.subst (assocLeftFam Φ.F) (Φ.F i))
-      = MvPowerSeries.subst (assocLeftFam Φ.F) (pderiv O (Sum.inr k) (Φ.F i)) := by
+    pderiv (Sum.inr (Sum.inr k)) (MvPowerSeries.subst (assocLeftFam Φ.F) (Φ.F i))
+      = MvPowerSeries.subst (assocLeftFam Φ.F) (pderiv (Sum.inr k) (Φ.F i)) := by
   classical
   cases nonempty_fintype ι
   rw [pderiv_subst (hasSubst_assocLeft Φ)]
   rw [Fintype.sum_sum_type]
-  have hinl (j : ι) : pderiv O (Sum.inr (Sum.inr k)) (assocLeftFam Φ.F (Sum.inl j)) = 0 := by
+  have hinl (j : ι) : pderiv (Sum.inr (Sum.inr k)) (assocLeftFam Φ.F (Sum.inl j)) = 0 := by
     refine pderiv_subst_eq_zero hasSubst_emb12 _ ?_ _
     rintro (a | b) <;> simp
-  have hinr (j : ι) : pderiv O (Sum.inr (Sum.inr k)) (assocLeftFam Φ.F (Sum.inr j))
+  have hinr (j : ι) : pderiv (Sum.inr (Sum.inr k)) (assocLeftFam Φ.F (Sum.inr j))
       = if j = k then 1 else 0 := by
-    change pderiv O (Sum.inr (Sum.inr k)) (X (Sum.inr (Sum.inr j))
-      : MvPowerSeries (ι ⊕ ι ⊕ ι) O) = _
+    change pderiv (Sum.inr (Sum.inr k)) (X (Sum.inr (Sum.inr j)) : MvPowerSeries (ι ⊕ ι ⊕ ι) O) = _
     simp [pderiv_X, Pi.single_apply]
   simp only [hinl, hinr, mul_zero, mul_ite, mul_one, Finset.sum_const_zero, zero_add]
   rw [Finset.sum_ite_eq' Finset.univ k
-    fun j ↦ MvPowerSeries.subst (assocLeftFam Φ.F) (pderiv O (Sum.inr j) (Φ.F i)),
+    fun j ↦ MvPowerSeries.subst (assocLeftFam Φ.F) (pderiv (Sum.inr j) (Φ.F i)),
     ite_eq_left (Finset.mem_univ k)]
 
 -- `∂_{C_k}` of the embedded second factor
 private lemma pderiv_emb23 (j k : ι) :
-    pderiv O (Sum.inr (Sum.inr k)) (MvPowerSeries.subst
+    pderiv (Sum.inr (Sum.inr k)) (MvPowerSeries.subst
         (Sum.elim (fun a : ι ↦ X (Sum.inr (Sum.inl a))) fun b : ι ↦ X (Sum.inr (Sum.inr b))
           : ι ⊕ ι → MvPowerSeries (ι ⊕ ι ⊕ ι) O)
         (Φ.F j))
       = MvPowerSeries.subst
           (Sum.elim (fun a : ι ↦ X (Sum.inr (Sum.inl a))) fun b : ι ↦ X (Sum.inr (Sum.inr b))
             : ι ⊕ ι → MvPowerSeries (ι ⊕ ι ⊕ ι) O)
-          (pderiv O (Sum.inr k) (Φ.F j)) := by
+          (pderiv (Sum.inr k) (Φ.F j)) := by
   classical
   cases nonempty_fintype ι
   rw [pderiv_subst hasSubst_emb23, Fintype.sum_sum_type]
-  have hinl (a : ι) : pderiv O (Sum.inr (Sum.inr k))
+  have hinl (a : ι) : pderiv (Sum.inr (Sum.inr k))
       (X (Sum.inr (Sum.inl a)) : MvPowerSeries (ι ⊕ ι ⊕ ι) O) = 0 := by
     simp
-  have hinr (b : ι) : pderiv O (Sum.inr (Sum.inr k))
+  have hinr (b : ι) : pderiv (Sum.inr (Sum.inr k))
       (X (Sum.inr (Sum.inr b)) : MvPowerSeries (ι ⊕ ι ⊕ ι) O) = if b = k then 1 else 0 := by
     simp [pderiv_X, Pi.single_apply]
   simp only [Sum.elim_inl, Sum.elim_inr, hinl, hinr, mul_zero, mul_ite, mul_one,
@@ -311,59 +310,59 @@ private lemma pderiv_emb23 (j k : ι) :
     fun b ↦ MvPowerSeries.subst
       (Sum.elim (fun a : ι ↦ X (Sum.inr (Sum.inl a))) fun b : ι ↦ X (Sum.inr (Sum.inr b))
         : ι ⊕ ι → MvPowerSeries (ι ⊕ ι ⊕ ι) O)
-      (pderiv O (Sum.inr b) (Φ.F j)),
+      (pderiv (Sum.inr b) (Φ.F j)),
     ite_eq_left (Finset.mem_univ k)]
 
 -- the `Y`-block embedding commutes with `∂/∂Y`
 lemma pderiv_Yemb (l : ι) (h : MvPowerSeries ι O) :
-    pderiv O (Sum.inr l) (MvPowerSeries.subst
+    pderiv (Sum.inr l) (MvPowerSeries.subst
         (fun s : ι ↦ (X (Sum.inr s) : MvPowerSeries (ι ⊕ ι) O)) h)
       = MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inr s) : MvPowerSeries (ι ⊕ ι) O))
-          (pderiv O l h) := by
+          (pderiv l h) := by
   classical
   cases nonempty_fintype ι
   rw [pderiv_subst (hasSubst_Yemb)]
-  have hx (t : ι) : pderiv O (Sum.inr l) (X (Sum.inr t) : MvPowerSeries (ι ⊕ ι) O)
+  have hx (t : ι) : pderiv (Sum.inr l) (X (Sum.inr t) : MvPowerSeries (ι ⊕ ι) O)
       = if t = l then 1 else 0 := by
     simp [pderiv_X, Pi.single_apply]
   simp only [hx, mul_ite, mul_one, mul_zero]
   rw [Finset.sum_ite_eq' Finset.univ l
     fun t ↦ MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inr s) : MvPowerSeries (ι ⊕ ι) O))
-      (pderiv O t h),
+      (pderiv t h),
     ite_eq_left (Finset.mem_univ l)]
 
 -- `Y := 0` intertwines `∂/∂X_l` on both sides
 private lemma pderiv_unitR (l : ι) (h : MvPowerSeries (ι ⊕ ι) O) :
-    pderiv O l (MvPowerSeries.subst
+    pderiv l (MvPowerSeries.subst
         (Sum.elim MvPowerSeries.X (fun _ ↦ 0) : ι ⊕ ι → MvPowerSeries ι O) h)
       = MvPowerSeries.subst (Sum.elim MvPowerSeries.X (fun _ ↦ 0) : ι ⊕ ι → MvPowerSeries ι O)
-          (pderiv O (Sum.inl l) h) := by
+          (pderiv (Sum.inl l) h) := by
   classical
   cases nonempty_fintype ι
   rw [pderiv_subst (hasSubst_unitR), Fintype.sum_sum_type]
-  have hinl (a : ι) : pderiv O l ((Sum.elim MvPowerSeries.X (fun _ ↦ 0)
+  have hinl (a : ι) : pderiv l ((Sum.elim MvPowerSeries.X (fun _ ↦ 0)
       : ι ⊕ ι → MvPowerSeries ι O) (Sum.inl a)) = if a = l then 1 else 0 := by
-    change pderiv O l (MvPowerSeries.X a : MvPowerSeries ι O) = _
+    change pderiv l (MvPowerSeries.X a : MvPowerSeries ι O) = _
     simp [pderiv_X, Pi.single_apply]
-  have hinr (b : ι) : pderiv O l ((Sum.elim MvPowerSeries.X (fun _ ↦ 0)
+  have hinr (b : ι) : pderiv l ((Sum.elim MvPowerSeries.X (fun _ ↦ 0)
       : ι ⊕ ι → MvPowerSeries ι O) (Sum.inr b)) = 0 := by
-    change pderiv O l (0 : MvPowerSeries ι O) = 0
+    change pderiv l (0 : MvPowerSeries ι O) = 0
     exact map_zero _
   simp only [hinl, hinr, mul_ite, mul_one, mul_zero, Finset.sum_const_zero, add_zero]
   rw [Finset.sum_ite_eq' Finset.univ l
     fun a ↦ MvPowerSeries.subst
       (Sum.elim MvPowerSeries.X (fun _ ↦ 0) : ι ⊕ ι → MvPowerSeries ι O)
-      (pderiv O (Sum.inl a) h),
+      (pderiv (Sum.inl a) h),
     ite_eq_left (Finset.mem_univ l)]
 
 -- the linear part of `M` is a mixed second derivative of `F`
 private lemma constantCoeff_pderiv_diffMatrix (i k l : ι) :
-    constantCoeff (pderiv O l (Φ.diffMatrix i k))
+    constantCoeff (pderiv l (Φ.diffMatrix i k))
       = coeff (Finsupp.single (Sum.inl l) 1 + Finsupp.single (Sum.inr k) 1) (Φ.F i) := by
   classical
   rw [show Φ.diffMatrix i k = MvPowerSeries.subst
       (Sum.elim MvPowerSeries.X (fun _ ↦ 0) : ι ⊕ ι → MvPowerSeries ι O)
-      (pderiv O (Sum.inr k) (Φ.F i)) from rfl,
+      (pderiv (Sum.inr k) (Φ.F i)) from rfl,
     pderiv_unitR,
     MvPowerSeries.constantCoeff_subst_of_constantCoeff_zero (hasSubst_unitR)
       (by rintro (a | a) <;> simp),
@@ -396,37 +395,37 @@ private lemma rename_sumComm_Yemb (h : MvPowerSeries ι O) :
 
 -- the `X`-block embedding commutes with `∂/∂X`
 lemma pderiv_Xemb (l : ι) (h : MvPowerSeries ι O) :
-    pderiv O (Sum.inl l) (MvPowerSeries.subst
+    pderiv (Sum.inl l) (MvPowerSeries.subst
         (fun s : ι ↦ (X (Sum.inl s) : MvPowerSeries (ι ⊕ ι) O)) h)
       = MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inl s) : MvPowerSeries (ι ⊕ ι) O))
-          (pderiv O l h) := by
+          (pderiv l h) := by
   classical
   cases nonempty_fintype ι
   rw [pderiv_subst (hasSubst_Xemb)]
-  have hx (t : ι) : pderiv O (Sum.inl l) (X (Sum.inl t) : MvPowerSeries (ι ⊕ ι) O)
+  have hx (t : ι) : pderiv (Sum.inl l) (X (Sum.inl t) : MvPowerSeries (ι ⊕ ι) O)
       = if t = l then 1 else 0 := by
     simp [pderiv_X, Pi.single_apply]
   simp only [hx, mul_ite, mul_one, mul_zero]
   rw [Finset.sum_ite_eq' Finset.univ l
     fun t ↦ MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inl s) : MvPowerSeries (ι ⊕ ι) O))
-      (pderiv O t h),
+      (pderiv t h),
     ite_eq_left (Finset.mem_univ l)]
 
 variable [Fintype ι]
 
 -- `∂_{C_k}` of the right associated substitution
 private lemma pderiv_substRight (i k : ι) :
-    pderiv O (Sum.inr (Sum.inr k)) (MvPowerSeries.subst (assocRightFam Φ.F) (Φ.F i))
-      = ∑ j, MvPowerSeries.subst (assocRightFam Φ.F) (pderiv O (Sum.inr j) (Φ.F i))
+    pderiv (Sum.inr (Sum.inr k)) (MvPowerSeries.subst (assocRightFam Φ.F) (Φ.F i))
+      = ∑ j, MvPowerSeries.subst (assocRightFam Φ.F) (pderiv (Sum.inr j) (Φ.F i))
           * MvPowerSeries.subst
               (Sum.elim (fun a : ι ↦ X (Sum.inr (Sum.inl a)))
                 fun b : ι ↦ X (Sum.inr (Sum.inr b))
                 : ι ⊕ ι → MvPowerSeries (ι ⊕ ι ⊕ ι) O)
-              (pderiv O (Sum.inr k) (Φ.F j)) := by
+              (pderiv (Sum.inr k) (Φ.F j)) := by
   classical
   rw [pderiv_subst (hasSubst_assocRight Φ), Fintype.sum_sum_type]
-  have hinl (j : ι) : pderiv O (Sum.inr (Sum.inr k)) (assocRightFam Φ.F (Sum.inl j)) = 0 := by
-    change pderiv O (Sum.inr (Sum.inr k)) (X (Sum.inl j) : MvPowerSeries (ι ⊕ ι ⊕ ι) O) = 0
+  have hinl (j : ι) : pderiv (Sum.inr (Sum.inr k)) (assocRightFam Φ.F (Sum.inl j)) = 0 := by
+    change pderiv (Sum.inr (Sum.inr k)) (X (Sum.inl j) : MvPowerSeries (ι ⊕ ι ⊕ ι) O) = 0
     simp
   simp only [hinl, mul_zero, Finset.sum_const_zero, zero_add]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
@@ -438,7 +437,7 @@ private lemma pderiv_substRight (i k : ι) :
 third block of variables at `0`. -/
 theorem diffMatrix_subst_F (i k : ι) :
     MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix i k)
-      = ∑ j, pderiv O (Sum.inr j) (Φ.F i)
+      = ∑ j, pderiv (Sum.inr j) (Φ.F i)
           * MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inr s) : MvPowerSeries (ι ⊕ ι) O))
               (Φ.diffMatrix j k) := by
   have hax := congrArg
@@ -446,7 +445,7 @@ theorem diffMatrix_subst_F (i k : ι) :
       (Sum.elim (fun a : ι ↦ X (Sum.inl a))
         (Sum.elim (fun b : ι ↦ X (Sum.inr b)) fun _ ↦ 0)
         : ι ⊕ ι ⊕ ι → MvPowerSeries (ι ⊕ ι) O))
-    (congrArg (pderiv O (Sum.inr (Sum.inr k))) (Φ.assoc' i))
+    (congrArg (pderiv (Sum.inr (Sum.inr k))) (Φ.assoc' i))
   rw [pderiv_substLeft, pderiv_substRight, subst_C0_assocLeft] at hax
   rw [← coe_substAlgHom hasSubst_C0, map_sum] at hax
   rw [subst_F_diffMatrix, hax]
@@ -462,7 +461,7 @@ law: `N(F(X,Y)) · D_Y F(X,Y) = N(Y)`, entrywise. Equivalently, the invariant di
 `δ = N(X) dX` satisfies `δ(F(X,Y)) · D_Y F(X,Y) = δ(Y)`. -/
 theorem diffMatrixInv_subst_F (i k : ι) :
     ∑ a, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
-        * pderiv O (Sum.inr k) (Φ.F a)
+        * pderiv (Sum.inr k) (Φ.F a)
       = MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inr s) : MvPowerSeries (ι ⊕ ι) O))
           (Φ.diffMatrix⁻¹ i k) := by
   have hdet := (Matrix.isUnit_iff_isUnit_det _).mp Φ.isUnit_diffMatrix
@@ -470,7 +469,7 @@ theorem diffMatrixInv_subst_F (i k : ι) :
   set SY := (substAlgHom (R := O) (hasSubst_Yemb (O := O) (ι := ι))).mapMatrix (m := ι)
     with hSY
   set D : Matrix ι ι (MvPowerSeries (ι ⊕ ι) O) :=
-    Matrix.of fun i j ↦ pderiv O (Sum.inr j) (Φ.F i) with hD
+    Matrix.of fun i j ↦ pderiv (Sum.inr j) (Φ.F i) with hD
   have h1 : SF Φ.diffMatrix⁻¹ * SF Φ.diffMatrix = 1 := by
     rw [← map_mul, Matrix.nonsing_inv_mul _ hdet, map_one]
   have h2 : SY Φ.diffMatrix * SY Φ.diffMatrix⁻¹ = 1 := by
@@ -494,67 +493,67 @@ theorem diffMatrixInv_subst_F (i k : ι) :
 
 -- expansion of `∂_{Y_l}` of the left side of the inverse-matrix invariance identity
 private lemma pderiv_inr_expand (i k l : ι) :
-    pderiv O (Sum.inr l) (∑ a, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
-        * pderiv O (Sum.inr k) (Φ.F a))
-      = (∑ a, ∑ b, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (pderiv O b (Φ.diffMatrix⁻¹ i a))
-            * pderiv O (Sum.inr l) (Φ.F b) * pderiv O (Sum.inr k) (Φ.F a))
+    pderiv (Sum.inr l) (∑ a, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
+        * pderiv (Sum.inr k) (Φ.F a))
+      = (∑ a, ∑ b, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (pderiv b (Φ.diffMatrix⁻¹ i a))
+            * pderiv (Sum.inr l) (Φ.F b) * pderiv (Sum.inr k) (Φ.F a))
         + ∑ a, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
-            * pderiv O (Sum.inr l) (pderiv O (Sum.inr k) (Φ.F a)) := by
+            * pderiv (Sum.inr l) (pderiv (Sum.inr k) (Φ.F a)) := by
   rw [map_sum]
-  have hterm (a : ι) : pderiv O (Sum.inr l)
+  have hterm (a : ι) : pderiv (Sum.inr l)
       (MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
-        * pderiv O (Sum.inr k) (Φ.F a))
-      = (∑ b, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (pderiv O b (Φ.diffMatrix⁻¹ i a))
-            * pderiv O (Sum.inr l) (Φ.F b) * pderiv O (Sum.inr k) (Φ.F a))
+        * pderiv (Sum.inr k) (Φ.F a))
+      = (∑ b, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (pderiv b (Φ.diffMatrix⁻¹ i a))
+            * pderiv (Sum.inr l) (Φ.F b) * pderiv (Sum.inr k) (Φ.F a))
         + MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
-            * pderiv O (Sum.inr l) (pderiv O (Sum.inr k) (Φ.F a)) := by
+            * pderiv (Sum.inr l) (pderiv (Sum.inr k) (Φ.F a)) := by
     rw [Derivation.leibniz, smul_eq_mul, smul_eq_mul,
-      mul_comm (pderiv O (Sum.inr k) (Φ.F a)), pderiv_subst (hasSubst_F Φ),
+      mul_comm (pderiv (Sum.inr k) (Φ.F a)), pderiv_subst (hasSubst_F Φ),
       Finset.sum_mul, add_comm]
   rw [Finset.sum_congr rfl fun a _ ↦ hterm a, Finset.sum_add_distrib]
 
 -- the antisymmetrized (in `(k,l)`) differentiated invariance identity
 private lemma subst_Yemb_pderiv_sub (i k l : ι) :
     MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inr s) : MvPowerSeries (ι ⊕ ι) O))
-        (pderiv O l (Φ.diffMatrix⁻¹ i k) - pderiv O k (Φ.diffMatrix⁻¹ i l))
+        (pderiv l (Φ.diffMatrix⁻¹ i k) - pderiv k (Φ.diffMatrix⁻¹ i l))
       = ∑ a, ∑ b,
           MvPowerSeries.subst (fun j : ι ↦ Φ.F j)
-              (pderiv O b (Φ.diffMatrix⁻¹ i a) - pderiv O a (Φ.diffMatrix⁻¹ i b))
-            * pderiv O (Sum.inr k) (Φ.F a) * pderiv O (Sum.inr l) (Φ.F b) := by
-  have hkl := congrArg (pderiv O (Sum.inr l)) (diffMatrixInv_subst_F Φ i k)
-  have hlk := congrArg (pderiv O (Sum.inr k)) (diffMatrixInv_subst_F Φ i l)
+              (pderiv b (Φ.diffMatrix⁻¹ i a) - pderiv a (Φ.diffMatrix⁻¹ i b))
+            * pderiv (Sum.inr k) (Φ.F a) * pderiv (Sum.inr l) (Φ.F b) := by
+  have hkl := congrArg (pderiv (Sum.inr l)) (diffMatrixInv_subst_F Φ i k)
+  have hlk := congrArg (pderiv (Sum.inr k)) (diffMatrixInv_subst_F Φ i l)
   rw [pderiv_inr_expand, pderiv_Yemb] at hkl hlk
   rw [← coe_substAlgHom (hasSubst_Yemb), map_sub,
     coe_substAlgHom (hasSubst_Yemb), ← hkl, ← hlk]
   have hsecond : ∑ a, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
-        * pderiv O (Sum.inr l) (pderiv O (Sum.inr k) (Φ.F a))
+        * pderiv (Sum.inr l) (pderiv (Sum.inr k) (Φ.F a))
       = ∑ a, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
-        * pderiv O (Sum.inr k) (pderiv O (Sum.inr l) (Φ.F a)) :=
+        * pderiv (Sum.inr k) (pderiv (Sum.inr l) (Φ.F a)) :=
     Finset.sum_congr rfl fun a _ ↦ by rw [pderiv_comm]
   rw [hsecond, add_sub_add_right_eq_sub]
   have hT2 : ∑ a, ∑ b, MvPowerSeries.subst (fun j : ι ↦ Φ.F j)
-        (pderiv O b (Φ.diffMatrix⁻¹ i a))
-        * pderiv O (Sum.inr k) (Φ.F b) * pderiv O (Sum.inr l) (Φ.F a)
+        (pderiv b (Φ.diffMatrix⁻¹ i a))
+        * pderiv (Sum.inr k) (Φ.F b) * pderiv (Sum.inr l) (Φ.F a)
       = ∑ a, ∑ b, MvPowerSeries.subst (fun j : ι ↦ Φ.F j)
-        (pderiv O a (Φ.diffMatrix⁻¹ i b))
-        * pderiv O (Sum.inr k) (Φ.F a) * pderiv O (Sum.inr l) (Φ.F b) :=
+        (pderiv a (Φ.diffMatrix⁻¹ i b))
+        * pderiv (Sum.inr k) (Φ.F a) * pderiv (Sum.inr l) (Φ.F b) :=
     Finset.sum_comm
   rw [hT2, ← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun a _ ↦ ?_
   rw [← Finset.sum_sub_distrib]
   refine Finset.sum_congr rfl fun b _ ↦ ?_
   have hS : MvPowerSeries.subst (fun j : ι ↦ Φ.F j)
-      (pderiv O b (Φ.diffMatrix⁻¹ i a) - pderiv O a (Φ.diffMatrix⁻¹ i b))
-      = MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (pderiv O b (Φ.diffMatrix⁻¹ i a))
-        - MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (pderiv O a (Φ.diffMatrix⁻¹ i b)) := by
+      (pderiv b (Φ.diffMatrix⁻¹ i a) - pderiv a (Φ.diffMatrix⁻¹ i b))
+      = MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (pderiv b (Φ.diffMatrix⁻¹ i a))
+        - MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (pderiv a (Φ.diffMatrix⁻¹ i b)) := by
     rw [← coe_substAlgHom (hasSubst_F Φ), map_sub]
   rw [hS]
   ring
 
 -- the specialization of the antisymmetrized identity at `Y = 0`
 private lemma closedness_C_eq (i k l : ι) :
-    C (constantCoeff (pderiv O l (Φ.diffMatrix⁻¹ i k) - pderiv O k (Φ.diffMatrix⁻¹ i l)))
-      = ∑ a, ∑ b, (pderiv O b (Φ.diffMatrix⁻¹ i a) - pderiv O a (Φ.diffMatrix⁻¹ i b))
+    C (constantCoeff (pderiv l (Φ.diffMatrix⁻¹ i k) - pderiv k (Φ.diffMatrix⁻¹ i l)))
+      = ∑ a, ∑ b, (pderiv b (Φ.diffMatrix⁻¹ i a) - pderiv a (Φ.diffMatrix⁻¹ i b))
           * Φ.diffMatrix a k * Φ.diffMatrix b l := by
   have h := congrArg (MvPowerSeries.subst
     (Sum.elim MvPowerSeries.X (fun _ ↦ 0) : ι ⊕ ι → MvPowerSeries ι O))
@@ -569,20 +568,20 @@ private lemma closedness_C_eq (i k l : ι) :
 
 -- the linear parts of `M⁻¹` and `M` are opposite
 private lemma constantCoeff_pderiv_diffMatrixInv (i k l : ι) :
-    constantCoeff (pderiv O l (Φ.diffMatrix⁻¹ i k))
-      = - constantCoeff (pderiv O l (Φ.diffMatrix i k)) := by
+    constantCoeff (pderiv l (Φ.diffMatrix⁻¹ i k))
+      = - constantCoeff (pderiv l (Φ.diffMatrix i k)) := by
   have hNM : Φ.diffMatrix⁻¹ * Φ.diffMatrix = 1 :=
     Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).mp Φ.isUnit_diffMatrix)
   have hik := congrFun (congrFun hNM i) k
   rw [Matrix.mul_apply, Matrix.one_apply] at hik
-  have h := congrArg (fun g ↦ constantCoeff (pderiv O l g)) hik
+  have h := congrArg (fun g ↦ constantCoeff (pderiv l g)) hik
   have hN (j : ι) : constantCoeff (Φ.diffMatrix⁻¹ i j) = if i = j then 1 else 0 := by
     have hc := congrFun (congrFun (diffMatrixInv_map_constantCoeff Φ) i) j
     rwa [Matrix.map_apply, Matrix.one_apply] at hc
   have hM (j : ι) : constantCoeff (Φ.diffMatrix j k) = if j = k then 1 else 0 := by
     have hc := congrFun (congrFun Φ.diffMatrix_map_constantCoeff j) k
     rwa [Matrix.map_apply, Matrix.one_apply] at hc
-  have hrhs : constantCoeff (pderiv O l (if i = k then (1 : MvPowerSeries ι O) else 0)) = 0 := by
+  have hrhs : constantCoeff (pderiv l (if i = k then (1 : MvPowerSeries ι O) else 0)) = 0 := by
     split <;> simp
   simp only [map_sum, Derivation.leibniz, smul_eq_mul, map_add, map_mul, hN, hM, hrhs, ite_mul,
     one_mul, zero_mul, Finset.sum_add_distrib, Finset.sum_ite_eq, Finset.sum_ite_eq',
@@ -593,7 +592,7 @@ private lemma constantCoeff_pderiv_diffMatrixInv (i k l : ι) :
 
 -- the double sum in the specialized identity vanishes
 private lemma closedness_sum_eq_zero (i k l : ι) :
-    ∑ a, ∑ b, (pderiv O b (Φ.diffMatrix⁻¹ i a) - pderiv O a (Φ.diffMatrix⁻¹ i b))
+    ∑ a, ∑ b, (pderiv b (Φ.diffMatrix⁻¹ i a) - pderiv a (Φ.diffMatrix⁻¹ i b))
         * Φ.diffMatrix a k * Φ.diffMatrix b l
       = 0 := by
   rw [← closedness_C_eq Φ i k l, map_sub, constantCoeff_pderiv_diffMatrixInv Φ,
@@ -605,9 +604,9 @@ derivatives of the entries of any row of the inverse Jacobian matrix `M⁻¹` sa
 symmetry `∂_l (M⁻¹)_{ik} = ∂_k (M⁻¹)_{il}`. Commutativity of the formal group law is
 essential here. -/
 theorem pderiv_diffMatrixInv_symm (i k l : ι) :
-    pderiv O l (Φ.diffMatrix⁻¹ i k) = pderiv O k (Φ.diffMatrix⁻¹ i l) := by
+    pderiv l (Φ.diffMatrix⁻¹ i k) = pderiv k (Φ.diffMatrix⁻¹ i l) := by
   set A : Matrix ι ι (MvPowerSeries ι O) :=
-    Matrix.of fun a b ↦ pderiv O b (Φ.diffMatrix⁻¹ i a) - pderiv O a (Φ.diffMatrix⁻¹ i b)
+    Matrix.of fun a b ↦ pderiv b (Φ.diffMatrix⁻¹ i a) - pderiv a (Φ.diffMatrix⁻¹ i b)
     with hA
   have hMAM : Φ.diffMatrix.transpose * A * Φ.diffMatrix = 0 := by
     refine Matrix.ext fun k l ↦ ?_
@@ -627,7 +626,7 @@ theorem pderiv_diffMatrixInv_symm (i k l : ι) :
 -- the `X`-block version of the inverse-matrix invariance identity, by commutativity
 lemma diffMatrixInv_subst_F_inl (i k : ι) :
     ∑ a, MvPowerSeries.subst (fun j : ι ↦ Φ.F j) (Φ.diffMatrix⁻¹ i a)
-        * pderiv O (Sum.inl k) (Φ.F a)
+        * pderiv (Sum.inl k) (Φ.F a)
       = MvPowerSeries.subst (fun s : ι ↦ (X (Sum.inl s) : MvPowerSeries (ι ⊕ ι) O))
           (Φ.diffMatrix⁻¹ i k) := by
   have h := congrArg (rename (⇑(Equiv.sumComm ι ι))) (diffMatrixInv_subst_F Φ i k)

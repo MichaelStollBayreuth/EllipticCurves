@@ -617,8 +617,6 @@ private lemma universal_Δ_ne_zero : universal.Δ ≠ 0 := by
   rw [map_zero, ← WeierstrassCurve.map_Δ] at h2
   norm_num [WeierstrassCurve.Δ, WeierstrassCurve.b₂, WeierstrassCurve.b₄, WeierstrassCurve.b₆,
     WeierstrassCurve.b₈, universal, WeierstrassCurve.map] at h2
-  revert h2
-  decide
 
 /-- Associativity of the addition series for the universal Weierstrass curve.
 
