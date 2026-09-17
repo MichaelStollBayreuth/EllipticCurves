@@ -83,6 +83,378 @@ namespace WeierstrassCurve.Affine
 variable {K : Type*} [Field K] (W : Affine K)
 
 /-!
+### The `x - T` map beyond the weak Mordell-Weil theorem
+
+The following material about the descent map `μ` of `EllipticCurves.WeakMordellWeil` is not
+needed for the finiteness of `E(K)/2E(K)`: the norm computations (Step 5 there), the `2`-torsion
+of `E(K)`, the refined sets of bad primes and the cardinality bound for `A(S,2)`. It feeds the
+Selmer-group computations of this file.
+-/
+
+section Norm
+
+/-- The norm of `x - θ` is `f x`. -/
+lemma norm_mk_C_sub_X (x : K) : Algebra.norm K (AdjoinRoot.mk W.f (C x - X)) = W.f.eval x := by
+  have hd : (C x - X).natDegree = 1 := by compute_degree!
+  rw [AdjoinRoot.norm_mk_eq_resultant W.monic_f, hd, resultant_C_sub_X _ _ _ le_rfl]
+
+/-- If `x` is a root of `f`, then the norm of `x - θ + fCofactor x`, which is the element
+representing `f' θ` in this case, is the square `(f' x)²`. -/
+lemma norm_mk_C_sub_X_add_fCofactor {x : K} (hx : W.f.eval x = 0) :
+    Algebra.norm K (AdjoinRoot.mk W.f (C x - X + W.fCofactor x))
+      = (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) ^ 2 := by
+  have hq : (W.fCofactor x).natDegree = 2 := W.natDegree_fCofactor x
+  have hqx : (W.fCofactor x).eval x = 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ :=
+    W.eval_fCofactor_self x
+  have hp : (C x - X + W.fCofactor x).natDegree = 2 := by
+    simp only [fCofactor]
+    compute_degree!
+  have hpx : (C x - X + W.fCofactor x).eval x = 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ := by
+    rw [eval_add, ← hqx]
+    simp
+  rw [AdjoinRoot.norm_mk_eq_resultant W.monic_f, hp, W.natDegree_f]
+  conv_lhs => rw [W.f_eq_mul_of_eval_eq_zero hx]
+  rw [show (3 : ℕ) = (W.fCofactor x).natDegree + (X - C x).natDegree by
+        rw [hq, natDegree_X_sub_C],
+    resultant_mul_left _ _ _ 2 hp.le, hq, natDegree_X_sub_C]
+  -- the factor coming from `X - C x` is `p.eval x`
+  rw [show (X - C x) = (X - C x) ^ 1 by rw [pow_one],
+    resultant_X_sub_C_pow_left _ _ _ _ hp.le, pow_one, hpx]
+  -- the factor coming from `fCofactor x` is `(C x - X).resultant`, since `fCofactor x ≡ 0`
+  have hres : (W.fCofactor x).resultant (C x - X) 2 2 = 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ := by
+    have h := resultant_add_right_deg (W.fCofactor x) (C x - X) 2 1 1 (by compute_degree!)
+    simp only [show (1 : ℕ) + 1 = 2 from rfl, pow_one] at h
+    rw [h, show (W.fCofactor x).coeff 2 = 1 by
+        rw [← hq]; exact (W.monic_fCofactor x).coeff_natDegree,
+      one_mul, resultant_C_sub_X _ _ _ hq.le, hqx]
+  rw [show C x - X + W.fCofactor x = (C x - X) + W.fCofactor x * 1 by ring,
+    resultant_add_mul_right (W.fCofactor x) (C x - X) 1 2 2 (by simp) hq.le, hres]
+  ring
+
+/-- The class of `f'` in `K[X]/⟨g⟩`, for any modulus `g` (e.g. `f` itself or one of its
+irreducible factors), is `3 θ² + 2 a₂ θ + a₄`, where `θ` is the image of `X`. -/
+lemma mk_derivative_f (g : K[X]) : AdjoinRoot.mk g (derivative W.f) =
+    3 * AdjoinRoot.root g ^ 2 + 2 * algebraMap K (AdjoinRoot g) W.a₂ * AdjoinRoot.root g
+      + algebraMap K (AdjoinRoot g) W.a₄ := by
+  rw [derivative_f]
+  simp [AdjoinRoot.mk_C, map_ofNat, ← AdjoinRoot.algebraMap_eq]
+
+/-- The norm of `f' θ` is `-disc f` (this needs `3 ≠ 0` in `K`, so that `f'` is honestly
+quadratic). -/
+lemma norm_mk_derivative_f (h3 : (3 : K) ≠ 0) :
+    Algebra.norm K (AdjoinRoot.mk W.f (derivative W.f)) = -W.f.discr := by
+  have h := Polynomial.resultant_deriv (f := W.f)
+    (by rw [← natDegree_pos_iff_degree_pos, natDegree_f]; norm_num)
+  rw [natDegree_f, W.monic_f.leadingCoeff, mul_one] at h
+  norm_num at h
+  rw [AdjoinRoot.norm_mk_eq_resultant W.monic_f, W.natDegree_derivative_f h3, natDegree_f, h]
+
+end Norm
+
+section TwoTorsion
+
+variable {W} [DecidableEq K] [W.IsCharNeTwoNF] [W.IsElliptic]
+
+/-!
+### The `2`-torsion of the group of points
+
+In our situation (`a₁ = a₃ = 0`, so `-(x, y) = (x, -y)`), the `2`-torsion consists of the
+origin together with the points `(x, 0)` at the roots of `f`; in particular its order is
+the number of roots of `f` in `K` plus one.
+-/
+
+lemma two_nsmul_some_eq_zero {x : K} (hx : W.f.eval x = 0) :
+    (2 : ℕ) • (Point.some _ _ (W.nonsingular_of_eval_f_eq_zero hx) : W.Point) = 0 := by
+  rw [two_nsmul, add_eq_zero_iff_eq_neg, Point.neg_some, Point.some.injEq]
+  refine ⟨rfl, ?_⟩
+  rw [negY_of_isCharNeTwoNF, neg_zero]
+
+lemma y_eq_zero_of_two_nsmul_eq_zero {x y : K} (h : W.Nonsingular x y)
+    (h2 : (2 : ℕ) • (Point.some _ _ h : W.Point) = 0) :
+    y = 0 := by
+  have h20 : (2 : K) ≠ 0 := W.two_ne_zero
+  rw [two_nsmul, add_eq_zero_iff_eq_neg, Point.neg_some, Point.some.injEq] at h2
+  have hy : 2 * y = 0 := by linear_combination h2.2.trans (negY_of_isCharNeTwoNF ..)
+  rcases mul_eq_zero.mp hy with h' | h'
+  · exact absurd h' h20
+  · exact h'
+
+/-- The `2`-torsion of the group of points consists of the origin and the points `(x, 0)`
+at the roots of `f`. -/
+theorem card_ker_nsmul_two :
+    Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker =
+      Nat.card {x : K // W.f.eval x = 0} + 1 := by
+  have hfin : Finite {x : K | W.f.eval x = 0} :=
+    Set.Finite.to_subtype (Polynomial.finite_setOfPred_isRoot W.f_ne_zero)
+  set pt : {x : K | W.f.eval x = 0} → W.Point :=
+    fun x ↦ Point.some _ _ (W.nonsingular_of_eval_f_eq_zero x.2)
+  have hinj : Function.Injective pt := by
+    intro a b hab
+    exact Subtype.ext ((Point.some.injEq _ _ _ _ _ _).mp hab).1
+  -- the kernel is the origin together with the image of the roots
+  have hset : ((nsmulAddMonoidHom (α := W.Point) 2).ker : Set W.Point) =
+      insert 0 (Set.range pt) := by
+    ext P
+    constructor
+    · intro hP
+      induction P with
+      | zero => exact Set.mem_insert _ _
+      | some x y h =>
+        have hy := W.y_eq_zero_of_two_nsmul_eq_zero h hP
+        subst hy
+        have hx : W.f.eval x = 0 := by
+          have := (W.equation_iff_eval_f_eq_sq x 0).mp h.1
+          simpa using this
+        exact Set.mem_insert_of_mem _ ⟨⟨x, hx⟩, rfl⟩
+    · intro hP
+      rcases Set.mem_insert_iff.mp hP with rfl | ⟨x, rfl⟩
+      · exact zero_mem _
+      · exact W.two_nsmul_some_eq_zero x.2
+  calc Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker
+      = ((nsmulAddMonoidHom (α := W.Point) 2).ker : Set W.Point).ncard :=
+        Nat.card_coe_set_eq _
+    _ = (insert 0 (Set.range pt)).ncard := by rw [hset]
+    _ = (Set.range pt).ncard + 1 :=
+        Set.ncard_insert_of_notMem (by intro ⟨x, hx⟩; exact Point.some_ne_zero _ hx)
+    _ = Nat.card {x : K // W.f.eval x = 0} + 1 := by
+        rw [← Nat.card_coe_set_eq, Nat.card_range_of_injective hinj]
+        rfl
+
+/-!
+### Step 5: show that `im μ` is contained in the kernel of the norm map.
+
+The norm `Algebra.norm K : W.A →* K` sends units to units, hence induces a homomorphism
+`normM : W.M →* Units.modPow K 2` on square classes. We must show `normM ∘ μ = 1`.
+
+Writing `f = (X - θ₁) * (X - θ₂) * (X - θ₃)` over a splitting field, the two cases are:
+
+* if `f x ≠ 0`, then `N (x - θ) = ∏ᵢ (x - θᵢ) = f x = y²`, a square;
+* if `f x = 0`, then `N (f' θ) = (f' x)²`, again a square.
+
+Both are instances of `AdjoinRoot.norm_mk_eq_resultant`: the norm of `AdjoinRoot.mk g p` for monic
+`g` is the resultant of `g` and `p`. `WeierstrassCurve.Affine.norm_mk_C_sub_X` and
+`WeierstrassCurve.Affine.norm_mk_C_sub_X_add_fCofactor` (Step 1) deduce them from it by resultant
+algebra; in the second case the factorization `f = fCofactor x * (X - C x)` splits the resultant
+into two factors, each equal to `(W.fCofactor x).eval x = f' x`.
+
+`AdjoinRoot.norm_mk_eq_resultant` is proved in `EllipticCurves.Mathlib.Basic`; it is a general fact
+about `AdjoinRoot g` for monic `g` and looks worth upstreaming.
+-/
+
+section Step5
+
+/-- The norm map on square classes, induced by `Algebra.norm K : W.A →* K`. -/
+noncomputable def normM : W.M →* Units.modPow K 2 :=
+  Units.modPow.map (Algebra.norm K) 2
+
+/-- The image of `μX` lies in the kernel of the norm map on square classes. -/
+lemma normM_μX_eq_one {x y : K} (h : W.Equation x y) : W.normM (W.μX x) = 1 := by
+  rcases eq_or_ne (W.f.eval x) 0 with hx | hx
+  · rw [μX_of_eval_f_eq_zero hx, normM, Units.modPow.map_unit, Units.modPow.unit_eq_one_iff]
+    exact ⟨3 * x ^ 2 + 2 * W.a₂ * x + W.a₄, (W.norm_mk_C_sub_X_add_fCofactor hx).symm⟩
+  · rw [μX_of_eval_f_ne_zero hx, normM, Units.modPow.map_unit, Units.modPow.unit_eq_one_iff]
+    exact ⟨y, by rw [W.norm_mk_C_sub_X, (equation_iff_eval_f_eq_sq W x y).mp h]⟩
+
+@[simp]
+lemma normM_μ₀_eq_one (P : W.Point) : W.normM (W.μ₀ P) = 1 := by
+  match P with
+  | 0 => simp
+  | .some x y h => exact normM_μX_eq_one h.1
+
+/-- The image of `μ` is contained in the kernel of the norm map on square classes. -/
+lemma range_μ_le_ker_normM : (μ (W := W)).range ≤ (normM (W := W)).ker := by
+  rintro _ ⟨P, rfl⟩
+  obtain ⟨P, rfl⟩ := Multiplicative.ofAdd.surjective P
+  rw [MonoidHom.mem_ker, μ_apply]
+  exact normM_μ₀_eq_one P
+
+end Step5
+
+end TwoTorsion
+
+section BadPrimes
+
+open WithZero in
+/-- The places where the reduced cubic degenerates: `disc f` vanishes to order at least `2`,
+or a coefficient has a pole. Away from these the local descent image consists of unramified
+classes (in any residue characteristic). -/
+def discBadPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
+    [IsFractionRing R K] : Set (HeightOneSpectrum R) :=
+  {v | ¬ exp (-1 : ℤ) ≤ v.valuation K W.f.discr} ∪ HeightOneSpectrum.Support R W.a₂ ∪
+    HeightOneSpectrum.Support R W.a₄ ∪ HeightOneSpectrum.Support R W.a₆
+
+/-- The places where the local condition genuinely constrains the 2-Selmer group: the
+degenerate places of `WeierstrassCurve.Affine.discBadPrimes` together with all even places. -/
+def badPrimes₂ (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
+    [IsFractionRing R K] : Set (HeightOneSpectrum R) :=
+  W.discBadPrimes R ∪ {v | v.valuation K 2 ≠ 1}
+
+open WithZero in
+/-- There are only finitely many places in `WeierstrassCurve.Affine.discBadPrimes`: where
+`exp (-1) ≤ v(disc f)` fails, in particular `v(disc f) ≠ 1`, and `disc f` is nonzero. -/
+lemma finite_discBadPrimes (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
+    [IsFractionRing R K] [W.IsElliptic] [W.IsCharNeTwoNF] : (W.discBadPrimes R).Finite :=
+  have h : {v : HeightOneSpectrum R | ¬ exp (-1 : ℤ) ≤ v.valuation K W.f.discr} ⊆
+      {v | v.valuation K W.f.discr ≠ 1} := fun v hv he ↦
+    hv ((le_of_le_of_eq (exp_le_exp.mpr (by lia)) exp_zero).trans he.ge)
+  ((((HeightOneSpectrum.finite_setOf_valuation_ne_one W.discr_f_ne_zero).subset h).union
+    (HeightOneSpectrum.Support.finite R W.a₂)).union
+      (HeightOneSpectrum.Support.finite R W.a₄)).union
+        (HeightOneSpectrum.Support.finite R W.a₆)
+
+/-- There are only finitely many places in `WeierstrassCurve.Affine.badPrimes₂`. -/
+lemma finite_badPrimes₂ (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
+    [IsFractionRing R K] [W.IsElliptic] [W.IsCharNeTwoNF] : (W.badPrimes₂ R).Finite :=
+  (W.finite_discBadPrimes R).union <|
+    HeightOneSpectrum.finite_setOf_valuation_ne_one <| W.two_ne_zero
+
+/-- The norm of the class of `-1` in the étale algebra is the class of `-1`: the algebra has
+odd rank `3` over `K`. -/
+lemma normM_neg_one : W.normM (QuotientGroup.mk (-1 : W.Aˣ)) = QuotientGroup.mk (-1 : Kˣ) := by
+  have hnorm : Algebra.norm K (-1 : W.A) = -1 := by
+    rw [show (-1 : W.A) = algebraMap K W.A (-1) by simp, Algebra.norm_algebraMap, W.finrank_A]
+    norm_num
+  rw [normM, Units.modPow.map_mk]
+  congr 1
+  ext
+  rw [Units.coe_map]
+  simpa using hnorm
+
+/-- If `-1` is not a square in `K`, the class of `-1` in the étale algebra has nontrivial
+norm class. -/
+lemma normM_neg_one_ne_one (h : ¬ IsSquare (-1 : K)) :
+    W.normM (QuotientGroup.mk (-1 : W.Aˣ)) ≠ 1 := by
+  rw [W.normM_neg_one, Ne, Units.modPow.mk_eq_one_iff_isSquare]
+  simpa using h
+
+open WithZero in
+/-- `WeierstrassCurve.Affine.discBadPrimes` is empty when the coefficients of the cubic are
+everywhere integral and its discriminant vanishes at most to first order everywhere — e.g. for a
+global integral model with squarefree `disc f`
+(`IsDedekindDomain.HeightOneSpectrum.notMem_pow_two_of_squarefree`). -/
+lemma discBadPrimes_eq_empty (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K]
+    [IsFractionRing R K] (ha₂ : ∀ v : HeightOneSpectrum R, v.valuation K W.a₂ ≤ 1)
+    (ha₄ : ∀ v : HeightOneSpectrum R, v.valuation K W.a₄ ≤ 1)
+    (ha₆ : ∀ v : HeightOneSpectrum R, v.valuation K W.a₆ ≤ 1)
+    (hd : ∀ v : HeightOneSpectrum R, exp (-1 : ℤ) ≤ v.valuation K W.f.discr) :
+    W.discBadPrimes R = ∅ := by
+  rw [discBadPrimes, Set.eq_empty_iff_forall_notMem]
+  rintro v (((hv | hv) | hv) | hv) <;>
+    simp only [Set.mem_ofPred_eq, HeightOneSpectrum.Support, Set.mem_ofPred_eq] at hv
+  exacts [hv (hd v), absurd hv (not_lt.mpr (ha₂ v)), absurd hv (not_lt.mpr (ha₄ v)),
+    absurd hv (not_lt.mpr (ha₆ v))]
+
+/-- `discBadPrimes R = ∅` when the coefficients of `W` are `R`-integral and the discriminant
+of the cubic comes from a squarefree element of `R` (with `R` a principal ideal domain, so
+that squarefreeness gives `δ ∉ v²` for every `v`). -/
+lemma discBadPrimes_eq_empty_of_squarefree (R : Type*) [CommRing R] [IsDedekindDomain R]
+    [Algebra R K] [IsFractionRing R K] [IsPrincipalIdealRing R]
+    (ha₂ : W.a₂ ∈ (algebraMap R K).range) (ha₄ : W.a₄ ∈ (algebraMap R K).range)
+    (ha₆ : W.a₆ ∈ (algebraMap R K).range) {δ : R} (hδ : algebraMap R K δ = W.f.discr)
+    (hsq : Squarefree δ) :
+    W.discBadPrimes R = ∅ := by
+  obtain ⟨a₂, ha₂⟩ := ha₂
+  obtain ⟨a₄, ha₄⟩ := ha₄
+  obtain ⟨a₆, ha₆⟩ := ha₆
+  refine W.discBadPrimes_eq_empty R (fun v ↦ ?_) (fun v ↦ ?_) (fun v ↦ ?_) (fun v ↦ ?_)
+  · rw [← ha₂]; exact v.valuation_le_one a₂
+  · rw [← ha₄]; exact v.valuation_le_one a₄
+  · rw [← ha₆]; exact v.valuation_le_one a₆
+  · rw [← hδ]
+    exact v.exp_neg_one_le_valuation_algebraMap (v.notMem_pow_two_of_squarefree hsq)
+
+variable (R : Type*) [CommRing R] [IsDedekindDomain R] [Algebra R K] [IsFractionRing R K]
+  {v : HeightOneSpectrum R}
+
+open WithZero in
+lemma exp_neg_one_le_valuation_discr_of_notMem_discBadPrimes (hv : v ∉ W.discBadPrimes R) :
+    exp (-1 : ℤ) ≤ v.valuation K W.f.discr :=
+  not_not.mp fun hne ↦ hv (.inl (.inl (.inl hne)))
+
+lemma valuation_a₂_le_one_of_notMem_discBadPrimes (hv : v ∉ W.discBadPrimes R) :
+    v.valuation K W.a₂ ≤ 1 :=
+  not_lt.mp fun hlt ↦ hv (.inl (.inl (.inr hlt)))
+
+lemma valuation_a₄_le_one_of_notMem_discBadPrimes (hv : v ∉ W.discBadPrimes R) :
+    v.valuation K W.a₄ ≤ 1 :=
+  not_lt.mp fun hlt ↦ hv (.inl (.inr hlt))
+
+lemma valuation_a₆_le_one_of_notMem_discBadPrimes (hv : v ∉ W.discBadPrimes R) :
+    v.valuation K W.a₆ ≤ 1 :=
+  not_lt.mp fun hlt ↦ hv (.inr hlt)
+
+lemma notMem_discBadPrimes_of_notMem_badPrimes₂ (hv : v ∉ W.badPrimes₂ R) :
+    v ∉ W.discBadPrimes R :=
+  fun h ↦ hv (.inl h)
+
+lemma valuation_two_eq_one_of_notMem_badPrimes₂ (hv : v ∉ W.badPrimes₂ R) :
+    v.valuation K 2 = 1 :=
+  not_not.mp fun hne ↦ hv (.inr hne)
+
+/-- Away from `WeierstrassCurve.Affine.badPrimes₂`, the residue characteristic is odd. -/
+lemma two_notMem_asIdeal_of_notMem_badPrimes₂ (hv : v ∉ W.badPrimes₂ R) :
+    (2 : R) ∉ v.asIdeal := by
+  have h := W.valuation_two_eq_one_of_notMem_badPrimes₂ R hv
+  rw [← map_ofNat (algebraMap R K) 2] at h
+  exact v.valuation_eq_one_iff_notMem.mp h
+
+lemma discBadPrimes_subset_badPrimes₂ : W.discBadPrimes R ⊆ W.badPrimes₂ R :=
+  Set.subset_union_left
+
+open WithZero in
+/-- The refined bad set is contained in the old one: away from `WeierstrassCurve.Affine.badPrimes`,
+both `2` and `disc f` are `v`-adic units and the coefficients are `v`-integral. -/
+lemma badPrimes₂_subset_badPrimes [W.IsCharNeTwoNF] : W.badPrimes₂ R ⊆ W.badPrimes R := by
+  refine fun v hv ↦ by_contra fun hb ↦ ?_
+  rcases hv with (((hd | h) | h) | h) | h2
+  · exact hd <| (le_of_le_of_eq (exp_le_exp.mpr (by lia)) exp_zero).trans
+      (W.valuation_discr_eq_one_of_notMem_badPrimes R hb).ge
+  · exact hb (.inl (.inl (.inr h)))
+  · exact hb (.inl (.inr h))
+  · exact hb (.inr h)
+  · exact hb (.inl (.inl (.inl (.inl h2))))
+
+end BadPrimes
+
+section SelmerGroupA
+
+variable [W.IsElliptic] [W.IsCharNeTwoNF] (R : Type*) [CommRing R] [IsDedekindDomain R]
+  [Algebra R K] [IsFractionRing R K] (S : Set (HeightOneSpectrum R))
+
+/-- The class of `-1` lies in `A(S,2)` for every `S`: all its valuations vanish. -/
+lemma neg_one_mem_selmerGroupA : (QuotientGroup.mk (-1 : W.Aˣ) : W.M) ∈ W.selmerGroupA R S := by
+  rw [mem_selmerGroupA_unit_iff]
+  intro p w hw
+  set u := Units.map (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p).toMonoidHom
+    (-1 : W.Aˣ) with hu
+  have hsq : u ^ 2 = 1 := by rw [hu, ← map_pow]; simp
+  have h1 : w.valuationOfNeZero u = 1 := by
+    have h := congrArg w.valuationOfNeZero hsq
+    rw [map_pow, map_one] at h
+    exact pow_eq_one_iff_left two_ne_zero |>.mp h
+  rw [h1]
+  simp
+
+variable [(p : W.f.Factors) → Finite (ClassGroup (W.ringOfIntegersFactor R p))]
+  [(p : W.f.Factors) → Group.FG (W.ringOfIntegersFactor R p)ˣ]
+
+/-- `A(S,2)` embeds into the product of the `2`-Selmer groups of the field factors, so its
+order is bounded by the product of theirs. -/
+theorem card_selmerGroupA_le_prod [Fintype W.f.Factors] (hS : S.Finite) :
+    Nat.card (W.selmerGroupA R S) ≤ ∏ p : W.f.Factors, Nat.card (W.selmerGroupFactor R S p) := by
+  have (p : W.f.Factors) : Finite (W.selmerGroupFactor R S p) :=
+    W.finite_selmerGroupFactor R S hS p
+  rw [← Nat.card_pi]
+  refine Nat.card_le_card_of_injective
+    (fun m p ↦ ⟨AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2 m.1 p,
+      (W.mem_selmerGroupA_iff R S m.1).mp m.2 p⟩) fun m m' h ↦ ?_
+  refine Subtype.ext
+    ((AdjoinRoot.modPowEquivPiFactors W.f_ne_zero W.squarefree_f 2).injective (funext fun p ↦ ?_))
+  exact Subtype.ext_iff.mp (congrFun h p)
+
+end SelmerGroupA
+
+/-!
 ### Base change of the étale algebra and the local conditions
 
 For a field extension `L/K`, the curve base-changes to `W⁄L` (Mathlib's
@@ -1589,7 +1961,6 @@ theorem card_range_μ_completion_isComplex {v : InfinitePlace F} [DecidableEq v.
 section LocalCount
 
 open AdjoinRoot IsDedekindDomain.HeightOneSpectrum
-
 
 variable (v : HeightOneSpectrum (𝓞 F))
 
