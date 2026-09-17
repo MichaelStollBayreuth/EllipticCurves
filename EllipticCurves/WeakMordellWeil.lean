@@ -970,6 +970,36 @@ private lemma Valuation.map_sub_eq_map_div_sq (ha : v a ≤ 1) (hb : v b ≤ 1) 
 
 end CubicField
 
+namespace WeierstrassCurve
+
+variable {K Γ : Type*} [CommRing K] [LinearOrderedCommGroupWithZero Γ]
+
+/-- A Weierstrass curve over `K` is *integral at* a valuation `v` of `K` if all its
+coefficients are `v`-integral. -/
+structure IsIntegralAt (W : WeierstrassCurve K) (v : Valuation K Γ) : Prop where
+  a₁ : v W.a₁ ≤ 1
+  a₂ : v W.a₂ ≤ 1
+  a₃ : v W.a₃ ≤ 1
+  a₄ : v W.a₄ ≤ 1
+  a₆ : v W.a₆ ≤ 1
+
+/-- For a curve in the normal form `a₁ = a₃ = 0`, integrality at `v` is integrality of the
+three remaining coefficients. -/
+lemma isIntegralAt_of_isCharNeTwoNF {W : WeierstrassCurve K} [W.IsCharNeTwoNF] {v : Valuation K Γ}
+    (ha₂ : v W.a₂ ≤ 1) (ha₄ : v W.a₄ ≤ 1) (ha₆ : v W.a₆ ≤ 1) : W.IsIntegralAt v :=
+  ⟨by simp [a₁_of_isCharNeTwoNF], ha₂, by simp [a₃_of_isCharNeTwoNF], ha₄, ha₆⟩
+
+/-- A curve with coefficients in a Dedekind domain `R` is integral at every `v`-adic valuation
+of its fraction field. -/
+lemma isIntegralAt_valuation {R : Type*} [CommRing R] [IsDedekindDomain R] {K : Type*} [Field K]
+    [Algebra R K] [IsFractionRing R K] (W : WeierstrassCurve K) [IsIntegral R W]
+    (v : IsDedekindDomain.HeightOneSpectrum R) : W.IsIntegralAt (v.valuation K) := by
+  obtain ⟨W₀, rfl⟩ := IsIntegral.integral (R := R) (W := W)
+  exact ⟨v.valuation_le_one _, v.valuation_le_one _, v.valuation_le_one _, v.valuation_le_one _,
+    v.valuation_le_one _⟩
+
+end WeierstrassCurve
+
 namespace WeierstrassCurve.Affine
 
 open IsDedekindDomain Polynomial UniqueFactorizationMonoid
@@ -1022,6 +1052,12 @@ lemma valuation_a₆_le_one_of_notMem_badPrimes (hv : v ∉ W.badPrimes R) :
     v.valuation K W.a₆ ≤ 1 :=
   not_lt.mp fun hlt ↦ hv (.inr hlt)
 
+lemma isIntegralAt_of_notMem_badPrimes [W.IsCharNeTwoNF] (hv : v ∉ W.badPrimes R) :
+    W.IsIntegralAt (v.valuation K) :=
+  isIntegralAt_of_isCharNeTwoNF (W.valuation_a₂_le_one_of_notMem_badPrimes R hv)
+    (W.valuation_a₄_le_one_of_notMem_badPrimes R hv)
+    (W.valuation_a₆_le_one_of_notMem_badPrimes R hv)
+
 lemma valuation_Δ_eq_one_of_notMem_badPrimes (hv : v ∉ W.badPrimes R) :
     v.valuation K W.Δ = 1 :=
   not_not.mp fun hne ↦ hv (.inl (.inl (.inl (.inr hne))))
@@ -1051,14 +1087,14 @@ the valuation of `disc f` is `1` or `exp (-1)`: this is the arithmetic input for
 
 /-- The discriminant of `f` is a polynomial in the coefficients of `W`, so it is integral
 wherever they are. -/
-lemma valuation_discr_le_one {Γ : Type*} [LinearOrderedCommGroupWithZero Γ] (v : Valuation K Γ)
-    (ha₂ : v W.a₂ ≤ 1) (ha₄ : v W.a₄ ≤ 1) (ha₆ : v W.a₆ ≤ 1) : v W.f.discr ≤ 1 := by
+lemma valuation_discr_le_one {Γ : Type*} [LinearOrderedCommGroupWithZero Γ] {v : Valuation K Γ}
+    (hW : W.IsIntegralAt v) : v W.f.discr ≤ 1 := by
   have h : W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a₂ ^ 3 * W.a₆ - 27 * W.a₆ ^ 2
       + 18 * W.a₂ * W.a₄ * W.a₆ ∈ v.integer :=
-    add_mem (sub_mem (sub_mem (sub_mem (mul_mem (pow_mem ha₂ 2) (pow_mem ha₄ 2))
-      (mul_mem (ofNat_mem _ 4) (pow_mem ha₄ 3))) (mul_mem (mul_mem (ofNat_mem _ 4)
-        (pow_mem ha₂ 3)) ha₆)) (mul_mem (ofNat_mem _ 27) (pow_mem ha₆ 2)))
-      (mul_mem (mul_mem (mul_mem (ofNat_mem _ 18) ha₂) ha₄) ha₆)
+    add_mem (sub_mem (sub_mem (sub_mem (mul_mem (pow_mem hW.a₂ 2) (pow_mem hW.a₄ 2))
+      (mul_mem (ofNat_mem _ 4) (pow_mem hW.a₄ 3))) (mul_mem (mul_mem (ofNat_mem _ 4)
+        (pow_mem hW.a₂ 3)) hW.a₆)) (mul_mem (ofNat_mem _ 27) (pow_mem hW.a₆ 2)))
+      (mul_mem (mul_mem (mul_mem (ofNat_mem _ 18) hW.a₂) hW.a₄) hW.a₆)
   rw [W.discr_f]
   exact h
 
@@ -1080,19 +1116,18 @@ open WithZero in
 /-- If `x` is a rational root of `f` and the coefficients of the cubic are `v`-integral with
 `exp (-1) ≤ v (disc f)`, then `f'(x)` is a `v`-unit: `disc f = (fCofactor x).discr * f'(x)²`
 with both factors integral, and the square `v (f'(x))²` cannot equal `exp (-1)`. -/
-lemma valuation_deriv_eval_eq_one (v : Valuation K ℤᵐ⁰) {x : K} (hx : W.f.eval x = 0)
-    (ha₂ : v W.a₂ ≤ 1) (ha₄ : v W.a₄ ≤ 1) (ha₆ : v W.a₆ ≤ 1)
-    (hd : exp (-1) ≤ v W.f.discr) :
+lemma valuation_deriv_eval_eq_one {v : Valuation K ℤᵐ⁰} {x : K} (hx : W.f.eval x = 0)
+    (hW : W.IsIntegralAt v) (hd : exp (-1) ≤ v W.f.discr) :
     v (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1 := by
   have hx1 : v x ≤ 1 := by
     rw [eval_f] at hx
-    exact v.le_one_of_root_cubic ha₂ ha₄ ha₆ hx
+    exact v.le_one_of_root_cubic hW.a₂ hW.a₄ hW.a₆ hx
   have hfx : 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ ∈ v.integer :=
     add_mem (add_mem (mul_mem (ofNat_mem _ 3) (pow_mem hx1 2))
-      (mul_mem (mul_mem (ofNat_mem _ 2) ha₂) hx1)) ha₄
+      (mul_mem (mul_mem (ofNat_mem _ 2) hW.a₂) hx1)) hW.a₄
   have hcd' : (x + W.a₂) ^ 2 - 4 * (x ^ 2 + W.a₂ * x + W.a₄) ∈ v.integer :=
-    sub_mem (pow_mem (add_mem hx1 ha₂) 2) (mul_mem (ofNat_mem _ 4)
-      (add_mem (add_mem (pow_mem hx1 2) (mul_mem ha₂ hx1)) ha₄))
+    sub_mem (pow_mem (add_mem hx1 hW.a₂) 2) (mul_mem (ofNat_mem _ 4)
+      (add_mem (add_mem (pow_mem hx1 2) (mul_mem hW.a₂ hx1)) hW.a₄))
   have hcd : v (W.fCofactor x).discr ≤ 1 := by rw [W.discr_fCofactor x]; exact hcd'
   rw [W.discr_f_eq_discr_fCofactor_mul_sq hx, map_mul, map_pow] at hd
   exact eq_one_of_le_one_of_exp_neg_one_le_sq hfx (hd.trans (mul_le_of_le_one_left' hcd))
@@ -1185,8 +1220,7 @@ lemma mk_fCofactor_eq (p : W.f.Factors) (x : K) :
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
   {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
-  (ha₂ : (w.below R).valuation K W.a₂ ≤ 1) (ha₄ : (w.below R).valuation K W.a₄ ≤ 1)
-  (ha₆ : (w.below R).valuation K W.a₆ ≤ 1) (hd : (w.below R).valuation K W.f.discr = 1)
+  (hW : W.IsIntegralAt ((w.below R).valuation K)) (hd : (w.below R).valuation K W.f.discr = 1)
   -- (this is `w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1`;
   -- `variable` commands cannot use the local notation)
   (hderiv : w.valuation (AdjoinRoot (p : K[X]))
@@ -1194,14 +1228,14 @@ variable [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
       + 2 * algebraMap K (AdjoinRoot (p : K[X])) W.a₂ * AdjoinRoot.root (p : K[X])
       + algebraMap K (AdjoinRoot (p : K[X])) W.a₄) = 1)
 
-include ha₂ ha₄ ha₆ in
+include hW in
 /-- If the coefficients of the cubic are integral at the prime below `w`, then the root `θ` is
 `w`-integral: it satisfies the monic cubic `f`, whose coefficients are integral at `w`. -/
 lemma valuation_root_le_one : w.valuation (𝕃 p) (θ p) ≤ 1 :=
   Valuation.le_one_of_root_cubic _
-    (W.valuation_algebraMap_le_one R p w ha₂)
-    (W.valuation_algebraMap_le_one R p w ha₄)
-    (W.valuation_algebraMap_le_one R p w ha₆)
+    (W.valuation_algebraMap_le_one R p w hW.a₂)
+    (W.valuation_algebraMap_le_one R p w hW.a₄)
+    (W.valuation_algebraMap_le_one R p w hW.a₆)
     (W.root_cubic_eq_zero p)
 
 /-- An element of `K` with trivial valuation at the prime below `w` has trivial valuation
@@ -1210,15 +1244,15 @@ lemma valuation_algebraMap_eq_one {z : K} (hz : (w.below R).valuation K z = 1) :
     w.valuation (𝕃 p) (ι p z) = 1 := by
   rw [← W.valuation_algebraMap_eq R p w z, hz, one_pow]
 
-include ha₂ ha₄ ha₆ in
+include hW in
 /-- If the coefficients of the cubic are integral at the prime below `w`, then `f' θ` is
 `w`-integral. -/
 lemma valuation_deriv_root_le_one :
     w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) ≤ 1 :=
-  Valuation.map_cubic_deriv_le_one _ (W.valuation_algebraMap_le_one R p w ha₂)
-    (W.valuation_algebraMap_le_one R p w ha₄) (W.valuation_root_le_one R p ha₂ ha₄ ha₆)
+  Valuation.map_cubic_deriv_le_one _ (W.valuation_algebraMap_le_one R p w hW.a₂)
+    (W.valuation_algebraMap_le_one R p w hW.a₄) (W.valuation_root_le_one R p hW)
 
-include ha₂ ha₄ ha₆ hd in
+include hW hd in
 /-- If the coefficients of the cubic are integral and `disc f` is a unit at the prime below
 `w`, then `f' θ = 3 θ ^ 2 + 2 a₂ θ + a₄` is a `w`-unit.
 
@@ -1228,12 +1262,12 @@ quadratic `c` with `w`-integral coefficients. Both factors are integral at `w` a
 unit, so both are units. -/
 lemma valuation_deriv_root_eq_one :
     w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1 :=
-  Valuation.map_cubic_deriv_eq_one _ (W.valuation_algebraMap_le_one R p w ha₂)
-    (W.valuation_algebraMap_le_one R p w ha₄) (W.valuation_algebraMap_le_one R p w ha₆)
-    (W.valuation_root_le_one R p ha₂ ha₄ ha₆) (W.valuation_algebraMap_eq_one R p hd)
+  Valuation.map_cubic_deriv_eq_one _ (W.valuation_algebraMap_le_one R p w hW.a₂)
+    (W.valuation_algebraMap_le_one R p w hW.a₄) (W.valuation_algebraMap_le_one R p w hW.a₆)
+    (W.valuation_root_le_one R p hW) (W.valuation_algebraMap_eq_one R p hd)
     (W.deriv_root_mul_eq_discr_f p)
 
-include ha₂ ha₄ ha₆ hderiv in
+include hW hderiv in
 /-- If the coefficients of the cubic are integral at the prime below `w` and `f' θ` is a
 `w`-unit, and if `x` is `w`-integral and `x - θ` is not a `w`-unit, then the cofactor
 `x ^ 2 + θ x + θ ^ 2 + a₂ (x + θ) + a₄` is a `w`-unit: modulo `x - θ` it equals `f' θ`. -/
@@ -1242,10 +1276,10 @@ lemma valuation_cofactor_eq_one {x : K}
     (hlt : w.valuation (𝕃 p) (ι p x - θ p) < 1) :
     w.valuation (𝕃 p) (ι p x ^ 2 + θ p * ι p x + θ p ^ 2
       + ι p W.a₂ * (ι p x + θ p) + ι p W.a₄) = 1 :=
-  Valuation.map_cofactor_eq_one _ (W.valuation_algebraMap_le_one R p w ha₂)
-    (W.valuation_root_le_one R p ha₂ ha₄ ha₆) hx hlt hderiv
+  Valuation.map_cofactor_eq_one _ (W.valuation_algebraMap_le_one R p w hW.a₂)
+    (W.valuation_root_le_one R p hW) hx hlt hderiv
 
-include ha₂ ha₄ ha₆ in
+include hW in
 /-- If `x` is a root of `f`, then at a prime `w` at which (i.e. at the prime of `R` below
 which) the coefficients of the cubic are integral and `f'(x)` is a unit, the `p`-component of
 the `x - T` representative is a unit.
@@ -1261,8 +1295,8 @@ lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0)
     (hdx : (w.below R).valuation K (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1) :
     w.valuation (𝕃 p) (ι p x - θ p + AdjoinRoot.mk (p : K[X]) (W.fCofactor x)) = 1 := by
   rw [W.mk_fCofactor_eq p x]
-  refine Valuation.map_sub_add_cofactor_eq_one _ (W.valuation_algebraMap_le_one R p w ha₂)
-    (W.valuation_algebraMap_le_one R p w ha₄) (W.valuation_algebraMap_le_one R p w ha₆)
+  refine Valuation.map_sub_add_cofactor_eq_one _ (W.valuation_algebraMap_le_one R p w hW.a₂)
+    (W.valuation_algebraMap_le_one R p w hW.a₄) (W.valuation_algebraMap_le_one R p w hW.a₆)
     (by rw [← W.map_eval_f, hx, map_zero]) (W.root_cubic_eq_zero p) ?_
   simpa only [map_add, map_mul, map_pow, map_ofNat] using
     W.valuation_algebraMap_eq_one R p (w := w) hdx
@@ -1279,8 +1313,7 @@ variable [W.IsElliptic] [W.IsCharNeTwoNF]
   (hu : (u : AdjoinRoot (p : K[X])) =
     algebraMap K (AdjoinRoot (p : K[X])) x - AdjoinRoot.root (p : K[X]))
   (w : HeightOneSpectrum (W.ringOfIntegersFactor R p))
-  (ha₂ : (w.below R).valuation K W.a₂ ≤ 1) (ha₄ : (w.below R).valuation K W.a₄ ≤ 1)
-  (ha₆ : (w.below R).valuation K W.a₆ ≤ 1)
+  (hW : W.IsIntegralAt ((w.below R).valuation K))
   -- (this is `w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1`;
   -- `variable` commands cannot use the local notation)
   (hderiv : w.valuation (AdjoinRoot (p : K[X]))
@@ -1288,7 +1321,7 @@ variable [W.IsElliptic] [W.IsCharNeTwoNF]
       + 2 * algebraMap K (AdjoinRoot (p : K[X])) W.a₂ * AdjoinRoot.root (p : K[X])
       + algebraMap K (AdjoinRoot (p : K[X])) W.a₄) = 1)
 
-include h hx hu ha₂ ha₄ ha₆
+include h hx hu hW
 
 /-- Non-integral case: `x` has a pole at the prime of `R` below `w`.
 
@@ -1305,9 +1338,9 @@ lemma even_valuationOfNeZero_sub_root_of_one_lt
     rw [← W.map_eval_f, (equation_iff_eval_f_eq_sq W x y).mp h, map_pow]
   have hkey : w.valuation (𝕃 p) u = w.valuation (𝕃 p) (Units.mk0 _ (div_ne_zero hy0 hx0)) ^ 2 := by
     rw [hu, Units.val_mk0]
-    exact Valuation.map_sub_eq_map_div_sq _ (W.valuation_algebraMap_le_one R p w ha₂)
-      (W.valuation_algebraMap_le_one R p w ha₄) (W.valuation_algebraMap_le_one R p w ha₆)
-      (W.valuation_root_le_one R p ha₂ ha₄ ha₆) hx' heq
+    exact Valuation.map_sub_eq_map_div_sq _ (W.valuation_algebraMap_le_one R p w hW.a₂)
+      (W.valuation_algebraMap_le_one R p w hW.a₄) (W.valuation_algebraMap_le_one R p w hW.a₆)
+      (W.valuation_root_le_one R p hW) hx' heq
   simpa using w.dvd_toAdd_valuationOfNeZero hkey
 
 include hderiv in
@@ -1326,8 +1359,8 @@ lemma even_valuationOfNeZero_sub_root_of_le_one
   have hfac : (ι p x - θ p) * (ι p x ^ 2 + θ p * ι p x + θ p ^ 2 + ι p W.a₂ * (ι p x + θ p)
       + ι p W.a₄) = ι p y ^ 2 := by
     linear_combination -W.root_cubic_eq_zero p - heq
-  rcases Valuation.map_sub_eq_one_or_eq_map_sq _ (W.valuation_algebraMap_le_one R p w ha₂)
-    (W.valuation_root_le_one R p ha₂ ha₄ ha₆) hx' hderiv hfac with h1 | h1
+  rcases Valuation.map_sub_eq_one_or_eq_map_sq _ (W.valuation_algebraMap_le_one R p w hW.a₂)
+    (W.valuation_root_le_one R p hW) hx' hderiv hfac with h1 | h1
   · simpa using w.dvd_toAdd_valuationOfNeZero (n := 2) (z := 1)
       (by rw [Units.val_one, map_one, one_pow, hu, h1])
   · simpa using w.dvd_toAdd_valuationOfNeZero (n := 2) (z := Units.mk0 _ hy0)
@@ -1343,8 +1376,8 @@ The proof splits on whether `x` has a pole at the prime of `R` below `w`. -/
 lemma even_valuationOfNeZero_sub_root :
     (2 : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero u) := by
   by_cases hx' : 1 < w.valuation (𝕃 p) (ι p x)
-  · exact W.even_valuationOfNeZero_sub_root_of_one_lt R p h hx u hu w ha₂ ha₄ ha₆ hx'
-  · exact W.even_valuationOfNeZero_sub_root_of_le_one R p h hx u hu w ha₂ ha₄ ha₆ hderiv
+  · exact W.even_valuationOfNeZero_sub_root_of_one_lt R p h hx u hu w hW hx'
+  · exact W.even_valuationOfNeZero_sub_root_of_le_one R p h hx u hu w hW hderiv
       (not_lt.mp hx')
 
 end Core
@@ -1452,10 +1485,9 @@ lemma mem_selmerGroupA_unit_iff (a : W.Aˣ) :
   refine forall_congr' fun p ↦ ?_
   rw [AdjoinRoot.modPowEquivPiFactors_mk, mem_selmerGroupFactor_unit_iff]
 
-variable (hSa₂ : ∀ v ∉ S, v.valuation K W.a₂ ≤ 1) (hSa₄ : ∀ v ∉ S, v.valuation K W.a₄ ≤ 1)
-  (hSa₆ : ∀ v ∉ S, v.valuation K W.a₆ ≤ 1) (hSd : ∀ v ∉ S, v.valuation K W.f.discr = 1)
+variable (hS : ∀ v ∉ S, W.IsIntegralAt (v.valuation K)) (hSd : ∀ v ∉ S, v.valuation K W.f.discr = 1)
 
-include hSa₂ hSa₄ hSa₆ hSd in
+include hS hSd in
 /-- Generic case of the arithmetic input: `f x ≠ 0`, so the `p`-component of `μX x` is the class
 of `x - θ`. -/
 lemma mem_selmerGroupFactor_of_eval_f_ne_zero {x y : K} (h : W.Equation x y)
@@ -1466,11 +1498,11 @@ lemma mem_selmerGroupFactor_of_eval_f_ne_zero {x y : K} (h : W.Equation x y)
   rw [W.mem_selmerGroupFactor_unit_iff R S p]
   intro w hw
   have hv := W.below_notMem_of_notMem_primesAbove R p hw
-  refine W.even_valuationOfNeZero_sub_root R p h hx _ ?_ w (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv)
-    (W.valuation_deriv_root_eq_one R p (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv) (hSd _ hv))
+  refine W.even_valuationOfNeZero_sub_root R p h hx _ ?_ w (hS _ hv)
+    (W.valuation_deriv_root_eq_one R p (hS _ hv) (hSd _ hv))
   exact W.projFactor_mk_C_sub_X x p
 
-include hSa₂ hSa₄ hSa₆ hSd in
+include hS hSd in
 /-- `2`-torsion case of the arithmetic input: `f x = 0`.
 
 By `WeierstrassCurve.Affine.projFactor_mk_C_sub_X_add_fCofactor` the `p`-component of `μX x` is
@@ -1491,15 +1523,15 @@ lemma mem_selmerGroupFactor_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0)
     exact (WithZero.exp_le_exp.mpr (by lia)).trans_eq WithZero.exp_zero
   have hval : w.valuation (𝕃 p) (u : 𝕃 p) = 1 := by
     rw [hudef, IsUnit.unit_spec, W.projFactor_mk_C_sub_X_add_fCofactor x p]
-    exact W.valuation_projFactor_torsion_eq_one R p (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv) hx
-      (W.valuation_deriv_eval_eq_one _ hx (hSa₂ _ hv) (hSa₄ _ hv) (hSa₆ _ hv) hd1)
+    exact W.valuation_projFactor_torsion_eq_one R p (hS _ hv) hx
+      (W.valuation_deriv_eval_eq_one hx (hS _ hv) hd1)
   simpa using w.dvd_toAdd_valuationOfNeZero (n := 2) (z := 1) (by simp [hval])
 
 section
 
 variable [DecidableEq K]
 
-include hSa₂ hSa₄ hSa₆ hSd in
+include hS hSd in
 /-- The heart of Step 6: for a point `(x, y)` of `W` and a field factor `K[X]/(p)` of `W.A`,
 the square class of the image of the `x - T` map lies in the `2`-Selmer group of that factor. -/
 lemma μX_component_mem_selmerGroupFactor {x y : K} (h : W.Equation x y) (p : W.f.Factors) :
@@ -1507,11 +1539,11 @@ lemma μX_component_mem_selmerGroupFactor {x y : K} (h : W.Equation x y) (p : W.
       W.selmerGroupFactor R S p := by
   rcases eq_or_ne (W.f.eval x) 0 with hx | hx
   · rw [μX_of_eval_f_eq_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
-    exact W.mem_selmerGroupFactor_of_eval_f_eq_zero R S hSa₂ hSa₄ hSa₆ hSd hx p
+    exact W.mem_selmerGroupFactor_of_eval_f_eq_zero R S hS hSd hx p
   · rw [μX_of_eval_f_ne_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
-    exact W.mem_selmerGroupFactor_of_eval_f_ne_zero R S hSa₂ hSa₄ hSa₆ hSd h hx p
+    exact W.mem_selmerGroupFactor_of_eval_f_ne_zero R S hS hSd h hx p
 
-include hSa₂ hSa₄ hSa₆ hSd in
+include hS hSd in
 /-- **Step 6**: the image of `μ` is contained in `A(S,2)`, whenever the coefficients of the
 cubic are integral and `disc f` is a unit away from `S`. -/
 theorem range_μ_le_selmerGroupA : (μ (W := W)).range ≤ W.selmerGroupA R S := by
@@ -1522,7 +1554,7 @@ theorem range_μ_le_selmerGroupA : (μ (W := W)).range ≤ W.selmerGroupA R S :=
   | 0 => rw [μ₀_zero]; exact one_mem _
   | .some x y h =>
     rw [μ₀_some, mem_selmerGroupA_iff]
-    exact fun p ↦ W.μX_component_mem_selmerGroupFactor R S hSa₂ hSa₄ hSa₆ hSd h.1 p
+    exact fun p ↦ W.μX_component_mem_selmerGroupFactor R S hS hSd h.1 p
 
 end
 
@@ -1574,9 +1606,7 @@ theorem finite_index_range_nsmulAddMonoidHom_two :
   have := W.finite_selmerGroupA R (W.badPrimes R) (W.finite_badPrimes R)
   exact ((W.selmerGroupA R (W.badPrimes R) : Set W.M).toFinite.subset
     (W.range_μ_le_selmerGroupA R (W.badPrimes R)
-      (fun _ hv ↦ W.valuation_a₂_le_one_of_notMem_badPrimes R hv)
-      (fun _ hv ↦ W.valuation_a₄_le_one_of_notMem_badPrimes R hv)
-      (fun _ hv ↦ W.valuation_a₆_le_one_of_notMem_badPrimes R hv)
+      (fun _ hv ↦ W.isIntegralAt_of_notMem_badPrimes R hv)
       (fun _ hv ↦ W.valuation_discr_eq_one_of_notMem_badPrimes R hv))).to_subtype
 
 end Step7

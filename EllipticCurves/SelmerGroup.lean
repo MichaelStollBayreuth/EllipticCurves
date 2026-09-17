@@ -383,6 +383,12 @@ lemma valuation_a₆_le_one_of_notMem_discBadPrimes (hv : v ∉ W.discBadPrimes 
     v.valuation K W.a₆ ≤ 1 :=
   not_lt.mp fun hlt ↦ hv (.inr hlt)
 
+lemma isIntegralAt_of_notMem_discBadPrimes [W.IsCharNeTwoNF] (hv : v ∉ W.discBadPrimes R) :
+    W.IsIntegralAt (v.valuation K) :=
+  isIntegralAt_of_isCharNeTwoNF (W.valuation_a₂_le_one_of_notMem_discBadPrimes R hv)
+    (W.valuation_a₄_le_one_of_notMem_discBadPrimes R hv)
+    (W.valuation_a₆_le_one_of_notMem_discBadPrimes R hv)
+
 lemma notMem_discBadPrimes_of_notMem_badPrimes₂ (hv : v ∉ W.badPrimes₂ R) :
     v ∉ W.discBadPrimes R :=
   fun h ↦ hv (.inl h)
@@ -1423,28 +1429,14 @@ private lemma one_le_inertiaDeg (v : HeightOneSpectrum (𝓞 F)) (q : 𝕎[v].f.
   have := w.isPrime
   exact Ideal.inertiaDeg_pos w.asIdeal 𝒪_[v]
 
--- The coefficients of the base-changed curve are integral at the prime of `𝒪_v`, when the
--- coefficients of `W` are `v`-integral.
-private lemma valuation_a₂_adicCompletion_le_one (v : HeightOneSpectrum (𝓞 F))
-    (ha₂ : v.valuation F W.a₂ ≤ 1)
-    (P : HeightOneSpectrum 𝒪_[v]) : P.valuation F_[v] 𝕎[v].a₂ ≤ 1 := by
-  change P.valuation F_[v] (algebraMap F F_[v] W.a₂) ≤ 1
-  rw [v.valuation_adicCompletion_algebraMap P]
-  exact ha₂
-
-private lemma valuation_a₄_adicCompletion_le_one (v : HeightOneSpectrum (𝓞 F))
-    (ha₄ : v.valuation F W.a₄ ≤ 1)
-    (P : HeightOneSpectrum 𝒪_[v]) : P.valuation F_[v] 𝕎[v].a₄ ≤ 1 := by
-  change P.valuation F_[v] (algebraMap F F_[v] W.a₄) ≤ 1
-  rw [v.valuation_adicCompletion_algebraMap P]
-  exact ha₄
-
-private lemma valuation_a₆_adicCompletion_le_one (v : HeightOneSpectrum (𝓞 F))
-    (ha₆ : v.valuation F W.a₆ ≤ 1)
-    (P : HeightOneSpectrum 𝒪_[v]) : P.valuation F_[v] 𝕎[v].a₆ ≤ 1 := by
-  change P.valuation F_[v] (algebraMap F F_[v] W.a₆) ≤ 1
-  rw [v.valuation_adicCompletion_algebraMap P]
-  exact ha₆
+-- The base-changed curve is integral at every prime of `𝒪_v` when `W` is integral at `v`.
+private lemma isIntegralAt_adicCompletion (v : HeightOneSpectrum (𝓞 F))
+    (hW : W.IsIntegralAt (v.valuation F)) (P : HeightOneSpectrum 𝒪_[v]) :
+    𝕎[v].IsIntegralAt (P.valuation F_[v]) :=
+  have key (z : F) : P.valuation F_[v] (algebraMap F F_[v] z) = v.valuation F z :=
+    v.valuation_adicCompletion_algebraMap P z
+  ⟨(key W.a₁).trans_le hW.a₁, (key W.a₂).trans_le hW.a₂, (key W.a₃).trans_le hW.a₃,
+    (key W.a₄).trans_le hW.a₄, (key W.a₆).trans_le hW.a₆⟩
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 
@@ -1455,20 +1447,11 @@ this imposes no condition at `2`, so it applies at even places whose reduced cub
 squarefree; such places can therefore be dropped from the exceptional set `S` of the global
 upper bound `A(S, 2)`. -/
 theorem range_μ_le_selmerGroupA_empty {v : HeightOneSpectrum (𝓞 F)} [DecidableEq F_[v]]
-    (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1)
-    (ha₆ : v.valuation F W.a₆ ≤ 1) (hd : v.valuation F W.f.discr = 1) :
+    (hW : W.IsIntegralAt (v.valuation F)) (hd : v.valuation F W.f.discr = 1) :
     (μ (W := 𝕎[v])).range ≤ 𝕎[v].selmerGroupA 𝒪_[v] ∅ := by
-  have key (z : F) (P : HeightOneSpectrum 𝒪_[v]) :
-      P.valuation F_[v] (algebraMap F F_[v] z) = v.valuation F z :=
-    v.valuation_adicCompletion_algebraMap P z
-  refine 𝕎[v].range_μ_le_selmerGroupA 𝒪_[v] ∅ ?_ ?_ ?_ ?_ <;> intro P _
-  · change P.valuation F_[v] (algebraMap F F_[v] W.a₂) ≤ 1
-    rw [key]; exact ha₂
-  · change P.valuation F_[v] (algebraMap F F_[v] W.a₄) ≤ 1
-    rw [key]; exact ha₄
-  · change P.valuation F_[v] (algebraMap F F_[v] W.a₆) ≤ 1
-    rw [key]; exact ha₆
-  · rw [W.baseChange_discr_f F_[v], key]; exact hd
+  refine 𝕎[v].range_μ_le_selmerGroupA 𝒪_[v] ∅ (fun P _ ↦ W.isIntegralAt_adicCompletion v hW P)
+    fun P _ ↦ ?_
+  rw [W.baseChange_discr_f F_[v], v.valuation_adicCompletion_algebraMap P]; exact hd
 
 section OddPlace
 
@@ -1586,8 +1569,7 @@ private lemma prod_valuation_deriv :
 
 -- Step 2: at a place with `v (disc f) = exp (-1)` there is a unique "critical" factor;
 -- it has inertia degree `1`, and at every other factor `f' θ` is a `w`-unit.
-private lemma exists_critical_factor (ha₂ : v.valuation F W.a₂ ≤ 1)
-    (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+private lemma exists_critical_factor (hW : W.IsIntegralAt (v.valuation F))
     (hd : v.valuation F W.f.discr = exp (-1)) :
     ∃ q₀ : 𝕎[v].f.Factors, (W.factorPrime v q₀).asIdeal.inertiaDeg 𝒪_[v] = 1 ∧
       ∀ q, q ≠ q₀ → ∀ w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q),
@@ -1602,9 +1584,7 @@ private lemma exists_critical_factor (ha₂ : v.valuation F W.a₂ ≤ 1)
         (AdjoinRoot.mk (q : F_[v][X]) (derivative 𝕎[v].f)) ≤ 1 := by
     rw [𝕎[v].mk_derivative_f (q : F_[v][X])]
     exact 𝕎[v].valuation_deriv_root_le_one 𝒪_[v] q
-      (W.valuation_a₂_adicCompletion_le_one v ha₂ _)
-      (W.valuation_a₄_adicCompletion_le_one v ha₄ _)
-      (W.valuation_a₆_adicCompletion_le_one v ha₆ _)
+      (W.isIntegralAt_adicCompletion v hW _)
   have hprod : ∏ q, t q ^ e q = exp (-1) := by rw [W.prod_valuation_deriv v, hd]
   have ht0 (q : 𝕎[v].f.Factors) : t q ≠ 0 := by
     intro h0
@@ -1651,8 +1631,7 @@ private lemma prod_valuation_sub_root {x y : F_[v]} (h : 𝕎[v].toAffine.Equati
 /- At the critical factor, evenness of `w(x - θ)` follows from norm parity: the weighted
 product of the valuations over all factors is the square `v(y)²`, the non-critical components
 are even by the generic argument, and the critical weight is `1`. -/
-private lemma even_valuationOfNeZero_critical (ha₂ : v.valuation F W.a₂ ≤ 1)
-    (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+private lemma even_valuationOfNeZero_critical (hW : W.IsIntegralAt (v.valuation F))
     {x y : F_[v]} (h : 𝕎[v].toAffine.Equation x y) (hx : 𝕎[v].f.eval x ≠ 0)
     {q₀ : 𝕎[v].f.Factors} (he : (W.factorPrime v q₀).asIdeal.inertiaDeg 𝒪_[v] = 1)
     (hother : ∀ q, q ≠ q₀ → ∀ w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q),
@@ -1679,9 +1658,7 @@ private lemma even_valuationOfNeZero_critical (ha₂ : v.valuation F W.a₂ ≤ 
       IsUnit.unit_spec _
     have heven := 𝕎[v].even_valuationOfNeZero_sub_root 𝒪_[v] q h hx u'
       (hspec.trans (𝕎[v].projFactor_mk_C_sub_X x q)) (W.factorPrime v q)
-      (W.valuation_a₂_adicCompletion_le_one v ha₂ _)
-      (W.valuation_a₄_adicCompletion_le_one v ha₄ _)
-      (W.valuation_a₆_adicCompletion_le_one v ha₆ _)
+      (W.isIntegralAt_adicCompletion v hW _)
       (by rw [← 𝕎[v].mk_derivative_f (q : F_[v][X])]; exact hother q hq _)
     have hlog : t q = ((W.factorPrime v q).valuationOfNeZero u' : ℤᵐ⁰) := by
       rw [(W.factorPrime v q).valuationOfNeZero_eq u', hspec]
@@ -1696,8 +1673,7 @@ private lemma even_valuationOfNeZero_critical (ha₂ : v.valuation F W.a₂ ≤ 
 /- The `2`-torsion case: with integral coefficients and `exp (-1) ≤ v(disc f)`, `f'(x)` is a
 unit at every rational `2`-torsion `x`, so the representative is a unit at every prime of
 every factor. -/
-private lemma mem_selmerGroupFactor_empty_of_eval_f_eq_zero (ha₂ : v.valuation F W.a₂ ≤ 1)
-    (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+private lemma mem_selmerGroupFactor_empty_of_eval_f_eq_zero (hW : W.IsIntegralAt (v.valuation F))
     (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) {x : F_[v]} (hx : 𝕎[v].f.eval x = 0)
     (q : 𝕎[v].f.Factors) :
     (((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
@@ -1713,19 +1689,14 @@ private lemma mem_selmerGroupFactor_empty_of_eval_f_eq_zero (ha₂ : v.valuation
   have hval : w.valuation (AdjoinRoot (q : F_[v][X])) (u : AdjoinRoot (q : F_[v][X])) = 1 := by
     rw [hudef, IsUnit.unit_spec, 𝕎[v].projFactor_mk_C_sub_X_add_fCofactor x q]
     exact 𝕎[v].valuation_projFactor_torsion_eq_one 𝒪_[v] q
-      (W.valuation_a₂_adicCompletion_le_one v ha₂ _)
-      (W.valuation_a₄_adicCompletion_le_one v ha₄ _)
-      (W.valuation_a₆_adicCompletion_le_one v ha₆ _) hx
-      (𝕎[v].valuation_deriv_eval_eq_one ((w.below 𝒪_[v]).valuation F_[v]) hx
-        (W.valuation_a₂_adicCompletion_le_one v ha₂ _)
-        (W.valuation_a₄_adicCompletion_le_one v ha₄ _)
-        (W.valuation_a₆_adicCompletion_le_one v ha₆ _) hdisc)
+      (W.isIntegralAt_adicCompletion v hW _) hx
+      (𝕎[v].valuation_deriv_eval_eq_one hx
+        (W.isIntegralAt_adicCompletion v hW _) hdisc)
   simpa using w.dvd_toAdd_valuationOfNeZero (n := 2) (z := 1) (by simp [hval])
 
 -- The generic case at `v(disc f) = exp (-1)`: split into the critical factor (norm parity)
 -- and the others (generic argument with `f' θ` a unit).
-private lemma mem_selmerGroupFactor_empty_of_eval_f_ne_zero (ha₂ : v.valuation F W.a₂ ≤ 1)
-    (ha₄ : v.valuation F W.a₄ ≤ 1) (ha₆ : v.valuation F W.a₆ ≤ 1)
+private lemma mem_selmerGroupFactor_empty_of_eval_f_ne_zero (hW : W.IsIntegralAt (v.valuation F))
     (hd : v.valuation F W.f.discr = exp (-1)) {x y : F_[v]}
     (h : 𝕎[v].toAffine.Equation x y) (hx : 𝕎[v].f.eval x ≠ 0) (q : 𝕎[v].f.Factors) :
     (((isUnit_mk_sub_X_of_eval_f_ne_zero hx).map
@@ -1733,14 +1704,12 @@ private lemma mem_selmerGroupFactor_empty_of_eval_f_ne_zero (ha₂ : v.valuation
         Units.modPow (AdjoinRoot (q : F_[v][X])) 2) ∈ 𝕎[v].selmerGroupFactor 𝒪_[v] ∅ q := by
   rw [𝕎[v].mem_selmerGroupFactor_unit_iff 𝒪_[v] ∅ q]
   intro w _
-  obtain ⟨q₀, he, hother⟩ := W.exists_critical_factor v ha₂ ha₄ ha₆ hd
+  obtain ⟨q₀, he, hother⟩ := W.exists_critical_factor v hW hd
   rcases eq_or_ne q q₀ with rfl | hq
-  · exact W.even_valuationOfNeZero_critical v ha₂ ha₄ ha₆ h hx he hother _
+  · exact W.even_valuationOfNeZero_critical v hW h hx he hother _
       (IsUnit.unit_spec _) w
   · refine 𝕎[v].even_valuationOfNeZero_sub_root 𝒪_[v] q h hx _ ?_ w
-      (W.valuation_a₂_adicCompletion_le_one v ha₂ _)
-      (W.valuation_a₄_adicCompletion_le_one v ha₄ _)
-      (W.valuation_a₆_adicCompletion_le_one v ha₆ _)
+      (W.isIntegralAt_adicCompletion v hW _)
       (by rw [← 𝕎[v].mk_derivative_f (q : F_[v][X])]; exact hother q hq w)
     exact (IsUnit.unit_spec _).trans (𝕎[v].projFactor_mk_C_sub_X x q)
 
@@ -1754,10 +1723,9 @@ Notably, no condition at `2` is needed: the norm-parity argument over the field 
 the completed étale algebra is uniform in the residue characteristic. -/
 theorem range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr {v : HeightOneSpectrum (𝓞 F)}
     [DecidableEq F_[v]]
-    (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1)
-    (ha₆ : v.valuation F W.a₆ ≤ 1) (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) :
+    (hW : W.IsIntegralAt (v.valuation F)) (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) :
     (μ (W := 𝕎[v])).range ≤ 𝕎[v].selmerGroupA 𝒪_[v] ∅ := by
-  rcases eq_exp_neg_one_or_eq_one hd (W.valuation_discr_le_one (v.valuation F) ha₂ ha₄ ha₆)
+  rcases eq_exp_neg_one_or_eq_one hd (W.valuation_discr_le_one hW)
     with hd1 | hd1
   · rintro _ ⟨P, rfl⟩
     obtain ⟨P, rfl⟩ := Multiplicative.ofAdd.surjective P
@@ -1769,10 +1737,10 @@ theorem range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr {v : HeightOneSpe
       intro q
       rcases eq_or_ne (𝕎[v].f.eval x) 0 with hx | hx
       · rw [μX_of_eval_f_eq_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
-        exact W.mem_selmerGroupFactor_empty_of_eval_f_eq_zero v ha₂ ha₄ ha₆ hd hx q
+        exact W.mem_selmerGroupFactor_empty_of_eval_f_eq_zero v hW hd hx q
       · rw [μX_of_eval_f_ne_zero hx, AdjoinRoot.modPowEquivPiFactors_unit]
-        exact W.mem_selmerGroupFactor_empty_of_eval_f_ne_zero v ha₂ ha₄ ha₆ hd1 h.1 hx q
-  · exact W.range_μ_le_selmerGroupA_empty ha₂ ha₄ ha₆ hd1
+        exact W.mem_selmerGroupFactor_empty_of_eval_f_ne_zero v hW hd1 h.1 hx q
+  · exact W.range_μ_le_selmerGroupA_empty hW hd1
 
 end OddPlace
 
@@ -2196,11 +2164,11 @@ over `F_v` (`card_selmerGroupA_eq_two_pow`, resting on the `𝔾ₘ`-interface s
 `#(im μ) = #E(F_v)[2] ≥ 2^(g-1)` by counting `2`-torsion points coming from the linear
 factors of `f`. -/
 theorem selmerGroupA_inf_ker_normM_eq_range_μ {v : HeightOneSpectrum (𝓞 F)} [DecidableEq F_[v]]
-    (h2 : (2 : 𝓞 F) ∉ v.asIdeal) (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1)
-    (ha₆ : v.valuation F W.a₆ ≤ 1) (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) :
+    (h2 : (2 : 𝓞 F) ∉ v.asIdeal) (hW : W.IsIntegralAt (v.valuation F))
+    (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) :
     𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker = (μ (W := 𝕎[v])).range := by
   have hle : (μ (W := 𝕎[v])).range ≤ 𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker :=
-    le_inf (W.range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr ha₂ ha₄ ha₆ hd)
+    le_inf (W.range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr hW hd)
       range_μ_le_ker_normM
   have hfinA := W.finite_selmerGroupA_adicCompletionIntegers h2
   have hfinT : Finite (𝕎[v].selmerGroupA 𝒪_[v] ∅ ⊓ (normM (W := 𝕎[v])).ker :
@@ -2214,13 +2182,12 @@ coefficients, and `v(disc f) ≥ exp (-1)` — the local condition follows from
 the local descent map is the group of unramified square classes with trivial norm. -/
 theorem inf_le_localCondition_adicCompletion {v : HeightOneSpectrum (𝓞 F)} [DecidableEq F_[v]]
     {S : Set (HeightOneSpectrum (𝓞 F))} (hv : v ∉ S) (h2 : (2 : 𝓞 F) ∉ v.asIdeal)
-    (ha₂ : v.valuation F W.a₂ ≤ 1) (ha₄ : v.valuation F W.a₄ ≤ 1)
-    (ha₆ : v.valuation F W.a₆ ≤ 1) (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) :
+    (hW : W.IsIntegralAt (v.valuation F)) (hd : exp (-1 : ℤ) ≤ v.valuation F W.f.discr) :
     W.selmerGroupA (𝓞 F) S ⊓ (normM (W := W)).ker ≤ W.localCondition F_[v] := by
   intro m hm
   rw [Subgroup.mem_inf] at hm
   rw [mem_localCondition_iff]
-  apply (W.selmerGroupA_inf_ker_normM_eq_range_μ h2 ha₂ ha₄ ha₆ hd).le
+  apply (W.selmerGroupA_inf_ker_normM_eq_range_μ h2 hW hd).le
   rw [Subgroup.mem_inf]
   refine ⟨W.localRes_mem_selmerGroupA hv hm.1, ?_⟩
   rw [MonoidHom.mem_ker, W.normM_localRes, MonoidHom.mem_ker.mp hm.2, map_one]
@@ -2241,9 +2208,7 @@ theorem selmerGroup₂_le_selmerGroupA_inf_ker :
   refine Subgroup.mem_inf.mpr ⟨W.mem_selmerGroupA_of_forall_localRes fun v hv ↦ ?_,
     MonoidHom.mem_ker.mpr h1⟩
   exact W.range_μ_le_selmerGroupA_empty_of_exp_neg_one_le_discr
-    (W.valuation_a₂_le_one_of_notMem_discBadPrimes (𝓞 F) hv)
-    (W.valuation_a₄_le_one_of_notMem_discBadPrimes (𝓞 F) hv)
-    (W.valuation_a₆_le_one_of_notMem_discBadPrimes (𝓞 F) hv)
+    (W.isIntegralAt_of_notMem_discBadPrimes (𝓞 F) hv)
     (W.exp_neg_one_le_valuation_discr_of_notMem_discBadPrimes (𝓞 F) hv)
     ((W.mem_localCondition_iff F_[v]).mp (h2 v))
 
@@ -2273,9 +2238,7 @@ theorem selmerGroup₂_eq_badPrimes₂ :
   · have hv' := W.notMem_discBadPrimes_of_notMem_badPrimes₂ (𝓞 F) hv
     exact W.inf_le_localCondition_adicCompletion hv'
       (W.two_notMem_asIdeal_of_notMem_badPrimes₂ (𝓞 F) hv)
-      (W.valuation_a₂_le_one_of_notMem_discBadPrimes (𝓞 F) hv')
-      (W.valuation_a₄_le_one_of_notMem_discBadPrimes (𝓞 F) hv')
-      (W.valuation_a₆_le_one_of_notMem_discBadPrimes (𝓞 F) hv')
+      (W.isIntegralAt_of_notMem_discBadPrimes (𝓞 F) hv')
       (W.exp_neg_one_le_valuation_discr_of_notMem_discBadPrimes (𝓞 F) hv')
       (Subgroup.mem_inf.mpr ⟨hA, h1⟩)
 
