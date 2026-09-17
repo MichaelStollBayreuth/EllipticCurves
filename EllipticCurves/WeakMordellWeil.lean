@@ -185,6 +185,14 @@ lemma negY_of_isCharNeTwoNF [W.IsCharNeTwoNF] (x y : K) : W.negY x y = -y := by
   rw [negY, a₁_of_isCharNeTwoNF, a₃_of_isCharNeTwoNF]
   ring
 
+/-- For a curve in the normal form `a₁ = a₃ = 0`, the slope of the tangent at `(x, y)` is
+`(3 * x ^ 2 + 2 * a₂ * x + a₄) / (2 * y)`; the hypothesis `y ≠ W.negY x y` says `2 * y ≠ 0`. -/
+lemma slope_self_of_isCharNeTwoNF [DecidableEq K] [W.IsCharNeTwoNF] {x y : K}
+    (hy : y ≠ W.negY x y) :
+    W.slope x x y y = (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) / (2 * y) := by
+  rw [slope_of_Y_ne rfl hy, negY_of_isCharNeTwoNF, a₁_of_isCharNeTwoNF, zero_mul, sub_zero,
+    sub_neg_eq_add, ← two_mul]
+
 /-- On a point of `W`, the value `f x` is a square, so it vanishes exactly when `y` does. -/
 lemma ne_zero_of_eval_f_ne_zero [W.IsCharNeTwoNF] {x y : K} (h : W.Equation x y)
     (hx : W.f.eval x ≠ 0) : y ≠ 0 :=
@@ -209,6 +217,14 @@ lemma eval_fCofactor_self (x : K) :
 
 lemma fCofactor_mul_eq (x : K) : W.fCofactor x * (X - C x) = W.f - C (W.f.eval x) := by
   simp [fCofactor, f]
+  algebra
+
+/-- Dividing `W.fCofactor x` by `X - C x` once more leaves the remainder
+`3 * x ^ 2 + 2 * W.a₂ * x + W.a₄`, the derivative of `WeierstrassCurve.Affine.f` at `x`; so
+`C x - X` is invertible modulo `W.fCofactor x` as soon as that derivative is nonzero. -/
+lemma C_sub_X_mul_eq_C_sub_fCofactor (x : K) :
+    (C x - X) * (X + C (2 * x + W.a₂)) = C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) - W.fCofactor x := by
+  simp only [fCofactor, C_eq_algebraMap]
   algebra
 
 lemma f_eq_mul_of_eval_eq_zero {x : K} (hx : W.f.eval x = 0) :
@@ -238,24 +254,11 @@ private lemma f_dvd_of_fCofactor_dvd {x r s : K} (hx : W.f.eval x = 0) (hr : r �
     (hdvd : W.fCofactor x ∣ (C r * X + C s) ^ 2 - (C x - X)) :
     W.f ∣ (X - C (-s / r)) ^ 2 * (X - C x) - -(C (1 / r) * X + C (-x / r)) ^ 2 := by
   obtain ⟨q, hq⟩ := hdvd
-  apply_fun (· * (X - C x)) at hq
-  rw [mul_right_comm, ← f_eq_mul_of_eval_eq_zero _ hx] at hq
-  replace hq : q * W.f = ((C r * X + C s) ^ 2 - (C x - X)) * (X - C x) := by
-    rw [mul_comm]; exact hq.symm
-  refine ⟨C (1 / r ^ 2) * q, ?_⟩
-  rw [eq_comm, mul_comm W.f]
-  apply_fun (C (r ^ 2) * ·) using mul_right_injective₀ <| by simp [hr]
-  dsimp only
-  rw [← mul_assoc, ← mul_assoc, ← map_mul]
-  rw [mul_one_div_cancel <| pow_ne_zero 2 hr, map_one, one_mul, hq]
-  conv_rhs =>
-    rw [sub_neg_eq_add, mul_add, ← mul_assoc, map_pow, ← mul_pow, mul_sub (C r), ← map_mul,
-      mul_div_cancel₀ _ hr]
-    enter [2]
-    rw [← mul_pow, mul_add, ← mul_assoc, ← map_mul, mul_one_div_cancel hr, map_one, one_mul,
-      ← map_mul, mul_div_cancel₀ _ hr]
-  simp only [C_eq_algebraMap]
-  algebra
+  have hu : C r * C r⁻¹ = 1 := by rw [← C_mul, mul_inv_cancel₀ hr, C_1]
+  refine ⟨C (r⁻¹ ^ 2) * q, ?_⟩
+  rw [W.f_eq_mul_of_eval_eq_zero hx]
+  simp only [div_eq_mul_inv, map_mul, map_neg, one_mul, map_pow]
+  grobner
 
 /- A square of a class of degree `< g.natDegree / 2` is not the class of `C x - X` modulo a
 monic `g` of degree `≥ 2`: both sides have degree `< g.natDegree`, so they would be equal as
@@ -307,26 +310,13 @@ lemma exists_mk_eq (a : W.A) :
 lemma exists_X_sub_C_mul_eq (r s t : K) (hr : r ≠ 0) :
     ∃ ξ l m, AdjoinRoot.mk W.f (X - C ξ) * AdjoinRoot.mk W.f (C r * X ^ 2 + C s * X + C t) =
        AdjoinRoot.mk W.f (C l * X + C m) := by
-  conv => enter [1, ξ, 1, l, 1, m]; rw [← map_mul, ← sub_eq_zero, ← map_sub]
-  have H (ξ l m : K) : (X - C ξ) * (C r * X ^ 2 + C s * X + C t) - (C l * X + C m) =
-      C r * W.f + (C (-ξ * r + s - W.a₂ * r) * X ^ 2 + C (-ξ * s - l - W.a₄ * r + t) * X
-        + C (-ξ * t - m - W.a₆ * r)) := by
-    simp only [f, C_eq_algebraMap]
-    algebra
-  conv =>
-    enter [1, ξ, 1, l, 1, m]
-    rw [H, map_add, map_mul]
-    enter [1, 1, 2]
-    rw [AdjoinRoot.mk_self]
-  simp only [mul_zero, zero_add]
-  suffices ∃ ξ l m, -ξ * r + s - W.a₂ * r = 0 ∧ -ξ * s - l - W.a₄ * r + t = 0 ∧
-      -ξ * t - m - W.a₆ * r = 0 by
-    obtain ⟨ξ, l, m, h₂, h₁, h₀⟩ := this
-    refine ⟨ξ, l, m, ?_⟩
-    rw [h₂, h₁, h₀]
-    simp
+  have hu : C r * C r⁻¹ = 1 := by rw [← C_mul, mul_inv_cancel₀ hr, C_1]
   refine ⟨s / r - W.a₂, t - W.a₄ * r - s ^ 2 / r + W.a₂ * s,
-    -W.a₆ * r - t * s / r + W.a₂ * t, ?_, ?_, ?_⟩ <;> field
+    -W.a₆ * r - t * s / r + W.a₂ * t, ?_⟩
+  rw [← map_mul, ← sub_eq_zero, ← map_sub, AdjoinRoot.mk_eq_zero]
+  refine ⟨C r, ?_⟩
+  simp only [f, div_eq_mul_inv, map_sub, map_add, map_mul, map_pow, map_neg]
+  grobner
 
 /-- The étale algebra associated to the cofactor of `f`. -/
 abbrev A' (x : K) : Type _ := AdjoinRoot (W.fCofactor x)
@@ -455,33 +445,13 @@ variable [W.IsElliptic]
 
 lemma isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero {x : K} (h : W.f.eval x = 0) :
     IsUnit <| AdjoinRoot.mk W.f <| C x - X + W.fCofactor x := by
-  rw [isUnit_mk_iff W h]
-  have H₀ : 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ ≠ 0 := deriv_f_ne_zero W h
-  have H₁ : eval x (C x - X + W.fCofactor x) = 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ := by
-    rw [eval_add, W.eval_fCofactor_self]; simp
-  have H₂ : (AdjoinRoot.mk (W.fCofactor x)) (C x - X + W.fCofactor x) =
-      AdjoinRoot.mk (W.fCofactor x) (C x - X) := by
-    simp
-  rw [H₁, H₂, isUnit_iff_ne_zero]
-  refine ⟨H₀, ?_⟩
-  let u := AdjoinRoot.mk (W.fCofactor x) <|
-    C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄)⁻¹ * (X + C (2 * x + W.a₂))
-  rw [isUnit_iff_exists_inv]
-  refine ⟨u, ?_⟩
-  rw [← map_mul]
-  have : (C x - X) * (C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄)⁻¹ * (X + C (2 * x + W.a₂))) =
-      C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄)⁻¹ * (-W.fCofactor x) + 1 := by
-    rw [mul_left_comm]
-    apply_fun (C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) * ·) using
-      mul_right_injective₀ <| C_ne_zero.mpr H₀
-    dsimp only
-    rw [mul_add _ _ 1]
-    simp_rw [← mul_assoc, ← map_mul, mul_inv_cancel₀ H₀, map_one, one_mul, mul_one]
-    simp only [C_eq_algebraMap, fCofactor]
-    algebra
-  rw [this, map_add, map_one, map_mul, map_neg]
-  simp
-
+  have H : 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ ≠ 0 := deriv_f_ne_zero W h
+  rw [isUnit_mk_iff W h, map_add, AdjoinRoot.mk_self, add_zero]
+  refine ⟨?_, .of_mul_eq_one (AdjoinRoot.mk _
+    (C (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄)⁻¹ * (X + C (2 * x + W.a₂)))) ?_⟩
+  · simpa [isUnit_iff_ne_zero, W.eval_fCofactor_self] using H
+  · rw [← map_mul, mul_left_comm, W.C_sub_X_mul_eq_C_sub_fCofactor, mul_sub, ← C_mul]
+    simp [inv_mul_cancel₀ H]
 
 /-- The point `(x, 0)` at a root of `f` lies on the curve. -/
 lemma nonsingular_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0) :
@@ -733,24 +703,18 @@ private lemma exists_eq_two_smul_of_identities {x y ξ l m : K} (h : W.Nonsingul
     (H₂ : x + 2 * ξ = l ^ 2 - W.a₂) (H₁ : 2 * x * ξ + ξ ^ 2 = W.a₄ - 2 * l * m)
     (H₀ : x * ξ ^ 2 = -W.a₆ + m ^ 2) :
     ∃ P, Point.some x y h = 2 • P := by
-  have h20 : (2 : K) ≠ 0 := Ring.two_ne_zero <| ringChar_ne_two W
   -- if `lξ + m = 0`, then `ξ` is a root of `f` at which `f' ξ = 2l(lξ + m)` vanishes too
   have hy₀ : l * ξ + m ≠ 0 := fun h0 ↦ W.deriv_f_ne_zero (x := ξ)
     (by rw [eval_f]; linear_combination ξ ^ 2 * H₂ - ξ * H₁ + H₀ + (l * ξ + m) * h0)
     (by linear_combination 2 * ξ * H₂ - H₁ + 2 * l * h0)
-  have hy : l * ξ + m ≠ W.negY ξ (l * ξ + m) := by
-    rw [negY_of_isCharNeTwoNF]
-    grind
+  have h2y : 2 * (l * ξ + m) ≠ 0 := mul_ne_zero (Ring.two_ne_zero <| ringChar_ne_two W) hy₀
+  have hy : l * ξ + m ≠ W.negY ξ (l * ξ + m) :=
+    sub_ne_zero.mp <| by rwa [negY_of_isCharNeTwoNF, sub_neg_eq_add, ← two_mul]
   have hsl : W.slope ξ ξ (l * ξ + m) (l * ξ + m) = l := by
-    simp only [slope_of_Y_ne rfl hy, a₁_of_isCharNeTwoNF, zero_mul, sub_zero,
-      negY_of_isCharNeTwoNF, sub_neg_eq_add, ← two_mul]
-    rw [mul_comm] at hy₀ -- `field_simp` changes `l * ξ` to `ξ * l`
-    field_simp
-    grobner
-  have heq : W.Equation ξ (l * ξ + m) := by
-    rw [equation_iff_eval_f_eq_sq, eval_f]
-    linear_combination ξ ^ 2 * H₂ - ξ * H₁ + H₀
-  let P : W.Point := .some ξ (l * ξ + m) <| equation_iff_nonsingular.mp heq
+    rw [W.slope_self_of_isCharNeTwoNF hy, div_eq_iff h2y]
+    linear_combination 2 * ξ * H₂ - H₁
+  let P : W.Point := .some ξ (l * ξ + m) <| equation_iff_nonsingular.mp <| by
+    rw [equation_iff_eval_f_eq_sq, eval_f]; linear_combination ξ ^ 2 * H₂ - ξ * H₁ + H₀
   suffices .some x y h = 2 • P ∨ .some x y h = 2 • (-P) from this.casesOn (⟨_, ·⟩) (⟨_, ·⟩)
   simp only [smul_neg, P, two_smul, Point.add_self_of_Y_ne hy, ← Point.X_eq_iff, hsl, addX,
     a₁_of_isCharNeTwoNF, zero_mul, add_zero]
