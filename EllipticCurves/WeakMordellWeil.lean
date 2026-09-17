@@ -1017,97 +1017,97 @@ of `W.M`), and finally `WeierstrassCurve.Affine.range_μ_le_selmerGroupA`.
 
 section Cubic
 
-/- The valuation-theoretic arithmetic of Step 6, for a valuation `ν` on a commutative ring and
-the monic cubic `t ^ 3 + a * t ^ 2 + b * t + c` with `ν`-integral coefficients: integrality of
+/- The valuation-theoretic arithmetic of Step 6, for a valuation `v` on a commutative ring and
+the monic cubic `t ^ 3 + a * t ^ 2 + b * t + c` with `v`-integral coefficients: integrality of
 `f'(t)` and of the cofactors that appear, and the two ways the valuation of `x - θ` turns out to
 be even. Integrality of a polynomial expression in integral elements is read off from
-`ν.integer` being a subring. These are specific to Weierstrass equations, so they live here
+`v.integer` being a subring. These are specific to Weierstrass equations, so they live here
 rather than in the general-support file; the lemmas of the `RingOfIntegers` and `Core` sections
 below instantiate them in the field factors `K[X]/(p)`. -/
 
 open Polynomial
 
-variable {L Γ : Type*} [CommRing L] [LinearOrderedCommGroupWithZero Γ] (ν : Valuation L Γ)
+variable {L Γ : Type*} [CommRing L] [LinearOrderedCommGroupWithZero Γ] (v : Valuation L Γ)
   {t s a b c : L}
 
-private lemma Valuation.map_cubic_deriv_le_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (ht : ν t ≤ 1) :
-    ν (3 * t ^ 2 + 2 * a * t + b) ≤ 1 :=
-  let t' : ν.integer := ⟨t, ht⟩
-  let a' : ν.integer := ⟨a, ha⟩
-  let b' : ν.integer := ⟨b, hb⟩
-  (3 * t' ^ 2 + 2 * a' * t' + b').2
+private lemma Valuation.map_cubic_deriv_le_one (ha : v a ≤ 1) (hb : v b ≤ 1) (ht : v t ≤ 1) :
+    v (3 * t ^ 2 + 2 * a * t + b) ≤ 1 :=
+  let t' : v.integer := ⟨t, ht⟩
+  let a' : v.integer := ⟨a, ha⟩
+  let b' : v.integer := ⟨b, hb⟩
+  (3 * t' ^ 2 + 2 * a' * t' + b').prop
 
-private lemma Valuation.map_cubic_deriv_eq_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1)
-    (ht : ν t ≤ 1) {δ : L} (hδ : ν δ = 1)
+private lemma Valuation.map_cubic_deriv_eq_one (ha : v a ≤ 1) (hb : v b ≤ 1) (hc : v c ≤ 1)
+    (ht : v t ≤ 1) {δ : L} (hδ : v δ = 1)
     (hmul : (3 * t ^ 2 + 2 * a * t + b) * ((2 * a ^ 2 - 6 * b) * t ^ 2
       + (2 * a ^ 3 - 7 * a * b + 9 * c) * t + (a ^ 2 * b - 4 * b ^ 2 + 3 * a * c)) = δ) :
-    ν (3 * t ^ 2 + 2 * a * t + b) = 1 :=
-  let t' : ν.integer := ⟨t, ht⟩
-  let a' : ν.integer := ⟨a, ha⟩
-  let b' : ν.integer := ⟨b, hb⟩
-  let c' : ν.integer := ⟨c, hc⟩
-  ν.eq_one_of_mul_eq_one (ν.map_cubic_deriv_le_one ha hb ht)
+    v (3 * t ^ 2 + 2 * a * t + b) = 1 :=
+  let t' : v.integer := ⟨t, ht⟩
+  let a' : v.integer := ⟨a, ha⟩
+  let b' : v.integer := ⟨b, hb⟩
+  let c' : v.integer := ⟨c, hc⟩
+  v.eq_one_of_mul_eq_one (v.map_cubic_deriv_le_one ha hb ht)
     ((2 * a' ^ 2 - 6 * b') * t' ^ 2 + (2 * a' ^ 3 - 7 * a' * b' + 9 * c') * t'
-      + (a' ^ 2 * b' - 4 * b' ^ 2 + 3 * a' * c')).2 (hmul ▸ hδ)
+      + (a' ^ 2 * b' - 4 * b' ^ 2 + 3 * a' * c')).prop (hmul ▸ hδ)
 
-private lemma Valuation.map_cofactor_eq_one (ha : ν a ≤ 1) (ht : ν t ≤ 1) (hs : ν s ≤ 1)
-    (hlt : ν (s - t) < 1) (hderiv : ν (3 * t ^ 2 + 2 * a * t + b) = 1) :
-    ν (s ^ 2 + t * s + t ^ 2 + a * (s + t) + b) = 1 := by
-  have h2t : ν (s + 2 * t + a) ≤ 1 :=
-    let t' : ν.integer := ⟨t, ht⟩
-    let a' : ν.integer := ⟨a, ha⟩
-    let s' : ν.integer := ⟨s, hs⟩
-    (s' + 2 * t' + a').2
-  have hlt' : ν ((s - t) * (s + 2 * t + a)) < ν (3 * t ^ 2 + 2 * a * t + b) := by
+private lemma Valuation.map_cofactor_eq_one (ha : v a ≤ 1) (ht : v t ≤ 1) (hs : v s ≤ 1)
+    (hlt : v (s - t) < 1) (hderiv : v (3 * t ^ 2 + 2 * a * t + b) = 1) :
+    v (s ^ 2 + t * s + t ^ 2 + a * (s + t) + b) = 1 := by
+  have h2t : v (s + 2 * t + a) ≤ 1 :=
+    let t' : v.integer := ⟨t, ht⟩
+    let a' : v.integer := ⟨a, ha⟩
+    let s' : v.integer := ⟨s, hs⟩
+    (s' + 2 * t' + a').prop
+  have hlt' : v ((s - t) * (s + 2 * t + a)) < v (3 * t ^ 2 + 2 * a * t + b) := by
     rw [hderiv, map_mul]
     exact (mul_le_of_le_one_right' h2t).trans_lt hlt
   rw [show s ^ 2 + t * s + t ^ 2 + a * (s + t) + b
       = (s - t) * (s + 2 * t + a) + (3 * t ^ 2 + 2 * a * t + b) by ring,
-    ν.map_add_eq_of_lt_right hlt', hderiv]
+    v.map_add_eq_of_lt_right hlt', hderiv]
 
-private lemma Valuation.map_sub_eq_one_or_eq_map_sq (ha : ν a ≤ 1) (ht : ν t ≤ 1) {x y : L}
-    (hx : ν x ≤ 1) (hderiv : ν (3 * t ^ 2 + 2 * a * t + b) = 1)
+private lemma Valuation.map_sub_eq_one_or_eq_map_sq (ha : v a ≤ 1) (ht : v t ≤ 1) {x y : L}
+    (hx : v x ≤ 1) (hderiv : v (3 * t ^ 2 + 2 * a * t + b) = 1)
     (hfac : (x - t) * (x ^ 2 + t * x + t ^ 2 + a * (x + t) + b) = y ^ 2) :
-    ν (x - t) = 1 ∨ ν (x - t) = ν y ^ 2 := by
-  by_cases h1 : ν (x - t) = 1
+    v (x - t) = 1 ∨ v (x - t) = v y ^ 2 := by
+  by_cases h1 : v (x - t) = 1
   · exact .inl h1
   refine .inr ?_
-  have hlt : ν (x - t) < 1 := lt_of_le_of_ne ((ν.map_sub x t).trans (max_le hx ht)) h1
-  rw [← map_pow, ← hfac, map_mul, ν.map_cofactor_eq_one ha ht hx hlt hderiv, mul_one]
+  have hlt : v (x - t) < 1 := lt_of_le_of_ne ((v.map_sub x t).trans (max_le hx ht)) h1
+  rw [← map_pow, ← hfac, map_mul, v.map_cofactor_eq_one ha ht hx hlt hderiv, mul_one]
 
 variable [Nontrivial L]
 
-private lemma cubic_coeff_le_one (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1) :
+private lemma cubic_coeff_le_one (ha : v a ≤ 1) (hb : v b ≤ 1) (hc : v c ≤ 1) :
     ∀ i < (X ^ 3 + C a * X ^ 2 + C b * X + C c).natDegree,
-      ν ((X ^ 3 + C a * X ^ 2 + C b * X + C c).coeff i) ≤ 1 := by
+      v ((X ^ 3 + C a * X ^ 2 + C b * X + C c).coeff i) ≤ 1 := by
   have hdeg : (X ^ 3 + C a * X ^ 2 + C b * X + C c).natDegree = 3 := by compute_degree!
   intro i hi
   rw [hdeg] at hi
   interval_cases i <;> simp [ha, hb, hc]
 
-private lemma Valuation.map_cubic_of_one_lt (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1)
-    (ht : 1 < ν t) :
-    ν (t ^ 3 + a * t ^ 2 + b * t + c) = ν t ^ 3 := by
+private lemma Valuation.map_cubic_of_one_lt (ha : v a ≤ 1) (hb : v b ≤ 1) (hc : v c ≤ 1)
+    (ht : 1 < v t) :
+    v (t ^ 3 + a * t ^ 2 + b * t + c) = v t ^ 3 := by
   have hp : (X ^ 3 + C a * X ^ 2 + C b * X + C c).Monic := by monicity!
   have hdeg : (X ^ 3 + C a * X ^ 2 + C b * X + C c).natDegree = 3 := by compute_degree!
-  have h := ν.map_eval_eq_of_one_lt hp (cubic_coeff_le_one ν ha hb hc) ht
+  have h := v.map_eval_eq_of_one_lt hp (cubic_coeff_le_one v ha hb hc) ht
   rw [hdeg] at h
   simpa using h
 
-private lemma Valuation.le_one_of_root_cubic (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1)
+private lemma Valuation.le_one_of_root_cubic (ha : v a ≤ 1) (hb : v b ≤ 1) (hc : v c ≤ 1)
     (heq : t ^ 3 + a * t ^ 2 + b * t + c = 0) :
-    ν t ≤ 1 := by
+    v t ≤ 1 := by
   have hp : (X ^ 3 + C a * X ^ 2 + C b * X + C c).Monic := by monicity!
   have hdeg : (X ^ 3 + C a * X ^ 2 + C b * X + C c).natDegree = 3 := by compute_degree!
-  refine ν.le_one_of_root_monic hp (cubic_coeff_le_one ν ha hb hc) (by rw [hdeg]; norm_num) ?_
+  refine v.le_one_of_root_monic hp (cubic_coeff_le_one v ha hb hc) (by rw [hdeg]; norm_num) ?_
   simpa using heq
 
-private lemma Valuation.map_torsion_eq_one [NoZeroDivisors L] (ha : ν a ≤ 1) (hb : ν b ≤ 1)
-    (hc : ν c ≤ 1) (hs : s ^ 3 + a * s ^ 2 + b * s + c = 0) (ht : t ^ 3 + a * t ^ 2 + b * t + c = 0)
-    (hderiv : ν (3 * s ^ 2 + 2 * a * s + b) = 1) :
-    ν (s - t + (t ^ 2 + (s + a) * t + (s ^ 2 + a * s + b))) = 1 := by
-  have hs1 : ν s ≤ 1 := ν.le_one_of_root_cubic ha hb hc hs
-  have ht1 : ν t ≤ 1 := ν.le_one_of_root_cubic ha hb hc ht
+private lemma Valuation.map_sub_add_cofactor_eq_one [NoZeroDivisors L] (ha : v a ≤ 1) (hb : v b ≤ 1)
+    (hc : v c ≤ 1) (hs : s ^ 3 + a * s ^ 2 + b * s + c = 0) (ht : t ^ 3 + a * t ^ 2 + b * t + c = 0)
+    (hderiv : v (3 * s ^ 2 + 2 * a * s + b) = 1) :
+    v (s - t + (t ^ 2 + (s + a) * t + (s ^ 2 + a * s + b))) = 1 := by
+  have hs1 : v s ≤ 1 := v.le_one_of_root_cubic ha hb hc hs
+  have ht1 : v t ≤ 1 := v.le_one_of_root_cubic ha hb hc ht
   have hprod : (s - t) * (t ^ 2 + (s + a) * t + (s ^ 2 + a * s + b)) = 0 := by
     linear_combination hs - ht
   rcases mul_eq_zero.mp hprod with h0 | h0
@@ -1117,12 +1117,12 @@ private lemma Valuation.map_torsion_eq_one [NoZeroDivisors L] (ha : ν a ≤ 1) 
         linear_combination -(t + 2 * s + a) * h0, hderiv]
   · -- the cofactor vanishes: the element is `s - t`, and `f'(s) = (s - t)(2s + t + a)`
     rw [h0, add_zero]
-    have h2t : ν (2 * s + t + a) ≤ 1 :=
-      let t' : ν.integer := ⟨t, ht1⟩
-      let a' : ν.integer := ⟨a, ha⟩
-      let s' : ν.integer := ⟨s, hs1⟩
-      (2 * s' + t' + a').2
-    refine ν.eq_one_of_mul_eq_one ((ν.map_sub s t).trans (max_le hs1 ht1)) h2t ?_
+    have h2t : v (2 * s + t + a) ≤ 1 :=
+      let t' : v.integer := ⟨t, ht1⟩
+      let a' : v.integer := ⟨a, ha⟩
+      let s' : v.integer := ⟨s, hs1⟩
+      (2 * s' + t' + a').prop
+    refine v.eq_one_of_mul_eq_one ((v.map_sub s t).trans (max_le hs1 ht1)) h2t ?_
     rw [show (s - t) * (2 * s + t + a) = 3 * s ^ 2 + 2 * a * s + b by linear_combination -h0,
       hderiv]
 
@@ -1130,15 +1130,15 @@ end Cubic
 
 section CubicField
 
-variable {L Γ : Type*} [Field L] [LinearOrderedCommGroupWithZero Γ] (ν : Valuation L Γ)
+variable {L Γ : Type*} [Field L] [LinearOrderedCommGroupWithZero Γ] (v : Valuation L Γ)
   {t a b c : L}
 
-private lemma Valuation.map_sub_eq_map_div_sq (ha : ν a ≤ 1) (hb : ν b ≤ 1) (hc : ν c ≤ 1)
-    (ht : ν t ≤ 1) {x y : L} (hx : 1 < ν x) (heq : y ^ 2 = x ^ 3 + a * x ^ 2 + b * x + c) :
-    ν (x - t) = ν (y / x) ^ 2 := by
-  have hx0 : ν x ≠ 0 := (zero_lt_one.trans hx).ne'
-  have hval : ν y ^ 2 = ν x ^ 3 := by rw [← map_pow, heq, ν.map_cubic_of_one_lt ha hb hc hx]
-  rw [ν.map_sub_eq_of_lt_left (ht.trans_lt hx), map_div₀, div_pow, hval, pow_succ,
+private lemma Valuation.map_sub_eq_map_div_sq (ha : v a ≤ 1) (hb : v b ≤ 1) (hc : v c ≤ 1)
+    (ht : v t ≤ 1) {x y : L} (hx : 1 < v x) (heq : y ^ 2 = x ^ 3 + a * x ^ 2 + b * x + c) :
+    v (x - t) = v (y / x) ^ 2 := by
+  have hx0 : v x ≠ 0 := (zero_lt_one.trans hx).ne'
+  have hval : v y ^ 2 = v x ^ 3 := by rw [← map_pow, heq, v.map_cubic_of_one_lt ha hb hc hx]
+  rw [v.map_sub_eq_of_lt_left (ht.trans_lt hx), map_div₀, div_pow, hval, pow_succ,
     mul_div_cancel_left₀ _ (pow_ne_zero 2 hx0)]
 
 end CubicField
@@ -1361,10 +1361,10 @@ the valuation of `disc f` is `1` or `exp (-1)`: this is the arithmetic input for
 
 /-- The discriminant of `f` is a polynomial in the coefficients of `W`, so it is integral
 wherever they are. -/
-lemma valuation_discr_le_one {Γ : Type*} [LinearOrderedCommGroupWithZero Γ] (ν : Valuation K Γ)
-    (ha₂ : ν W.a₂ ≤ 1) (ha₄ : ν W.a₄ ≤ 1) (ha₆ : ν W.a₆ ≤ 1) : ν W.f.discr ≤ 1 := by
+lemma valuation_discr_le_one {Γ : Type*} [LinearOrderedCommGroupWithZero Γ] (v : Valuation K Γ)
+    (ha₂ : v W.a₂ ≤ 1) (ha₄ : v W.a₄ ≤ 1) (ha₆ : v W.a₆ ≤ 1) : v W.f.discr ≤ 1 := by
   have h : W.a₂ ^ 2 * W.a₄ ^ 2 - 4 * W.a₄ ^ 3 - 4 * W.a₂ ^ 3 * W.a₆ - 27 * W.a₆ ^ 2
-      + 18 * W.a₂ * W.a₄ * W.a₆ ∈ ν.integer :=
+      + 18 * W.a₂ * W.a₄ * W.a₆ ∈ v.integer :=
     add_mem (sub_mem (sub_mem (sub_mem (mul_mem (pow_mem ha₂ 2) (pow_mem ha₄ 2))
       (mul_mem (ofNat_mem _ 4) (pow_mem ha₄ 3))) (mul_mem (mul_mem (ofNat_mem _ 4)
         (pow_mem ha₂ 3)) ha₆)) (mul_mem (ofNat_mem _ 27) (pow_mem ha₆ 2)))
@@ -1387,23 +1387,23 @@ private lemma eq_one_of_le_one_of_exp_neg_one_le_sq {t : ℤᵐ⁰} (h1 : t ≤ 
   lia
 
 open WithZero in
-/-- If `x` is a rational root of `f` and the coefficients of the cubic are `ν`-integral with
-`exp (-1) ≤ ν (disc f)`, then `f'(x)` is a `ν`-unit: `disc f = (fCofactor x).discr * f'(x)²`
-with both factors integral, and the square `ν (f'(x))²` cannot equal `exp (-1)`. -/
-lemma valuation_deriv_eval_eq_one (ν : Valuation K ℤᵐ⁰) {x : K} (hx : W.f.eval x = 0)
-    (ha₂ : ν W.a₂ ≤ 1) (ha₄ : ν W.a₄ ≤ 1) (ha₆ : ν W.a₆ ≤ 1)
-    (hd : exp (-1) ≤ ν W.f.discr) :
-    ν (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1 := by
-  have hx1 : ν x ≤ 1 := by
+/-- If `x` is a rational root of `f` and the coefficients of the cubic are `v`-integral with
+`exp (-1) ≤ v (disc f)`, then `f'(x)` is a `v`-unit: `disc f = (fCofactor x).discr * f'(x)²`
+with both factors integral, and the square `v (f'(x))²` cannot equal `exp (-1)`. -/
+lemma valuation_deriv_eval_eq_one (v : Valuation K ℤᵐ⁰) {x : K} (hx : W.f.eval x = 0)
+    (ha₂ : v W.a₂ ≤ 1) (ha₄ : v W.a₄ ≤ 1) (ha₆ : v W.a₆ ≤ 1)
+    (hd : exp (-1) ≤ v W.f.discr) :
+    v (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1 := by
+  have hx1 : v x ≤ 1 := by
     rw [eval_f] at hx
-    exact ν.le_one_of_root_cubic ha₂ ha₄ ha₆ hx
-  have hfx : 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ ∈ ν.integer :=
+    exact v.le_one_of_root_cubic ha₂ ha₄ ha₆ hx
+  have hfx : 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ ∈ v.integer :=
     add_mem (add_mem (mul_mem (ofNat_mem _ 3) (pow_mem hx1 2))
       (mul_mem (mul_mem (ofNat_mem _ 2) ha₂) hx1)) ha₄
-  have hcd' : (x + W.a₂) ^ 2 - 4 * (x ^ 2 + W.a₂ * x + W.a₄) ∈ ν.integer :=
+  have hcd' : (x + W.a₂) ^ 2 - 4 * (x ^ 2 + W.a₂ * x + W.a₄) ∈ v.integer :=
     sub_mem (pow_mem (add_mem hx1 ha₂) 2) (mul_mem (ofNat_mem _ 4)
       (add_mem (add_mem (pow_mem hx1 2) (mul_mem ha₂ hx1)) ha₄))
-  have hcd : ν (W.fCofactor x).discr ≤ 1 := by rw [W.discr_fCofactor x]; exact hcd'
+  have hcd : v (W.fCofactor x).discr ≤ 1 := by rw [W.discr_fCofactor x]; exact hcd'
   rw [W.discr_f_eq_discr_fCofactor_mul_sq hx, map_mul, map_pow] at hd
   exact eq_one_of_le_one_of_exp_neg_one_le_sq hfx (hd.trans (mul_le_of_le_one_left' hcd))
 
@@ -1571,7 +1571,7 @@ lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0)
     (hdx : (w.below R).valuation K (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1) :
     w.valuation (𝕃 p) (ι p x - θ p + AdjoinRoot.mk (p : K[X]) (W.fCofactor x)) = 1 := by
   rw [W.mk_fCofactor_eq p x]
-  refine Valuation.map_torsion_eq_one _ (W.valuation_algebraMap_le_one R p w ha₂)
+  refine Valuation.map_sub_add_cofactor_eq_one _ (W.valuation_algebraMap_le_one R p w ha₂)
     (W.valuation_algebraMap_le_one R p w ha₄) (W.valuation_algebraMap_le_one R p w ha₆)
     (by rw [← W.map_eval_f, hx, map_zero]) (W.root_cubic_eq_zero p) ?_
   simpa only [map_add, map_mul, map_pow, map_ofNat] using
@@ -1602,10 +1602,10 @@ include h hx hu ha₂ ha₄ ha₆
 
 /-- Non-integral case: `x` has a pole at the prime of `R` below `w`.
 
-The coefficients `a₂`, `a₄`, `a₆` and the root `θ` are `w`-integral, so `1 < ν x` makes the
-leading term of the cubic dominate: `ν (f x) = ν x ^ 3`, hence `ν y ^ 2 = ν x ^ 3`. Also
-`ν θ ≤ 1 < ν x`
-gives `ν (x - θ) = ν x`. Therefore `ν (x - θ) = ν (y / x) ^ 2` is an even power. -/
+The coefficients `a₂`, `a₄`, `a₆` and the root `θ` are `w`-integral, so `1 < w x` makes the
+leading term of the cubic dominate: `w (f x) = w x ^ 3`, hence `w y ^ 2 = w x ^ 3`. Also
+`w θ ≤ 1 < w x`
+gives `w (x - θ) = w x`. Therefore `w (x - θ) = w (y / x) ^ 2` is an even power. -/
 lemma even_valuationOfNeZero_sub_root_of_one_lt
     (hx' : 1 < w.valuation (𝕃 p) (ι p x)) :
     (2 : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero u) := by
@@ -1625,8 +1625,8 @@ include hderiv in
 
 Over `L` the Weierstrass equation factors as `y ^ 2 = (x - θ) * c` with cofactor
 `c = x ^ 2 + θ x + θ ^ 2 + a₂ (x + θ) + a₄`. If `x - θ` is a `w`-unit there is nothing to do.
-Otherwise `ν (x - θ) < 1`, and since `c = (x - θ) * (x + 2 θ + a₂) + f' θ` with `f' θ` a
-`w`-unit, the cofactor is a `w`-unit. Hence `ν (x - θ) = ν y ^ 2` is an even power. -/
+Otherwise `w (x - θ) < 1`, and since `c = (x - θ) * (x + 2 θ + a₂) + f' θ` with `f' θ` a
+`w`-unit, the cofactor is a `w`-unit. Hence `w (x - θ) = w y ^ 2` is an even power. -/
 lemma even_valuationOfNeZero_sub_root_of_le_one
     (hx' : w.valuation (𝕃 p) (ι p x) ≤ 1) :
     (2 : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero u) := by
