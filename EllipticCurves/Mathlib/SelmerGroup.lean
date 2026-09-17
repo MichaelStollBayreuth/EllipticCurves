@@ -121,29 +121,17 @@ the range together with generators of the kernel. -/
 @[to_additive]
 theorem Group.fg_of_fg_ker_of_fg_range {G H : Type*} [Group G] [Group H] (φ : G →* H)
     (hker : Group.FG φ.ker) (hrange : Group.FG φ.range) : Group.FG G := by
-  obtain ⟨T, hT, hTfin⟩ := Group.fg_iff.mp hrange
-  obtain ⟨S, hS, hSfin⟩ := Group.fg_iff.mp hker
-  set σ : φ.range → G := Function.surjInv φ.rangeRestrict_surjective with hσ
-  set U : Set G := σ '' T ∪ (φ.ker.subtype '' S) with hU
-  refine Group.fg_iff.mpr ⟨U, ?_, (hTfin.image σ).union (hSfin.image _)⟩
-  -- the kernel is contained in the closure of `U`
-  have hkerle : φ.ker ≤ Subgroup.closure U := by
-    calc φ.ker = (⊤ : Subgroup φ.ker).map φ.ker.subtype := by
-          rw [← MonoidHom.range_eq_map, Subgroup.range_subtype]
-      _ = (Subgroup.closure S).map φ.ker.subtype := by rw [hS]
-      _ = Subgroup.closure (φ.ker.subtype '' S) := MonoidHom.map_closure ..
-      _ ≤ Subgroup.closure U := Subgroup.closure_mono Set.subset_union_right
-  -- the closure of `U` surjects onto the range
-  have hmap : (Subgroup.closure U).map φ.rangeRestrict = ⊤ := by
-    rw [eq_top_iff, ← hT]
-    refine (Subgroup.closure_mono ?_).trans_eq (MonoidHom.map_closure ..).symm
-    intro t ht
-    exact ⟨σ t, Set.mem_union_left _ ⟨t, ht, rfl⟩, Function.surjInv_eq _ t⟩
-  -- conclude via `comap_map_eq`
-  have h := Subgroup.comap_map_eq φ.rangeRestrict (Subgroup.closure U)
-  rw [hmap, Subgroup.comap_top, MonoidHom.ker_rangeRestrict,
-    sup_eq_left.mpr hkerle] at h
-  exact h.symm
+  obtain ⟨S, hS, hSfin⟩ := (Subgroup.fg_iff _).mp ((Group.fg_iff_subgroup_fg _).mp hker)
+  obtain ⟨T, hT, hTfin⟩ := (Subgroup.fg_iff _).mp ((Group.fg_iff_subgroup_fg _).mp hrange)
+  -- finitely many preimages of the generators of the range
+  obtain ⟨V, -, hVfin, hTV⟩ := (Set.exists_subset_image_finite_and (s := Set.univ)).mp
+    ⟨T, fun t ht ↦ by simpa using hT.le (Subgroup.subset_closure ht), hTfin, subset_rfl⟩
+  refine Group.fg_iff.mpr ⟨V ∪ S, ?_, hVfin.union hSfin⟩
+  refine Subgroup.map_injective_of_ker_le φ
+    (hS.ge.trans (Subgroup.closure_mono Set.subset_union_right)) le_top
+    (le_antisymm (Subgroup.map_mono le_top) ?_)
+  rw [← MonoidHom.range_eq_map, ← hT, MonoidHom.map_closure, Set.image_union]
+  exact Subgroup.closure_mono (hTV.trans Set.subset_union_left)
 
 /-- A finitely generated commutative group of finite exponent is finite. -/
 theorem CommGroup.finite_of_fg_of_pow_eq_one {G : Type*} [CommGroup G] [Group.FG G] (n : ℕ)
@@ -746,30 +734,12 @@ the principal fractional ideal `(u)` of the `S`-integers is `n`-divisible. -/
 lemma mem_selmerGroup_iff_unitsNDivisible (u : Kˣ) :
     (QuotientGroup.mk u : Units.modPow K n) ∈ selmerGroup (R := R) (K := K) (S := S) (n := n) ↔
       u ∈ unitsNDivisible (S.integer K) K n := by
-  have lhs : (QuotientGroup.mk u : Units.modPow K n) ∈
-        selmerGroup (R := R) (K := K) (S := S) (n := n) ↔
-      ∀ v ∉ S, (n : ℤ) ∣ Multiplicative.toAdd
-        ((v : HeightOneSpectrum R).valuationOfNeZero u) :=
-    forall₂_congr fun v _ ↦ HeightOneSpectrum.valuationOfNeZeroMod_mk_eq_one_iff v n u
-  have rhs : u ∈ unitsNDivisible (S.integer K) K n ↔
-      ∀ w : HeightOneSpectrum (S.integer K),
-        (n : ℤ) ∣ Multiplicative.toAdd (w.valuationOfNeZero u) := by
-    refine forall_congr' fun w ↦ ?_
-    rw [toAdd_valuationOfNeZero, Int.dvd_neg]
-    show (n : ℤ) ∣ count K w ((toPrincipalIdeal (S.integer K) K u :
-      (FractionalIdeal (S.integer K)⁰ K)ˣ) : FractionalIdeal (S.integer K)⁰ K) ↔ _
-    rw [coe_toPrincipalIdeal]
-  rw [lhs, rhs]
-  constructor
-  · intro h w
-    rw [show w = SInteger.heightOneSpectrumEquiv K S
-        ((SInteger.heightOneSpectrumEquiv K S).symm w) from
-        ((SInteger.heightOneSpectrumEquiv K S).apply_symm_apply w).symm,
-      SInteger.valuationOfNeZero_heightOneSpectrumEquiv]
-    exact h _ ((SInteger.heightOneSpectrumEquiv K S).symm w).property
-  · intro h v hv
-    have := h (SInteger.heightOneSpectrumEquiv K S ⟨v, hv⟩)
-    rwa [SInteger.valuationOfNeZero_heightOneSpectrumEquiv] at this
+  rw [mem_unitsNDivisible, ← (SInteger.heightOneSpectrumEquiv K S).forall_congr_right,
+    Subtype.forall]
+  exact forall₂_congr fun v hv ↦ by
+    rw [HeightOneSpectrum.valuationOfNeZeroMod_mk_eq_one_iff,
+      ← SInteger.valuationOfNeZero_heightOneSpectrumEquiv K S ⟨v, hv⟩,
+      toAdd_valuationOfNeZero, Int.dvd_neg]
 
 /-- The surjection from the `n`-divisible units onto the Selmer group. -/
 noncomputable def selmerGroupFromUnits :
@@ -834,25 +804,11 @@ theorem ker_toSClassGroup [NeZero n] :
   obtain ⟨u, rfl⟩ := selmerGroupFromUnits_surjective K S n x
   rw [MonoidHom.mem_ker, toSClassGroup_selmerGroupFromUnits,
     nthRootClass_eq_one_iff _ _ (NeZero.ne n)]
-  constructor
-  · intro ⟨a, w, hw⟩
-    refine ⟨(S.unitEquivUnitsInteger K).symm a, Subtype.ext ?_⟩
-    show (QuotientGroup.mk _ : Units.modPow K n) = QuotientGroup.mk (u : Kˣ)
-    have hwn : (QuotientGroup.mk (w ^ n) : Units.modPow K n) = 1 :=
-      (QuotientGroup.eq_one_iff _).mpr ⟨w, rfl⟩
-    rw [coe_unitEquivUnitsInteger_symm, ← hw, QuotientGroup.mk_mul, hwn]
-    exact (mul_one _).symm
-  · intro ⟨s, hs⟩
-    have hcoe : (QuotientGroup.mk (s : Kˣ) : Units.modPow K n) = QuotientGroup.mk (u : Kˣ) :=
-      congrArg Subtype.val hs
-    obtain ⟨w, hw⟩ := QuotientGroup.eq.mp hcoe
-    refine ⟨S.unitEquivUnitsInteger K s, w, ?_⟩
-    have hmap : Units.map (algebraMap (S.integer K) K : S.integer K →* K)
-        (S.unitEquivUnitsInteger K s) = (s : Kˣ) := by
-      rw [← coe_unitEquivUnitsInteger_symm, MulEquiv.symm_apply_apply]
-    rw [powMonoidHom_apply] at hw
-    rw [hmap, hw]
-    group
+  simp only [MonoidHom.mem_range, Subtype.ext_iff, coe_sUnitToSelmer, coe_selmerGroupFromUnits,
+    Units.modPow.mk_eq_mk_iff]
+  refine (S.unitEquivUnitsInteger K).symm.toEquiv.exists_congr fun a ↦ exists_congr fun w ↦ ?_
+  simp only [MulEquiv.toEquiv_eq_coe, MulEquiv.coe_toEquiv, coe_unitEquivUnitsInteger_symm,
+    eq_comm]
 
 /-- Exactness of the fundamental exact sequence on the right: the image of `toSClassGroup` is
 the `n`-torsion of the class group of the `S`-integers. (Surjectivity onto the full class group
