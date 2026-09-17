@@ -48,8 +48,9 @@ that have nothing to do with elliptic curves and look like candidates for Mathli
 * `AdjoinRoot.equivPiFactors`: for nonzero squarefree `f`, `K[X]/(f)` is the product of the
   fields `K[X]/(p)` over the monic irreducible factors `p` of `f`, and the induced
   `AdjoinRoot.modPowEquivPiFactors` on `n`-th power classes of units.
-* `Polynomial.discr_X_sub_C_mul`: splitting off a linear factor multiplies the discriminant
-  by the square of the evaluation, `((X - C x) * g).discr = g.discr * g.eval x ^ 2`.
+* `Polynomial.Monic.resultant_deriv`, the monic case of `Polynomial.resultant_deriv`, and
+  `Polynomial.discr_X_sub_C_mul`: splitting off a linear factor multiplies the discriminant by
+  the square of the evaluation, `((X - C x) * g).discr = g.discr * g.eval x ^ 2`.
 * `Matrix.det_blockDiagonal'`, `LinearMap.det_pi'`, `Algebra.norm_prod`, `Algebra.norm_pi`:
   determinants and norms on (dependent) products decompose as products; together with
   `AdjoinRoot.norm_eq_prod_norm_projFactor`, the norm on `K[X]/(f)` as the product of the
@@ -740,13 +741,12 @@ lemma Monic.resultant_congr_right (hg : g.Monic) {p : R[X]} {n₁ n₂ : ℕ}
   rw [← Nat.add_sub_cancel' h₂, resultant_add_right_deg _ _ _ _ _ h₁, hg.coeff_natDegree,
     one_pow, one_mul]
 
-private lemma succ_mul_div_two {n : ℕ} (hn : 0 < n) : (n + 1) * n / 2 = n * (n - 1) / 2 + n := by
-  obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero hn.ne'
-  obtain ⟨k, hk⟩ := Nat.even_mul_succ_self m
-  rw [mul_comm m] at hk
-  simp only [Nat.succ_eq_add_one, Nat.add_sub_cancel]
-  rw [show (m + 1 + 1) * (m + 1) = (m + 1) * m + 2 * (m + 1) by ring, hk]
-  lia
+/-- The monic case of `Polynomial.resultant_deriv`: the resultant of a monic polynomial of
+positive degree with its derivative is its discriminant up to sign. -/
+lemma Monic.resultant_deriv {f : R[X]} (hf : f.Monic) (hdeg : 0 < f.natDegree) :
+    f.resultant (derivative f) f.natDegree (f.natDegree - 1) =
+      (-1) ^ (f.natDegree * (f.natDegree - 1) / 2) * f.discr := by
+  rw [Polynomial.resultant_deriv (natDegree_pos_iff_degree_pos.mp hdeg), hf.leadingCoeff, mul_one]
 
 private lemma resultant_X_sub_C_add_mul_derivative (hdeg : 0 < g.natDegree) (x : R) :
     (X - C x).resultant (g + (X - C x) * derivative g) 1 g.natDegree = g.eval x := by
@@ -769,45 +769,35 @@ private lemma resultant_add_mul_derivative [Nontrivial R] (hg : g.Monic)
     resultant_X_sub_C_right _ _ _ le_rfl,
     ← hg.resultant_congr_right (n₂ := g.natDegree - 1) le_rfl (natDegree_derivative_le g)]
 
+-- the resultant of `(X - C x) * g` and its derivative, split along the product
+private lemma resultant_derivative_X_sub_C_mul [Nontrivial R] (hg : g.Monic)
+    (hdeg : 0 < g.natDegree) (x : R) :
+    ((X - C x) * g).resultant (derivative ((X - C x) * g)) (g.natDegree + 1) g.natDegree =
+      (-1) ^ g.natDegree * g.eval x ^ 2 *
+        g.resultant (derivative g) g.natDegree (g.natDegree - 1) := by
+  have hder : derivative ((X - C x) * g) = g + (X - C x) * derivative g := by
+    simp [derivative_mul]
+  have hDle : (g + (X - C x) * derivative g).natDegree ≤ g.natDegree := by
+    have h := natDegree_derivative_le ((X - C x) * g)
+    rw [hder, (monic_X_sub_C x).natDegree_mul hg, natDegree_X_sub_C] at h
+    lia
+  have h := resultant_mul_left (X - C x) g (g + (X - C x) * derivative g) g.natDegree hDle
+  rw [natDegree_X_sub_C, add_comm 1 g.natDegree, resultant_X_sub_C_add_mul_derivative hdeg x,
+    resultant_add_mul_derivative hg hdeg x] at h
+  rw [hder, h]; ring
+
 /-- The discriminant of `(X - C x) * g` for monic `g` of positive degree is
 `g.discr * g.eval x ^ 2`. -/
 theorem discr_X_sub_C_mul (hg : g.Monic) (hdeg : 0 < g.natDegree) (x : R) :
     ((X - C x) * g).discr = g.discr * g.eval x ^ 2 := by
   nontriviality R
-  have hmon : ((X - C x) * g).Monic := (monic_X_sub_C x).mul hg
   have hN : ((X - C x) * g).natDegree = g.natDegree + 1 := by
     rw [(monic_X_sub_C x).natDegree_mul hg, natDegree_X_sub_C, add_comm]
-  have hder : derivative ((X - C x) * g) = g + (X - C x) * derivative g := by
-    rw [derivative_mul, derivative_sub, derivative_X, derivative_C, sub_zero, one_mul]
-  have hDle : (g + (X - C x) * derivative g).natDegree ≤ g.natDegree :=
-    (natDegree_add_le _ _).trans (max_le le_rfl (natDegree_mul_le.trans
-      (by rw [natDegree_X_sub_C]; have := natDegree_derivative_le g; lia)))
-  -- compare the splitting of `Res((X - C x) * g, ((X - C x) * g)')` along the product with
-  -- its expression through the discriminant
-  have hsplit := resultant_mul_left (X - C x) g (g + (X - C x) * derivative g) g.natDegree hDle
-  rw [natDegree_X_sub_C, add_comm 1 g.natDegree] at hsplit
-  have hres := resultant_deriv (f := (X - C x) * g)
-    (by rw [← natDegree_pos_iff_degree_pos, hN]; lia)
-  rw [hN, hder, hmon.leadingCoeff, mul_one, Nat.add_sub_cancel, succ_mul_div_two hdeg,
-    pow_add] at hres
-  have hres2 := resultant_deriv (f := g) (natDegree_pos_iff_degree_pos.mp hdeg)
-  rw [hg.leadingCoeff, mul_one] at hres2
-  have hmain := hres.symm.trans hsplit
-  rw [resultant_X_sub_C_add_mul_derivative hdeg x, resultant_add_mul_derivative hg hdeg x,
-    hres2] at hmain
-  -- now peel off the signs, which cancel
-  have hpow (k : ℕ) : ((-1 : R) ^ k) * ((-1) ^ k) = 1 := by
-    rw [← pow_add, ← two_mul, pow_mul, neg_one_sq, one_pow]
-  set s : R := (-1) ^ (g.natDegree * (g.natDegree - 1) / 2)
-  set t : R := (-1) ^ g.natDegree
-  have hs : s * s = 1 := hpow _
-  have ht : t * t = 1 := hpow _
-  calc ((X - C x) * g).discr
-      = s * t * (s * t * ((X - C x) * g).discr) := by
-        rw [← mul_assoc, mul_mul_mul_comm, hs, ht, one_mul, one_mul]
-    _ = s * t * (g.eval x * (t * g.eval x * (s * g.discr))) := by rw [hmain]
-    _ = s * s * (t * t) * (g.discr * g.eval x ^ 2) := by ring
-    _ = g.discr * g.eval x ^ 2 := by rw [hs, ht, one_mul, one_mul]
+  have h := ((monic_X_sub_C x).mul hg).resultant_deriv (by rw [hN]; lia)
+  rw [hN, Nat.triangle_succ, pow_add, Nat.add_sub_cancel,
+    resultant_derivative_X_sub_C_mul hg hdeg x, hg.resultant_deriv hdeg] at h
+  refine (isUnit_neg_one.pow (g.natDegree * (g.natDegree - 1) / 2 + g.natDegree)).mul_left_cancel ?_
+  linear_combination -h
 
 lemma mem_degreeLT_natDegree_iff {q : R[X]} (hg : g ≠ 0) :
     q ∈ degreeLT R g.natDegree ↔ q.degree < g.degree := by
