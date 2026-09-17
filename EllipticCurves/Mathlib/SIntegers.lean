@@ -75,6 +75,28 @@ lemma IsDedekindDomain.SInteger.mem_denomIdeal_iff {x : K} {r : R} :
 
 end DenomIdeal
 
+section IdealExtension
+
+variable {R : Type*} [CommRing R] {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
+  [IsDedekindDomain R]
+
+/-- If the inverse of a nonzero ideal `I` of a Dedekind domain `R`, as a fractional ideal of the
+fraction field `K`, is contained in an intermediate ring `A` between `R` and `K`, then `I`
+extends to the unit ideal of `A`: the identity `I * I⁻¹ = 1` is witnessed inside `A`. -/
+theorem Ideal.map_eq_top_of_inv_subset {A : Subalgebra R K} {I : Ideal R} (hI : I ≠ ⊥)
+    (h : (((I : FractionalIdeal R⁰ K)⁻¹ : FractionalIdeal R⁰ K) : Set K) ⊆ A) :
+    Ideal.map (algebraMap R A) I = ⊤ := by
+  set M := Ideal.map (algebraMap R A) I
+  have key : (1 : Submodule R K) ≤ (M.restrictScalars R).map A.val.toLinearMap := by
+    rw [← FractionalIdeal.coe_one, ← FractionalIdeal.coe_ideal_mul_inv I hI,
+      FractionalIdeal.coe_mul]
+    refine Submodule.mul_le.mpr fun x hx y hy ↦ ?_
+    obtain ⟨a, ha, rfl⟩ := (FractionalIdeal.mem_coeIdeal R⁰).mp hx
+    exact ⟨algebraMap R A a * ⟨y, h hy⟩, Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ ha), rfl⟩
+  exact (Ideal.eq_top_iff_one M).mpr (by simpa using Submodule.one_le.mp key)
+
+end IdealExtension
+
 namespace IsDedekindDomain.SInteger
 
 variable {R : Type*} [CommRing R] [IsDedekindDomain R] (K : Type*) [Field K] [Algebra R K]
@@ -134,36 +156,8 @@ lemma mem_integer_of_mem_inv {v : HeightOneSpectrum R} (hv : v ∈ S) {y : K}
 
 /-- For `v ∈ S`, the extension of `v` to the ring of `S`-integers is the unit ideal. -/
 lemma map_asIdeal_eq_top {v : HeightOneSpectrum R} (hv : v ∈ S) :
-    Ideal.map (algebraMap R (S.integer K)) v.asIdeal = ⊤ := by
-  set A := S.integer K with hA
-  set M := Ideal.map (algebraMap R A) v.asIdeal with hM
-  -- `1 ∈ v * v⁻¹`, as a submodule of `K`
-  have h1 : (1 : K) ∈
-      (v.asIdeal : FractionalIdeal R⁰ K) * (v.asIdeal : FractionalIdeal R⁰ K)⁻¹ := by
-    rw [FractionalIdeal.coe_ideal_mul_inv _ v.ne_bot]
-    exact (FractionalIdeal.mem_one_iff _).mpr ⟨1, map_one _⟩
-  rw [← FractionalIdeal.mem_coe, FractionalIdeal.coe_mul] at h1
-  -- every element of the product that is an `S`-integer lies in `M`
-  refine Ideal.eq_top_iff_one M |>.mpr ?_
-  suffices H : ∀ x ∈ (v.asIdeal : FractionalIdeal R⁰ K) * (v.asIdeal : FractionalIdeal R⁰ K)⁻¹,
-      ∃ hx : x ∈ A, (⟨x, hx⟩ : A) ∈ M by
-    obtain ⟨hx, hx'⟩ := H 1 (by rwa [← FractionalIdeal.coe_mul, FractionalIdeal.mem_coe] at h1)
-    exact (show (⟨1, hx⟩ : A) = 1 from rfl) ▸ hx'
-  intro x hx
-  rw [← FractionalIdeal.mem_coe, FractionalIdeal.coe_mul] at hx
-  refine Submodule.mul_induction_on hx (fun a ha y hy ↦ ?_) (fun x y hx hy ↦ ?_)
-  · obtain ⟨a, ha', rfl⟩ := (FractionalIdeal.mem_coeIdeal R⁰).mp
-      ((FractionalIdeal.mem_coe (I := (v.asIdeal : FractionalIdeal R⁰ K))).mpr ha)
-    have hyA : y ∈ A := mem_integer_of_mem_inv K S hv
-      ((FractionalIdeal.mem_coe (I := (v.asIdeal : FractionalIdeal R⁰ K)⁻¹)).mpr hy)
-    have haA : algebraMap R K a ∈ A := A.algebraMap_mem a
-    refine ⟨mul_mem haA hyA, ?_⟩
-    have he : (⟨algebraMap R K a * y, mul_mem haA hyA⟩ : A) = algebraMap R A a * ⟨y, hyA⟩ := rfl
-    rw [he]
-    exact Ideal.mul_mem_right _ M (Ideal.mem_map_of_mem _ ha')
-  · obtain ⟨hx, hx'⟩ := hx
-    obtain ⟨hy, hy'⟩ := hy
-    exact ⟨add_mem hx hy, add_mem hx' hy'⟩
+    Ideal.map (algebraMap R (S.integer K)) v.asIdeal = ⊤ :=
+  Ideal.map_eq_top_of_inv_subset v.ne_bot fun _ hy ↦ mem_integer_of_mem_inv K S hv hy
 
 /-!
 ### Ideals of `𝒪_S` are extended from `R`
@@ -214,30 +208,17 @@ lemma map_denomIdeal_eq_top {x : K} (hx : x ∈ S.integer K) :
 theorem map_comap_eq (I : Ideal (S.integer K)) :
     Ideal.map (algebraMap R (S.integer K)) (I.comap (algebraMap R (S.integer K))) = I := by
   refine le_antisymm Ideal.map_comap_le fun x hx ↦ ?_
-  set f := algebraMap R (S.integer K) with hf
-  set J' := Ideal.map f (I.comap f) with hJ'
-  have coeval (r : R) : ((f r : S.integer K) : K) = algebraMap R K r := by
-    rw [IsScalarTower.algebraMap_apply R (S.integer K) K]; rfl
+  set f := algebraMap R (S.integer K)
+  set J := Ideal.map f (I.comap f)
   -- for a denominator `d` of `x`, the product `f d * x` is extended from `R` and lies in `I`
-  have key (d : R) (hd : d ∈ denomIdeal K (x : K)) : f d * x ∈ J' := by
-    rw [mem_denomIdeal_iff] at hd
-    obtain ⟨s, hs⟩ := hd
-    have hfx : f d * x = f s := by
-      apply Subtype.val_injective
-      rw [Subalgebra.coe_mul, coeval d, coeval s, hs]
-    rw [hfx]
-    exact Ideal.mem_map_of_mem f (show f s ∈ I from hfx ▸ I.mul_mem_left _ hx)
-  -- the elements `r` with `r * x ∈ J'` form an ideal containing the extension of `denomIdeal`
-  let K' : Ideal (S.integer K) :=
-    { carrier := {r | r * x ∈ J'}
-      zero_mem' := by simp
-      add_mem' := fun {a b} ha hb ↦ by simpa [add_mul] using J'.add_mem ha hb
-      smul_mem' := fun c {a} ha ↦ by
-        simpa only [smul_eq_mul, Set.mem_ofPred_eq, mul_assoc] using J'.mul_mem_left c ha }
-  have hsub : Ideal.map f (denomIdeal K (x : K)) ≤ K' := Ideal.map_le_iff_le_comap.mpr key
-  have hmtop : Ideal.map f (denomIdeal K (x : K)) = ⊤ := map_denomIdeal_eq_top K S x.property
-  have h1 : (1 : S.integer K) * x ∈ J' := hsub (hmtop.ge Submodule.mem_top)
-  simpa using h1
+  have key (d : R) (hd : d ∈ denomIdeal K (x : K)) : f d * x ∈ J := by
+    obtain ⟨s, hs⟩ := (mem_denomIdeal_iff K).mp hd
+    have hfx : f d * x = f s := Subtype.ext (by simpa [f] using hs)
+    exact hfx ▸ Ideal.mem_map_of_mem f (show f s ∈ I from hfx ▸ I.mul_mem_left _ hx)
+  -- hence the colon ideal `(J : x)` contains the extension of the denominator ideal, which is `⊤`
+  have hsub : Ideal.map f (denomIdeal K (x : K)) ≤ J.colon {x} :=
+    Ideal.map_le_iff_le_comap.mpr fun d hd ↦ Submodule.mem_colon_singleton.mpr (key d hd)
+  simpa using hsub ((Ideal.eq_top_iff_one _).mp (map_denomIdeal_eq_top K S x.property))
 
 /-!
 ### The Dedekind property
@@ -288,33 +269,16 @@ The primes of `𝒪_S` are the primes `v ∉ S`, via `v ↦ 𝒪_S ∩ v`. Under
 group of `𝒪_S` relative to `∅` is the Selmer group of `R` relative to `S`.
 -/
 
-/-- For `v ∉ S`, the extension of `v` to `𝒪_S` is a proper ideal: it is contained in the proper
-ideal of `S`-integers with `v`-valuation `< 1` (which does not contain `1`). -/
+/-- For `v ∉ S`, the extension of `v` to `𝒪_S` is a proper ideal: it is contained in the
+contraction of the maximal ideal of the valuation subring of `v` along the inclusion
+`IsDedekindDomain.SInteger.toSubring_le_valuationSubring`. -/
 lemma map_asIdeal_ne_top {v : HeightOneSpectrum R} (hv : v ∉ S) :
     Ideal.map (algebraMap R (S.integer K)) v.asIdeal ≠ ⊤ := by
-  set f := algebraMap R (S.integer K) with hf
-  have coeval (r : R) : ((f r : S.integer K) : K) = algebraMap R K r := by
-    rw [IsScalarTower.algebraMap_apply R (S.integer K) K]; rfl
-  let 𝔪 : Ideal (S.integer K) :=
-    { carrier := {x | v.valuation K (x : K) < 1}
-      zero_mem' := by simp
-      add_mem' := fun {a b} ha hb ↦ by
-        rw [Set.mem_ofPred_eq, Subalgebra.coe_add]
-        exact lt_of_le_of_lt ((v.valuation K).map_add _ _) (max_lt ha hb)
-      smul_mem' := fun c {a} ha ↦ by
-        have hc : v.valuation K (c : K) ≤ 1 := c.property v hv
-        rw [Set.mem_ofPred_eq, smul_eq_mul, Subalgebra.coe_mul, map_mul]
-        calc v.valuation K (c : K) * v.valuation K (a : K)
-            ≤ 1 * v.valuation K (a : K) := by gcongr
-          _ = v.valuation K (a : K) := one_mul _
-          _ < 1 := ha }
-  have hle : Ideal.map f v.asIdeal ≤ 𝔪 :=
-    Ideal.map_le_iff_le_comap.mpr fun a ha ↦ by
-      show v.valuation K ((f a : S.integer K) : K) < 1
-      rw [coeval]; exact (v.valuation_lt_one_iff_mem a).mpr ha
-  intro htop
-  have h1 : v.valuation K ((1 : S.integer K) : K) < 1 := le_trans htop.ge hle Submodule.mem_top
-  simp at h1
+  set i : S.integer K →+* (v.valuation K).valuationSubring :=
+    Subring.inclusion (toSubring_le_valuationSubring K S hv)
+  refine ne_top_of_le_ne_top (Ideal.comap_ne_top i (IsLocalRing.maximalIdeal.isMaximal _).ne_top)
+    (Ideal.map_le_iff_le_comap.mpr fun a ha ↦ ?_)
+  exact (v.valuation K).mem_maximalIdeal_iff.mpr ((v.valuation_lt_one_iff_mem a).mpr ha)
 
 lemma comap_map_asIdeal {v : HeightOneSpectrum R} (hv : v ∉ S) :
     (Ideal.map (algebraMap R (S.integer K)) v.asIdeal).comap (algebraMap R (S.integer K)) =
