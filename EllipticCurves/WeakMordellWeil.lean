@@ -112,9 +112,6 @@ lemma monic_f : W.f.Monic := by
 
 lemma f_ne_zero : W.f ≠ 0 := W.monic_f.ne_zero
 
-lemma degree_lt_degree_f {p : K[X]} (hp : p.natDegree ≤ 2) : p.degree < W.f.degree :=
-  degree_lt_degree <| by rw [natDegree_f]; lia
-
 lemma degree_f : W.f.degree = 3 := by
   rw [degree_eq_natDegree W.f_ne_zero, natDegree_f]; rfl
 
@@ -205,10 +202,6 @@ lemma monic_fCofactor (x : K) : (W.fCofactor x).Monic := by
   simp only [fCofactor]
   monicity!
 
-lemma degree_lt_degree_fCofactor (x : K) {p : K[X]} (hp : p.natDegree ≤ 1) :
-    p.degree < (W.fCofactor x).degree :=
-  degree_lt_degree <| by rw [natDegree_fCofactor]; lia
-
 lemma eval_fCofactor_self (x : K) :
     (W.fCofactor x).eval x = 3 * x ^ 2 + 2 * W.a₂ * x + W.a₄ := by
   simp [fCofactor]
@@ -263,6 +256,20 @@ private lemma f_dvd_of_fCofactor_dvd {x r s : K} (hx : W.f.eval x = 0) (hr : r �
       ← map_mul, mul_div_cancel₀ _ hr]
   simp only [C_eq_algebraMap]
   algebra
+
+/- A square of a class of degree `< g.natDegree / 2` is not the class of `C x - X` modulo a
+monic `g` of degree `≥ 2`: both sides have degree `< g.natDegree`, so they would be equal as
+polynomials, but a square has even degree (used in Step 4). -/
+private lemma mk_sq_ne_mk_C_sub_X {g : K[X]} (hg : g.Monic) (hg2 : 2 ≤ g.natDegree) {q : K[X]}
+    (hq : 2 * q.natDegree < g.natDegree) (x : K) :
+    AdjoinRoot.mk g q ^ 2 ≠ AdjoinRoot.mk g (C x - X) := by
+  have hx : (C x - X).natDegree = 1 := by compute_degree!
+  rw [← map_pow, Ne, AdjoinRoot.mk_eq_mk_iff_of_degree_lt hg
+    (degree_lt_degree (natDegree_pow_le.trans_lt hq)) (degree_lt_degree (by lia))]
+  intro h
+  have := congrArg natDegree h
+  rw [natDegree_pow, hx] at this
+  lia
 
 lemma fCofactor_eq_of_f_eq {xP xQ xR : K} (hf : W.f = (X - C xP) * (X - C xQ) * (X - C xR)) :
     W.fCofactor xP = (X - C xQ) * (X - C xR) ∧ W.fCofactor xQ = (X - C xP) * (X - C xR) ∧
@@ -788,18 +795,12 @@ private lemma eq_two_smul_of_μ_eq_one_of_ne (hμ : (μ <| .ofAdd <| .some x y h
   rw [exists_eq_two_smul_iff']
   rw [μ_apply, μ₀_some, μX_of_eval_f_ne_zero hx, Units.modPow.unit_eq_one_iff] at hμ
   obtain ⟨z, hz⟩ := hμ
-  obtain ⟨r, s, t, hrst⟩ := W.exists_mk_eq z
-  rw [hrst] at hz
+  obtain ⟨r, s, t, rfl⟩ := W.exists_mk_eq z
   have hr : r ≠ 0 := by
-    intro rfl
-    simp only [map_zero, zero_mul, zero_add, ← map_pow] at hz
-    rw [AdjoinRoot.mk_eq_mk_iff_of_degree_lt W.monic_f
-      (W.degree_lt_degree_f (by compute_degree!))
-      (W.degree_lt_degree_f (by compute_degree!))] at hz
-    apply_fun natDegree at hz
-    have hd : (C x - X).natDegree = 1 := by compute_degree!
-    rw [natDegree_pow, hd] at hz
-    lia
+    rintro rfl
+    simp only [map_zero, zero_mul, zero_add] at hz
+    exact mk_sq_ne_mk_C_sub_X W.monic_f (by rw [natDegree_f]; norm_num)
+      (by have := natDegree_linear_le (a := s) (b := t); rw [natDegree_f]; lia) x hz
   obtain ⟨ξ, l, m, H⟩ := W.exists_X_sub_C_mul_eq r s t hr
   rw [← map_mul] at H
   refine ⟨ξ, l, m, ?_⟩
@@ -814,24 +815,19 @@ private lemma eq_two_smul_of_μ_eq_one_of_eq (hμ : (μ <| .ofAdd <| .some x y h
   rw [exists_eq_two_smul_iff']
   rw [μ_apply, μ₀_some, μX_of_eval_f_eq_zero hx, Units.modPow.unit_eq_one_iff] at hμ
   obtain ⟨z, hz⟩ := hμ
-  obtain ⟨p, hp⟩ := AdjoinRoot.mk_surjective z
+  obtain ⟨p, rfl⟩ := AdjoinRoot.mk_surjective z
   obtain ⟨r, s, hrs⟩ := W.exists_mk_eq' (AdjoinRoot.mk (W.fCofactor x) p)
-  rw [← hp, ← map_pow, AdjoinRoot.mk_eq_mk] at hz
+  rw [← map_pow, AdjoinRoot.mk_eq_mk] at hz
   have hdvd : W.fCofactor x ∣ W.f := ⟨X - C x, W.f_eq_mul_of_eval_eq_zero hx⟩
   have hz' : AdjoinRoot.mk (W.fCofactor x) (p ^ 2) =
       AdjoinRoot.mk (W.fCofactor x) (C x - X + W.fCofactor x) :=
     AdjoinRoot.mk_eq_mk.mpr <| hdvd.trans hz
   rw [map_pow, hrs, map_add _ _ (fCofactor ..), AdjoinRoot.mk_self, add_zero] at hz'
   have hr₀ : r ≠ 0 := by
-    intro rfl
-    rw [map_zero, zero_mul, zero_add, ← map_pow,
-      AdjoinRoot.mk_eq_mk_iff_of_degree_lt (W.monic_fCofactor x)
-        (W.degree_lt_degree_fCofactor x (by compute_degree!))
-        (W.degree_lt_degree_fCofactor x (by compute_degree!))] at hz'
-    apply_fun natDegree at hz'
-    have hd : (C x - X).natDegree = 1 := by compute_degree!
-    rw [natDegree_pow, hd] at hz'
-    lia
+    rintro rfl
+    simp only [map_zero, zero_mul, zero_add] at hz'
+    exact mk_sq_ne_mk_C_sub_X (W.monic_fCofactor x) (W.natDegree_fCofactor x).ge
+      (by rw [natDegree_fCofactor, natDegree_C]; norm_num) x hz'
   rw [← map_pow, AdjoinRoot.mk_eq_mk] at hz'
   exact ⟨-s / r, 1 / r, -x / r, AdjoinRoot.mk_eq_mk.mpr (W.f_dvd_of_fCofactor_dvd hx hr₀ hz')⟩
 
