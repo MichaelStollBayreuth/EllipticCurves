@@ -54,10 +54,6 @@ theorem map_injective_of_injective (hf : Function.Injective f) :
     Function.Injective (MvPowerSeries.map (σ := ι) f) := fun φ ψ h ↦ by
   ext d; exact hf (by rw [← coeff_map, ← coeff_map, h])
 
-theorem map_smul_natCast (n : ℕ) (h : MvPowerSeries ι O) :
-    MvPowerSeries.map f ((n : O) • h) = (n : K) • MvPowerSeries.map f h := by
-  rw [Nat.cast_smul_eq_nsmul, map_nsmul, ← Nat.cast_smul_eq_nsmul K]
-
 theorem rescale_const_eq_subst (c : K) (L : MvPowerSeries ι K) :
     rescale (fun _ ↦ c) L = subst (fun j ↦ c • X j) L := by
   rw [rescale_eq_subst]; rfl
@@ -95,13 +91,14 @@ theorem subst_descent (hf : Function.Injective f)
         rw [subst_comp_subst_apply hpX hmHh]
         congr 1; funext j; rw [subst_smul hmHh, subst_X hmHh]
     _ = subst (fun j ↦ MvPowerSeries.map f (HL j)) E := by
-        congr 1; funext j; rw [← map_smul_natCast, hHh]
+        congr 1; funext j; rw [← map_natCast_smul (MvPowerSeries.map f) O K, hHh]
     _ = subst (fun j ↦ subst (fun j ↦ (p : K) • X j) (Lg j)) E := by
         congr 1; funext j; rw [hHL, rescale_const_eq_subst]
     _ = subst (fun j ↦ (p : K) • X j) (subst Lg E) := (subst_comp_subst_apply hLg hpX E).symm
     _ = subst (fun j ↦ (p : K) • X j) (X i) := by rw [hcomp]
     _ = (p : K) • X i := by rw [subst_X hpX]
-    _ = MvPowerSeries.map f ((p : O) • X i) := by rw [map_smul_natCast, MvPowerSeries.map_X]
+    _ = MvPowerSeries.map f ((p : O) • X i) := by
+        rw [map_natCast_smul (MvPowerSeries.map f) O K, MvPowerSeries.map_X]
 
 set_option linter.unusedSectionVars false in
 set_option linter.unusedFintypeInType false in

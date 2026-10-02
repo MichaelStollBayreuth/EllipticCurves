@@ -22,8 +22,7 @@ that have nothing to do with elliptic curves and look like candidates for Mathli
   `Valuation.eq_one_of_mul_eq_one`: a factor of a unit is a unit, provided both factors are
   integral.
 * `IsDedekindDomain.HeightOneSpectrum.finite_setOf_valuation_ne_one`,
-  `IsDedekindDomain.HeightOneSpectrum.below` (the prime lying below a prime of an integral
-  extension), `IsDedekindDomain.HeightOneSpectrum.primesAbove` and its finiteness
+  `IsDedekindDomain.HeightOneSpectrum.primesAbove` and its finiteness
   `IsDedekindDomain.HeightOneSpectrum.primesAbove_finite`, `IsDedekindDomain.selmerGroupAbove`,
   `IsDedekindDomain.HeightOneSpectrum.valuationOfNeZero_eq_iff`,
   `IsDedekindDomain.HeightOneSpectrum.dvd_toAdd_valuationOfNeZero`,
@@ -572,29 +571,16 @@ lemma IsDedekindDomain.HeightOneSpectrum.primesAbove_empty :
   ext w
   simp [primesAbove]
 
-/-- The prime of `R` lying below a prime `w` of an integral extension `B`. -/
-def IsDedekindDomain.HeightOneSpectrum.below [Algebra.IsIntegral R B] (w : HeightOneSpectrum B) :
-    HeightOneSpectrum R where
-  asIdeal := w.asIdeal.under R
-  isPrime := Ideal.IsPrime.under R w.asIdeal
-  ne_bot := Ideal.IsIntegral.under_ne_bot R w.ne_bot
-
-@[simp]
-lemma IsDedekindDomain.HeightOneSpectrum.below_asIdeal [Algebra.IsIntegral R B]
+instance IsDedekindDomain.HeightOneSpectrum.instLiesOverUnder [Algebra.IsIntegral R B]
     (w : HeightOneSpectrum B) :
-    (w.below R).asIdeal = w.asIdeal.under R :=
-  rfl
-
-instance IsDedekindDomain.HeightOneSpectrum.instLiesOverBelow [Algebra.IsIntegral R B]
-    (w : HeightOneSpectrum B) :
-    w.asIdeal.LiesOver (w.below R).asIdeal :=
+    w.asIdeal.LiesOver (w.under R).asIdeal :=
   Ideal.over_under ..
 
 lemma IsDedekindDomain.HeightOneSpectrum.mem_primesAbove_iff [Algebra.IsIntegral R B]
     (S : Set (HeightOneSpectrum R)) (w : HeightOneSpectrum B) :
-    w ∈ primesAbove R B S ↔ w.below R ∈ S := by
-  refine ⟨fun ⟨v, hv, hva⟩ ↦ ?_, fun hw ↦ ⟨w.below R, hw, rfl⟩⟩
-  rwa [show w.below R = v from HeightOneSpectrum.ext hva.symm]
+    w ∈ primesAbove R B S ↔ w.under R ∈ S := by
+  refine ⟨fun ⟨v, hv, hva⟩ ↦ ?_, fun hw ↦ ⟨w.under R, hw, rfl⟩⟩
+  rwa [show w.under R = v from HeightOneSpectrum.ext hva.symm]
 
 /-- Only finitely many primes of `B` lie above a finite set of primes of `R`: each fiber
 injects into `Ideal.primesOver`, which is finite for a Dedekind extension. -/
@@ -739,9 +725,7 @@ lemma resultant_C_sub_X (f : R[X]) (x : R) (m : ℕ) (hm : f.natDegree ≤ m) :
 
 lemma Monic.resultant_one_right (hg : g.Monic) (n : ℕ) :
     g.resultant 1 g.natDegree n = 1 := by
-  convert resultant_add_right_deg g 1 g.natDegree 0 n (by simp)
-  · simp
-  rw [← C_1, resultant_C_zero_right, one_pow, mul_one, hg.coeff_natDegree, one_pow]
+  rw [Polynomial.resultant_one_right, hg.coeff_natDegree, one_pow]
 
 /-- For monic `g`, the resultant does not depend on the size parameter used for the second
 argument, as long as it is at least its degree. -/
@@ -1503,14 +1487,11 @@ theorem NumberField.finite_classGroup_integralClosure :
 /-- **Dirichlet's unit theorem** (finite generation) for the integral closure of `𝓞 K` in a
 finite extension `L` of the number field `K`: its unit group is finitely generated. -/
 theorem NumberField.fg_units_integralClosure :
-    Group.FG (integralClosure (𝓞 K) L)ˣ := by
+    IsMulFG (integralClosure (𝓞 K) L)ˣ := by
   have : NumberField L := .of_module_finite K L
   have e : integralClosure (𝓞 K) L ≃ₐ[𝓞 K] (𝓞 L) :=
     IsIntegralClosure.equiv (𝓞 K) (integralClosure (𝓞 K) L) L (𝓞 L)
-  have : Group.FG (𝓞 L)ˣ := Group.fg_iff_monoid_fg.mpr inferInstance
-  exact Group.fg_of_surjective
-    (f := (Units.mapEquiv e.symm.toRingEquiv.toMulEquiv).toMonoidHom)
-    (Units.mapEquiv e.symm.toRingEquiv.toMulEquiv).surjective
+  exact .of_surjective _ (Units.mapEquiv e.symm.toRingEquiv.toMulEquiv).surjective
 
 /-- If the ring of integers of `L` is a principal ideal domain, then the integral closure of
 `𝓞 K` in `L` (being isomorphic to `𝓞 L`) has trivial class group. -/

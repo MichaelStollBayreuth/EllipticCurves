@@ -1169,23 +1169,23 @@ instance instIsTorsionFreeRingOfIntegersFactor (p : W.f.Factors) :
 below `w`, raised to the ramification index. -/
 lemma valuation_algebraMap_eq [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
     (w : HeightOneSpectrum (W.ringOfIntegersFactor R p)) (z : K) :
-    (w.below R).valuation K z ^ w.asIdeal.ramificationIdx R =
+    (w.under R).valuation K z ^ w.asIdeal.ramificationIdx R =
       w.valuation (𝕃 p) (ι p z) :=
   HeightOneSpectrum.valuation_liesOver _ _ _ z
 
 /-- If `z` is integral at the prime below `w`, then it is integral at `w`. -/
 lemma valuation_algebraMap_le_one [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
     (w : HeightOneSpectrum (W.ringOfIntegersFactor R p)) {z : K}
-    (hz : (w.below R).valuation K z ≤ 1) :
+    (hz : (w.under R).valuation K z ≤ 1) :
     w.valuation (𝕃 p) (ι p z) ≤ 1 := by
   rw [← W.valuation_algebraMap_eq R p w z]
   simpa using pow_le_pow_left' hz _
 
 /-- A prime `w` of the ring of integers of a field factor that does not lie above `S` lies
 over a prime of `R` outside `S`. -/
-lemma below_notMem_of_notMem_primesAbove [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
+lemma under_notMem_of_notMem_primesAbove [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
     {S : Set (HeightOneSpectrum R)} {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
-    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) S) : w.below R ∉ S :=
+    (hw : w ∉ HeightOneSpectrum.primesAbove R (W.ringOfIntegersFactor R p) S) : w.under R ∉ S :=
   fun hv ↦ hw ((HeightOneSpectrum.mem_primesAbove_iff R _ _ w).mpr hv)
 
 /-- `θ` satisfies the Weierstrass cubic in the field factor `K[X]/(p)`. -/
@@ -1220,7 +1220,7 @@ lemma mk_fCofactor_eq (p : W.f.Factors) (x : K) :
 
 variable [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
   {w : HeightOneSpectrum (W.ringOfIntegersFactor R p)}
-  (hW : W.IsIntegralAt ((w.below R).valuation K)) (hd : (w.below R).valuation K W.f.discr = 1)
+  (hW : W.IsIntegralAt ((w.under R).valuation K)) (hd : (w.under R).valuation K W.f.discr = 1)
   -- (this is `w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1`;
   -- `variable` commands cannot use the local notation)
   (hderiv : w.valuation (AdjoinRoot (p : K[X]))
@@ -1240,7 +1240,7 @@ lemma valuation_root_le_one : w.valuation (𝕃 p) (θ p) ≤ 1 :=
 
 /-- An element of `K` with trivial valuation at the prime below `w` has trivial valuation
 at `w`. -/
-lemma valuation_algebraMap_eq_one {z : K} (hz : (w.below R).valuation K z = 1) :
+lemma valuation_algebraMap_eq_one {z : K} (hz : (w.under R).valuation K z = 1) :
     w.valuation (𝕃 p) (ι p z) = 1 := by
   rw [← W.valuation_algebraMap_eq R p w z, hz, one_pow]
 
@@ -1292,7 +1292,7 @@ At a good prime, `hdx` is supplied by `WeierstrassCurve.Affine.valuation_deriv_e
 odd prime with `v(disc f) = exp (-1)` the same lemma applies, so the `2`-torsion representative is
 unramified there as well. -/
 lemma valuation_projFactor_torsion_eq_one {x : K} (hx : W.f.eval x = 0)
-    (hdx : (w.below R).valuation K (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1) :
+    (hdx : (w.under R).valuation K (3 * x ^ 2 + 2 * W.a₂ * x + W.a₄) = 1) :
     w.valuation (𝕃 p) (ι p x - θ p + AdjoinRoot.mk (p : K[X]) (W.fCofactor x)) = 1 := by
   rw [W.mk_fCofactor_eq p x]
   refine Valuation.map_sub_add_cofactor_eq_one _ (W.valuation_algebraMap_le_one R p w hW.a₂)
@@ -1313,7 +1313,7 @@ variable [W.IsElliptic] [W.IsCharNeTwoNF]
   (hu : (u : AdjoinRoot (p : K[X])) =
     algebraMap K (AdjoinRoot (p : K[X])) x - AdjoinRoot.root (p : K[X]))
   (w : HeightOneSpectrum (W.ringOfIntegersFactor R p))
-  (hW : W.IsIntegralAt ((w.below R).valuation K))
+  (hW : W.IsIntegralAt ((w.under R).valuation K))
   -- (this is `w.valuation (𝕃 p) (3 * θ p ^ 2 + 2 * ι p W.a₂ * θ p + ι p W.a₄) = 1`;
   -- `variable` commands cannot use the local notation)
   (hderiv : w.valuation (AdjoinRoot (p : K[X]))
@@ -1497,7 +1497,7 @@ lemma mem_selmerGroupFactor_of_eval_f_ne_zero {x y : K} (h : W.Equation x y)
         Units.modPow (𝕃 p) 2) ∈ W.selmerGroupFactor R S p := by
   rw [W.mem_selmerGroupFactor_unit_iff R S p]
   intro w hw
-  have hv := W.below_notMem_of_notMem_primesAbove R p hw
+  have hv := W.under_notMem_of_notMem_primesAbove R p hw
   refine W.even_valuationOfNeZero_sub_root R p h hx _ ?_ w (hS _ hv)
     (W.valuation_deriv_root_eq_one R p (hS _ hv) (hSd _ hv))
   exact W.projFactor_mk_C_sub_X x p
@@ -1515,10 +1515,10 @@ lemma mem_selmerGroupFactor_of_eval_f_eq_zero {x : K} (hx : W.f.eval x = 0)
         Units.modPow (𝕃 p) 2) ∈ W.selmerGroupFactor R S p := by
   rw [W.mem_selmerGroupFactor_unit_iff R S p]
   intro w hw
-  have hv := W.below_notMem_of_notMem_primesAbove R p hw
+  have hv := W.under_notMem_of_notMem_primesAbove R p hw
   set u := ((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
     (AdjoinRoot.projFactor W.f_ne_zero W.squarefree_f p)).unit with hudef
-  have hd1 : WithZero.exp (-1 : ℤ) ≤ (w.below R).valuation K W.f.discr := by
+  have hd1 : WithZero.exp (-1 : ℤ) ≤ (w.under R).valuation K W.f.discr := by
     rw [hSd _ hv]
     exact (WithZero.exp_le_exp.mpr (by lia)).trans_eq WithZero.exp_zero
   have hval : w.valuation (𝕃 p) (u : 𝕃 p) = 1 := by
@@ -1572,7 +1572,7 @@ and Dirichlet's unit theorem). The relevant set of primes, those above `S`, is f
 section Step7
 
 variable [(p : W.f.Factors) → Finite (ClassGroup (W.ringOfIntegersFactor R p))]
-  [(p : W.f.Factors) → Group.FG (W.ringOfIntegersFactor R p)ˣ]
+  [(p : W.f.Factors) → IsMulFG (W.ringOfIntegersFactor R p)ˣ]
 
 /-- The `2`-Selmer group of each field factor of `W.A` is finite, for a finite set `S`. -/
 theorem finite_selmerGroupFactor (hS : S.Finite) (p : W.f.Factors) :

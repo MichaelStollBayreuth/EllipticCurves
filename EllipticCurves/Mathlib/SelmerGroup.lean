@@ -41,13 +41,13 @@ of the free abelian group `ℤ^S` by `Rˣ`. So the weakest reasonable hypotheses
 below, are
 
 * `[Finite (ClassGroup R)]`,
-* `[Group.FG Rˣ]`,
+* `[IsMulFG Rˣ]`,
 * `S.Finite`, and
 * `[NeZero n]`.
 
 For `R` the ring of integers of a number field, the first is the class number theorem
 (`Fintype (ClassGroup (𝓞 K))`) and the second is Dirichlet's unit theorem
-(`Monoid.FG (𝓞 K)ˣ`), both in Mathlib; see the section `NumberField` at the end. Nothing here
+(`IsMulFG (𝓞 K)ˣ`), both in Mathlib; see the section `NumberField` at the end. Nothing here
 needs `R` to be of *arithmetic* type beyond these two properties, and in particular the results
 apply verbatim to the ring of integers of a function field.
 
@@ -100,23 +100,17 @@ open scoped nonZeroDivisors
 ### Quotients of finitely generated commutative groups
 -/
 
-/-- A commutative group is finitely generated iff it is finitely generated as a `ℤ`-module. -/
-theorem Module.finite_int_additive (G : Type*) [CommGroup G] [Group.FG G] :
-    Module.Finite ℤ (Additive G) :=
-  Module.Finite.iff_addGroup_fg.mpr (AddGroup.fg_iff_mul_fg.mpr ‹_›)
-
 /-- A commutative group that is finitely generated as a `ℤ`-module is finitely generated as a
-group; converse direction of `Module.finite_int_additive`. -/
+group; the other direction is the instance `AddMonoid.FG.to_moduleFinite_int`. -/
 theorem Group.fg_of_module_finite_int {G : Type*} [CommGroup G]
-    (h : Module.Finite ℤ (Additive G)) : Group.FG G :=
-  AddGroup.fg_iff_mul_fg.mp (Module.Finite.iff_addGroup_fg.mp h)
+    (h : Module.Finite ℤ (Additive G)) : IsMulFG G :=
+  isAddFG_additive_iff.mp (Module.Finite.iff_addGroup_fg.mp h)
 
 /-- A subgroup of a finitely generated commutative group is finitely generated, as `ℤ` is a
 Noetherian ring. (The proof passes through `Additive G`, so `to_additive` cannot translate it;
 an additive version would have to be stated by hand.) -/
-theorem Subgroup.fg_of_commGroup_fg {G : Type*} [CommGroup G] [Group.FG G] (H : Subgroup G) :
-    Group.FG H :=
-  have : Module.Finite ℤ (Additive G) := Module.finite_int_additive G
+theorem Subgroup.fg_of_commGroup_fg {G : Type*} [CommGroup G] [IsMulFG G] (H : Subgroup G) :
+    IsMulFG H :=
   Group.fg_of_module_finite_int <| Module.Finite.iff_fg.mpr <|
     IsNoetherian.noetherian (R := ℤ) (AddSubgroup.toIntSubmodule H.toAddSubgroup)
 
@@ -125,7 +119,7 @@ of `φ : G →* H` are finitely generated, then so is `G`. Generators: preimages
 the range together with generators of the kernel. -/
 @[to_additive]
 theorem Group.fg_of_fg_ker_of_fg_range {G H : Type*} [Group G] [Group H] (φ : G →* H)
-    (hker : Group.FG φ.ker) (hrange : Group.FG φ.range) : Group.FG G := by
+    (hker : IsMulFG φ.ker) (hrange : IsMulFG φ.range) : IsMulFG G := by
   obtain ⟨S, hS, hSfin⟩ := (Subgroup.fg_iff _).mp ((Group.fg_iff_subgroup_fg _).mp hker)
   obtain ⟨T, hT, hTfin⟩ := (Subgroup.fg_iff _).mp ((Group.fg_iff_subgroup_fg _).mp hrange)
   -- finitely many preimages of the generators of the range
@@ -137,45 +131,6 @@ theorem Group.fg_of_fg_ker_of_fg_range {G H : Type*} [Group G] [Group H] (φ : G
     (le_antisymm (Subgroup.map_mono le_top) ?_)
   rw [← MonoidHom.range_eq_map, ← hT, MonoidHom.map_closure, Set.image_union]
   exact Subgroup.closure_mono (hTV.trans Set.subset_union_left)
-
-/-- A finitely generated commutative group of finite exponent is finite. -/
-theorem CommGroup.finite_of_fg_of_pow_eq_one {G : Type*} [CommGroup G] [Group.FG G] (n : ℕ)
-    [NeZero n] (hn : ∀ x : G, x ^ n = 1) : Finite G := by
-  let _ : Module (ZMod n) (Additive G) := AddCommGroup.zmodModule (n := n) hn
-  have h₁ : Module.Finite ℤ (Additive G) :=
-    Module.Finite.iff_addGroup_fg.mpr (by rwa [AddGroup.fg_iff_mul_fg])
-  have h₂ : Module.Finite (ZMod n) (Additive G) :=
-    Module.Finite.of_restrictScalars_finite ℤ (ZMod n) (Additive G)
-  have := Module.finite_of_finite (ZMod n) (M := Additive G)
-  exact Finite.of_equiv _ (Additive.toMul (α := G))
-
-/-- The group of `n`-th power classes of a finitely generated commutative group is finite. -/
-theorem CommGroup.finite_modPow {G : Type*} [CommGroup G] [Group.FG G] (n : ℕ) [NeZero n] :
-    Finite (G ⧸ (powMonoidHom n : G →* G).range) := by
-  have : Group.FG (G ⧸ (powMonoidHom n : G →* G).range) :=
-    Group.fg_of_surjective (QuotientGroup.mk'_surjective _)
-  refine finite_of_fg_of_pow_eq_one n fun x ↦ ?_
-  induction x using QuotientGroup.induction_on with
-  | H g => exact (QuotientGroup.eq_one_iff _).mpr ⟨g, rfl⟩
-
-/-- First-isomorphism counting: the order of a group is the order of the kernel times the
-order of the range of any homomorphism out of it (with the usual `Nat.card` conventions when
-some of the groups involved are infinite). -/
-@[to_additive /-- First-isomorphism counting: the order of a group is the order of the kernel
-times the order of the range of any homomorphism out of it (with the usual `Nat.card`
-conventions when some of the groups involved are infinite). -/]
-theorem MonoidHom.card_ker_mul_card_range {G H : Type*} [Group G] [Group H] (φ : G →* H) :
-    Nat.card φ.ker * Nat.card φ.range = Nat.card G := by
-  rw [Nat.card_congr (QuotientGroup.quotientKerEquivRange φ).toEquiv.symm, mul_comm]
-  exact (Subgroup.card_eq_card_quotient_mul_card_subgroup φ.ker).symm
-
-/-- On a finite group, the index of the range of an endomorphism equals the order of its
-kernel. -/
-@[to_additive]
-theorem MonoidHom.index_range_eq_card_ker {G : Type*} [Group G] [Finite G] (φ : G →* G) :
-    φ.range.index = Nat.card φ.ker := by
-  have h1 : φ.range.index * Nat.card φ.range = Nat.card G := φ.range.index_mul_card
-  exact Nat.eq_of_mul_eq_mul_right Nat.card_pos (h1.trans φ.card_ker_mul_card_range.symm)
 
 /-- If a finite subgroup `X` contains an element on which `φ` does not vanish, then
 `X ∩ ker φ` is at most half of `X`. -/
@@ -194,7 +149,7 @@ theorem Subgroup.two_mul_card_inf_ker_le {G H : Type*} [Group G] [Group H] {X : 
     exact Finite.one_lt_card
   calc 2 * Nat.card (X ⊓ φ.ker : Subgroup G) = 2 * Nat.card ψ.ker := by rw [hker]
     _ ≤ Nat.card ψ.range * Nat.card ψ.ker := Nat.mul_le_mul_right _ hrange
-    _ = Nat.card X := by rw [mul_comm]; exact ψ.card_ker_mul_card_range
+    _ = Nat.card X := by rw [mul_comm]; exact Subgroup.card_ker_mul_card_range ψ
 
 /-- On a torsion-free additive group, multiplication by `n ≠ 0` has trivial kernel. -/
 lemma AddMonoidHom.ker_nsmulAddMonoidHom {G : Type*} [AddCommGroup G] [IsAddTorsionFree G]
@@ -360,7 +315,7 @@ open Module in
 /-- **The index of `n • G` in a finitely generated commutative group** `G` is
 `n ^ rank G * #G[n]`, where `G[n]` is the `n`-torsion subgroup. This extends
 `AddSubgroup.index_range_nsmul` (the free case) to arbitrary finitely generated groups. -/
-theorem AddSubgroup.index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGroup.FG G]
+theorem AddSubgroup.index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [IsAddFG G]
     {n : ℕ} (hn : n ≠ 0) :
     (nsmulAddMonoidHom (α := G) n).range.index =
       n ^ finrank ℤ G * Nat.card (nsmulAddMonoidHom (α := G) n).ker := by
@@ -399,7 +354,7 @@ theorem AddSubgroup.index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGro
     (AddMonoidHom.ker_eq_bot_iff _).mpr
       (AddSubgroup.nsmulAddMonoidHom_injective_of_isTorsionFree hn)
   rw [hidx, hker, hrk, nsmulAddMonoidHom_range_prod, AddSubgroup.index_prod,
-    AddSubgroup.index_range_nsmul, AddMonoidHom.index_range_eq_card_ker,
+    AddSubgroup.index_range_nsmul, AddSubgroup.index_range,
     nsmulAddMonoidHom_ker_prod, Nat.card_congr (AddSubgroup.prodEquiv _ _).toEquiv,
     Nat.card_prod, hkerF]
   simp
@@ -407,10 +362,9 @@ theorem AddSubgroup.index_range_nsmul_of_fg (G : Type*) [AddCommGroup G] [AddGro
 open Module in
 /-- The order of the group of `n`-th power classes of a finitely generated commutative group
 `G` is `n ^ rank G * #G[n]`; multiplicative version of `AddSubgroup.index_range_nsmul_of_fg`. -/
-theorem CommGroup.card_modPow (G : Type*) [CommGroup G] [Group.FG G] {n : ℕ} (hn : n ≠ 0) :
+theorem CommGroup.card_modPow (G : Type*) [CommGroup G] [IsMulFG G] {n : ℕ} (hn : n ≠ 0) :
     Nat.card (G ⧸ (powMonoidHom n : G →* G).range) =
       n ^ finrank ℤ (Additive G) * Nat.card (powMonoidHom n : G →* G).ker := by
-  have : AddGroup.FG (Additive G) := AddGroup.fg_iff_mul_fg.mpr ‹_›
   have hrange : (powMonoidHom n : G →* G).range =
       AddSubgroup.toSubgroup' (nsmulAddMonoidHom (α := Additive G) n).range := by
     ext x
@@ -446,7 +400,7 @@ theorem Units.card_ker_powMonoidHom_two (R : Type*) [CommRing R] [IsDomain R]
 open Module in
 /-- The order of `Rˣ/(Rˣ)²` for a domain `R` of characteristic `≠ 2` with finitely generated
 unit group: `2 ^ (r + 1)`, where `r` is the rank of `Rˣ`. -/
-theorem Units.card_modPow_two (R : Type*) [CommRing R] [IsDomain R] [Group.FG Rˣ]
+theorem Units.card_modPow_two (R : Type*) [CommRing R] [IsDomain R] [IsMulFG Rˣ]
     (h2 : ringChar R ≠ 2) :
     Nat.card (Units.modPow R 2) = 2 ^ (finrank ℤ (Additive Rˣ) + 1) := by
   rw [Units.modPow, CommGroup.card_modPow Rˣ two_ne_zero, Units.card_ker_powMonoidHom_two R h2,
@@ -456,7 +410,7 @@ open Module in
 /-- A nontrivial finitely generated torsion-free commutative group of rank at most `1` is
 infinite cyclic: it is free (over the PID `ℤ`) of rank exactly `1`. -/
 theorem AddCommGroup.nonempty_addEquiv_int_of_finrank_le_one {G : Type*} [AddCommGroup G]
-    [AddGroup.FG G] [IsAddTorsionFree G] [Nontrivial G] (h : Module.finrank ℤ G ≤ 1) :
+    [IsAddFG G] [IsAddTorsionFree G] [Nontrivial G] (h : Module.finrank ℤ G ≤ 1) :
     Nonempty (G ≃+ ℤ) := by
   have hfin : Module.Finite ℤ G := Module.Finite.iff_addGroup_fg.mpr ‹_›
   have : HasUniqueDiv G := ⟨fun _ hn _ _ h ↦ eq_of_nsmul_eq_nsmul_of_addCommute hn (.all _ _) h⟩
@@ -531,11 +485,11 @@ The map `IsDedekindDomain.sUnitValuation` has finitely generated image (a subgro
 abelian group `ℤ^S` of finite rank) and kernel isomorphic to `Rˣ`
 (`IsDedekindDomain.ker_sUnitValuation`, `IsDedekindDomain.unitsEquivEmptyUnit`), and an extension of
 a finitely generated group by a finitely generated group is finitely generated. -/
-theorem fg_sUnit [Group.FG Rˣ] (hS : S.Finite) : Group.FG (S.unit K) := by
+theorem fg_sUnit [IsMulFG Rˣ] (hS : S.Finite) : IsMulFG (S.unit K) := by
   have : Finite S := hS.to_subtype
   refine Group.fg_of_fg_ker_of_fg_range (sUnitValuation K S) ?_ (Subgroup.fg_of_commGroup_fg _)
   rw [ker_sUnitValuation]
-  have : Group.FG ((∅ : Set (HeightOneSpectrum R)).unit K) :=
+  have : IsMulFG ((∅ : Set (HeightOneSpectrum R)).unit K) :=
     Group.fg_of_surjective (f := (unitsEquivEmptyUnit R K).toMonoidHom)
       (unitsEquivEmptyUnit R K).surjective
   have hle : (∅ : Set (HeightOneSpectrum R)).unit K ≤ S.unit K := Set.unit_mono S.empty_subset
@@ -668,10 +622,9 @@ lemma finrank_range_sUnitLog (hS : S.Finite) :
 open Module in
 /-- **Dirichlet's `S`-unit theorem**, rank version: if the class group of `R` is finite, `Rˣ` is
 finitely generated and `S` is finite, then the `S`-unit group has rank `rank Rˣ + |S|`. -/
-theorem finrank_sUnit [Group.FG Rˣ] (hS : S.Finite) :
+theorem finrank_sUnit [IsMulFG Rˣ] (hS : S.Finite) :
     finrank ℤ (Additive (S.unit K)) = finrank ℤ (Additive Rˣ) + S.ncard := by
-  have hFG : Group.FG (S.unit K) := fg_sUnit K S hS
-  have hMfin : Module.Finite ℤ (Additive (S.unit K)) := Module.finite_int_additive _
+  have hFG : IsMulFG (S.unit K) := fg_sUnit K S hS
   -- rank additivity along `sUnitLog`
   have hadd := Submodule.rank_quotient_add_rank (LinearMap.ker (sUnitLog K S))
   have hM := rank_lt_aleph0 ℤ (Additive (S.unit K))
@@ -862,15 +815,15 @@ variable (R) in
 
 The image of `IsDedekindDomain.sUnitModPowToSelmer` is finite, since its source is the quotient of a
 finitely generated commutative group (`IsDedekindDomain.fg_sUnit`) by its `n`-th powers
-(`CommGroup.finite_modPow`). By `IsDedekindDomain.ker_toSClassGroup` that image is the kernel of
-`IsDedekindDomain.toSClassGroup`, whose target `ClassGroup (S.integer K)` is finite by
-`IsDedekindDomain.SInteger.finite_classGroup`. -/
-theorem finite_selmerGroup [Finite (ClassGroup R)] [Group.FG Rˣ] (hS : S.Finite) [NeZero n] :
+(`Subgroup.finiteIndex_range_powMonoidHom_of_fg`). By `IsDedekindDomain.ker_toSClassGroup` that
+image is the kernel of `IsDedekindDomain.toSClassGroup`, whose target `ClassGroup (S.integer K)` is
+finite by `IsDedekindDomain.SInteger.finite_classGroup`. -/
+theorem finite_selmerGroup [Finite (ClassGroup R)] [IsMulFG Rˣ] (hS : S.Finite) [NeZero n] :
     Finite (selmerGroup (K := K) (S := S) (n := n)) := by
   have := fg_sUnit K S hS
   have hker : Finite (toSClassGroup K S n).ker := by
     rw [ker_toSClassGroup, ← range_sUnitModPowToSelmer]
-    have := CommGroup.finite_modPow (G := S.unit K) n
+    have := Subgroup.finiteIndex_range_powMonoidHom_of_fg (S.unit K) (NeZero.ne n)
     exact Finite.Set.finite_range _
   have hquot : Finite (selmerGroup (K := K) (S := S) (n := n) ⧸ (toSClassGroup K S n).ker) :=
     .of_injective _ (QuotientGroup.kerLift_injective (toSClassGroup K S n))
@@ -892,20 +845,19 @@ theorem sUnitToSelmer_surjective [NeZero n] [Subsingleton (ClassGroup (S.integer
 /-- **The Selmer group bound from a trivial class group**: if the class group of the
 `S`-integers is trivial, then `K(S,n)` is a quotient of `𝒪_S^× / (𝒪_S^×)ⁿ`, so its order is
 bounded by that of the latter group. -/
-theorem card_selmerGroup_le [NeZero n] [Group.FG Rˣ] (hS : S.Finite)
+theorem card_selmerGroup_le [NeZero n] [IsMulFG Rˣ] (hS : S.Finite)
     [Subsingleton (ClassGroup (S.integer K))] :
     Nat.card (selmerGroup (K := K) (S := S) (n := n)) ≤
       Nat.card (S.unit K ⧸ (powMonoidHom n : S.unit K →* S.unit K).range) := by
   have := fg_sUnit K S hS
-  have : Finite (S.unit K ⧸ (powMonoidHom n : S.unit K →* S.unit K).range) :=
-    CommGroup.finite_modPow n
+  have := Subgroup.finiteIndex_range_powMonoidHom_of_fg (S.unit K) (NeZero.ne n)
   refine Nat.card_le_card_of_surjective (sUnitModPowToSelmer K S n) fun x ↦ ?_
   obtain ⟨u, hu⟩ := sUnitToSelmer_surjective K S n x
   exact ⟨QuotientGroup.mk u, hu⟩
 
 /-- **The everywhere-unramified Selmer group bound**: if `R` has trivial class group and
 finitely generated units, then `K(∅,n)` is at most as large as `Rˣ/(Rˣ)ⁿ`. -/
-theorem card_selmerGroup_empty_le [NeZero n] [Group.FG Rˣ] [Subsingleton (ClassGroup R)] :
+theorem card_selmerGroup_empty_le [NeZero n] [IsMulFG Rˣ] [Subsingleton (ClassGroup R)] :
     Nat.card (selmerGroup (K := K) (S := (∅ : Set (HeightOneSpectrum R))) (n := n)) ≤
       Nat.card (Units.modPow R n) := by
   refine (card_selmerGroup_le K ∅ n Set.finite_empty).trans_eq ?_
@@ -946,7 +898,7 @@ lemma mem_selmerGroupPi_iff (x : (i : ι) → Units.modPow (L i) n) :
 
 /-- A finite product of Selmer groups is finite. -/
 theorem finite_selmerGroupPi [Finite ι] [(i : ι) → Finite (ClassGroup (B i))]
-    [(i : ι) → Group.FG (B i)ˣ] (hS : ∀ i, (S i).Finite) [NeZero n] :
+    [(i : ι) → IsMulFG (B i)ˣ] (hS : ∀ i, (S i).Finite) [NeZero n] :
     Finite (selmerGroupPi L B S n) := by
   have (i : ι) : Finite (selmerGroup (R := B i) (K := L i) (S := S i) (n := n)) :=
     finite_selmerGroup (B i) (L i) (S i) n (hS i)
@@ -971,7 +923,7 @@ lemma mem_selmerGroupOfEquiv_iff (e : Units.modPow A n ≃* ((i : ι) → Units.
 
 /-- The Selmer group of a finite étale algebra is finite. -/
 theorem finite_selmerGroupOfEquiv [Finite ι] [(i : ι) → Finite (ClassGroup (B i))]
-    [(i : ι) → Group.FG (B i)ˣ] (hS : ∀ i, (S i).Finite) [NeZero n]
+    [(i : ι) → IsMulFG (B i)ˣ] (hS : ∀ i, (S i).Finite) [NeZero n]
     (e : Units.modPow A n ≃* ((i : ι) → Units.modPow (L i) n)) :
     Finite (selmerGroupOfEquiv L B S n e) := by
   have := finite_selmerGroupPi L B S n hS
@@ -992,11 +944,6 @@ section NumberField
 open NumberField
 
 variable (F : Type*) [Field F] [NumberField F] (S : Set (HeightOneSpectrum (𝓞 F))) (n : ℕ)
-
-/-- **Dirichlet's unit theorem**, `Group.FG` version: the unit group of the ring of integers of
-a number field is finitely generated. -/
-instance instGroupFGUnitsRingOfIntegers : Group.FG (𝓞 F)ˣ :=
-  Group.fg_iff_monoid_fg.mpr inferInstance
 
 /-- The Selmer group `K(S,n)` of a number field is finite for `S` finite and `n ≠ 0`. -/
 theorem finite_selmerGroup_of_numberField [NeZero n] (hS : S.Finite) :

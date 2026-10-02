@@ -158,7 +158,7 @@ theorem finrank_additive_units (p : E.f.Factors) :
   exact (NumberField.finrank_additive_units_integralClosure ℚ _).trans
     (RingOfIntegers.finrank_additive_units_of_discr_neg (finrank_adjoinRoot p) hneg)
 
-instance (p : E.f.Factors) : Group.FG (E.ringOfIntegersFactor (𝓞 ℚ) p)ˣ :=
+instance (p : E.f.Factors) : IsMulFG (E.ringOfIntegersFactor (𝓞 ℚ) p)ˣ :=
   NumberField.fg_units_integralClosure ℚ (AdjoinRoot (p : ℚ[X]))
 
 /-! ### The Selmer group bound and the rank bound -/
@@ -186,7 +186,7 @@ theorem finrank_point_le_one : Module.finrank ℤ E.Point ≤ 1 := by
     subsingleton_classGroup
   have (p : E.f.Factors) : Finite (ClassGroup (E.ringOfIntegersFactor (𝓞 ℚ) p)) :=
     Finite.of_subsingleton
-  have hfg : AddGroup.FG E.Point := fg_point_of_numberField
+  have hfg : IsAddFG E.Point := fg_point_of_numberField
   have hfin : Finite (E.selmerGroup₂ (𝓞 ℚ) (fun v : InfinitePlace ℚ ↦ v.Completion)) :=
     E.finite_selmerGroup₂
   have h := E.pow_rank_le_card_of_range_μ_le (E.range_μ_le_selmerGroup₂ (𝓞 ℚ)
@@ -199,7 +199,7 @@ theorem finrank_point_le_one : Module.finrank ℤ E.Point ≤ 1 := by
 finitely generated (the Mordell-Weil theorem), torsion-free, nontrivial (it contains
 `P = (1, 1)`), and of rank at most `1`, hence free of rank exactly `1`. -/
 theorem nonempty_point_addEquiv_int : Nonempty (E.Point ≃+ ℤ) := by
-  have : AddGroup.FG E.Point := fg_point_of_numberField
+  have : IsAddFG E.Point := fg_point_of_numberField
   have : Nontrivial E.Point := nontrivial_of_ne P 0 (Point.some_ne_zero _)
   exact AddCommGroup.nonempty_addEquiv_int_of_finrank_le_one finrank_point_le_one
 

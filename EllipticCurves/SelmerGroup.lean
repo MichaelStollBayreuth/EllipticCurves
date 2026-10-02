@@ -442,7 +442,7 @@ lemma neg_one_mem_selmerGroupA : (QuotientGroup.mk (-1 : W.Aˣ) : W.M) ∈ W.sel
   simp
 
 variable [(p : W.f.Factors) → Finite (ClassGroup (W.ringOfIntegersFactor R p))]
-  [(p : W.f.Factors) → Group.FG (W.ringOfIntegersFactor R p)ˣ]
+  [(p : W.f.Factors) → IsMulFG (W.ringOfIntegersFactor R p)ˣ]
 
 /-- `A(S,2)` embeds into the product of the `2`-Selmer groups of the field factors, so its
 order is bounded by the product of theirs. -/
@@ -964,7 +964,7 @@ theorem range_μ_le_selmerGroup₂ : (μ (W := W)).range ≤ W.selmerGroup₂ R 
 /-- The size of the image of `μ` in terms of the rank and the rational 2-torsion:
 `im μ ≅ E(K)/2E(K)`, which for a finitely generated `E(K)` has order
 `2 ^ rank E(K) * #E(K)[2]`. -/
-theorem card_range_μ [AddGroup.FG W.Point] :
+theorem card_range_μ [IsAddFG W.Point] :
     Nat.card (μ (W := W)).range =
       2 ^ Module.finrank ℤ W.Point * Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker := by
   rw [← Nat.card_congr (QuotientGroup.quotientKerEquivRange (μ (W := W))).toEquiv, ker_μ_eq,
@@ -975,7 +975,7 @@ theorem card_range_μ [AddGroup.FG W.Point] :
 finite and contains the image of `μ` bounds the rank of `E(K)` from above, via
 `2 ^ rank E(K) * #E(K)[2] ≤ #S`. Applies in particular to `S = W.selmerGroup₂ R Loc`
 (`range_μ_le_selmerGroup₂`) once the latter is known to be finite. -/
-theorem pow_rank_le_card_of_range_μ_le [AddGroup.FG W.Point] {S : Subgroup W.M} [Finite S]
+theorem pow_rank_le_card_of_range_μ_le [IsAddFG W.Point] {S : Subgroup W.M} [Finite S]
     (h : (μ (W := W)).range ≤ S) :
     2 ^ Module.finrank ℤ W.Point * Nat.card (nsmulAddMonoidHom (α := W.Point) 2).ker ≤
       Nat.card S := by
@@ -1183,6 +1183,36 @@ private lemma integerMapOfDvd_comp_algebraMap {p : W.f.Factors} {q : 𝕎[v].f.F
   ext c
   exact RingHom.congr_fun (map_comp_algebraMap v hq) c
 
+-- The double contraction of a prime of the local ring of integers is `v`.
+private lemma comap_comap_integerMapOfDvd {p : W.f.Factors} {q : 𝕎[v].f.Factors}
+    (hq : (q : F_[v][X]) ∣ (p : F[X]).map (algebraMap F F_[v]))
+    (w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) :
+    (w.asIdeal.comap (W.integerMapOfDvd v hq)).comap
+      (algebraMap (𝓞 F) (W.ringOfIntegersFactor (𝓞 F) p)) = v.asIdeal := by
+  rw [Ideal.comap_comap, integerMapOfDvd_comp_algebraMap W v hq, ← Ideal.comap_comap]
+  have h1 : w.asIdeal.comap (algebraMap 𝒪_[v] (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) =
+      IsLocalRing.maximalIdeal 𝒪_[v] :=
+    IsLocalRing.eq_maximalIdeal (w.under 𝒪_[v]).isMaximal
+  rw [h1, HeightOneSpectrum.comap_maximalIdeal_adicCompletionIntegers]
+
+-- The contraction of a prime of the local ring of integers to the global one is nonzero.
+private lemma comap_integerMapOfDvd_ne_bot {p : W.f.Factors} {q : 𝕎[v].f.Factors}
+    (hq : (q : F_[v][X]) ∣ (p : F[X]).map (algebraMap F F_[v]))
+    (w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) :
+    w.asIdeal.comap (W.integerMapOfDvd v hq) ≠ ⊥ := by
+  refine Ideal.comap_ne_bot_of_comap_comap_ne_bot (FaithfulSMul.algebraMap_injective (𝓞 F)
+    (W.ringOfIntegersFactor (𝓞 F) p)) ?_
+  rw [W.comap_comap_integerMapOfDvd v hq w]
+  exact v.ne_bot
+
+-- The contracted prime lies over `v`.
+private lemma under_comapOfNeBot_integerMapOfDvd {p : W.f.Factors} {q : 𝕎[v].f.Factors}
+    (hq : (q : F_[v][X]) ∣ (p : F[X]).map (algebraMap F F_[v]))
+    (w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) :
+    (HeightOneSpectrum.comapOfNeBot (W.integerMapOfDvd v hq) w
+      (W.comap_integerMapOfDvd_ne_bot v hq w)).under (𝓞 F) = v :=
+  HeightOneSpectrum.ext (W.comap_comap_integerMapOfDvd v hq w)
+
 variable [W.IsElliptic] [W.IsCharNeTwoNF]
 
 /- The `F_v`-algebra structure on the completion of the field factor `F[X]/(p)` at a place
@@ -1375,36 +1405,6 @@ private lemma dvd_toAdd_valuationOfNeZero_of_localFactor (p : W.f.Factors)
   rw [hunits,
     HeightOneSpectrum.valuationOfNeZero_maximalIdeal_adicCompletionIntegers] at hkey
   exact hkey
-
--- The double contraction of a prime of the local ring of integers is `v`.
-private lemma comap_comap_integerMapOfDvd {p : W.f.Factors} {q : 𝕎[v].f.Factors}
-    (hq : (q : F_[v][X]) ∣ (p : F[X]).map (algebraMap F F_[v]))
-    (w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) :
-    (w.asIdeal.comap (W.integerMapOfDvd v hq)).comap
-      (algebraMap (𝓞 F) (W.ringOfIntegersFactor (𝓞 F) p)) = v.asIdeal := by
-  rw [Ideal.comap_comap, integerMapOfDvd_comp_algebraMap W v hq, ← Ideal.comap_comap]
-  have h1 : w.asIdeal.comap (algebraMap 𝒪_[v] (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) =
-      IsLocalRing.maximalIdeal 𝒪_[v] :=
-    IsLocalRing.eq_maximalIdeal (w.below 𝒪_[v]).isMaximal
-  rw [h1, HeightOneSpectrum.comap_maximalIdeal_adicCompletionIntegers]
-
--- The contraction of a prime of the local ring of integers to the global one is nonzero.
-private lemma comap_integerMapOfDvd_ne_bot {p : W.f.Factors} {q : 𝕎[v].f.Factors}
-    (hq : (q : F_[v][X]) ∣ (p : F[X]).map (algebraMap F F_[v]))
-    (w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) :
-    w.asIdeal.comap (W.integerMapOfDvd v hq) ≠ ⊥ := by
-  refine Ideal.comap_ne_bot_of_comap_comap_ne_bot (FaithfulSMul.algebraMap_injective (𝓞 F)
-    (W.ringOfIntegersFactor (𝓞 F) p)) ?_
-  rw [W.comap_comap_integerMapOfDvd v hq w]
-  exact v.ne_bot
-
--- The contracted prime lies over `v`.
-private lemma below_comapOfNeBot_integerMapOfDvd {p : W.f.Factors} {q : 𝕎[v].f.Factors}
-    (hq : (q : F_[v][X]) ∣ (p : F[X]).map (algebraMap F F_[v]))
-    (w : HeightOneSpectrum (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)) :
-    (HeightOneSpectrum.comapOfNeBot (W.integerMapOfDvd v hq) w
-      (W.comap_integerMapOfDvd_ne_bot v hq w)).below (𝓞 F) = v :=
-  HeightOneSpectrum.ext (W.comap_comap_integerMapOfDvd v hq w)
 
 -- The base-change maps of the field factors are compatible with the CRT projections.
 private lemma map_projFactor {p : W.f.Factors} {q : 𝕎[v].f.Factors}
@@ -1683,7 +1683,7 @@ private lemma mem_selmerGroupFactor_empty_of_eval_f_eq_zero (hW : W.IsIntegralAt
   intro w _
   set u := ((isUnit_mk_sub_X_add_fCofactor_of_eval_f_eq_zero hx).map
     (projFactor 𝕎[v].f_ne_zero 𝕎[v].squarefree_f q)).unit with hudef
-  have hdisc : exp (-1 : ℤ) ≤ (w.below 𝒪_[v]).valuation F_[v] 𝕎[v].f.discr := by
+  have hdisc : exp (-1 : ℤ) ≤ (w.under 𝒪_[v]).valuation F_[v] 𝕎[v].f.discr := by
     rw [W.baseChange_discr_f F_[v], v.valuation_adicCompletion_algebraMap]
     exact hd
   have hval : w.valuation (AdjoinRoot (q : F_[v][X])) (u : AdjoinRoot (q : F_[v][X])) = 1 := by
@@ -1766,10 +1766,10 @@ theorem localRes_mem_selmerGroupA {v : HeightOneSpectrum (𝓞 F)}
     W.f_ne_zero q.prime (q.dvd.trans (W.baseChange_f F_[v]).dvd)
   -- the prime of the global field factor below `w`
   have hne := W.comap_integerMapOfDvd_ne_bot v hq w
-  have hbelow := W.below_comapOfNeBot_integerMapOfDvd v hq w
+  have hunder := W.under_comapOfNeBot_integerMapOfDvd v hq w
   -- the global unramifiedness hypothesis at that prime
   have hdvd := hm p (HeightOneSpectrum.comapOfNeBot (W.integerMapOfDvd v hq) w hne) fun hmem ↦
-    hv (hbelow ▸ (HeightOneSpectrum.mem_primesAbove_iff (𝓞 F) _ _ _).mp hmem)
+    hv (hunder ▸ (HeightOneSpectrum.mem_primesAbove_iff (𝓞 F) _ _ _).mp hmem)
   -- transport along the embedding of field factors
   have hkey := HeightOneSpectrum.dvd_toAdd_valuationOfNeZero_map
     (AdjoinRoot.map (algebraMap F F_[v]) _ _ hq) (W.integerMapOfDvd v hq)
@@ -1797,9 +1797,9 @@ theorem mem_selmerGroupA_of_forall_localRes {S : Set (HeightOneSpectrum (𝓞 F)
   simp only [QuotientGroup.mk'_apply]
   rw [mem_selmerGroupA_unit_iff]
   intro p w hw
-  have hv : w.below (𝓞 F) ∉ S := W.below_notMem_of_notMem_primesAbove (𝓞 F) p hw
-  refine W.dvd_toAdd_valuationOfNeZero_of_localFactor (w.below (𝓞 F)) p w a ?_
-  refine (W.localRes_mem_selmerGroupA_iff (w.below (𝓞 F)) _ a).mp (hm _ hv) _ _ fun hc ↦ ?_
+  have hv : w.under (𝓞 F) ∉ S := W.under_notMem_of_notMem_primesAbove (𝓞 F) p hw
+  refine W.dvd_toAdd_valuationOfNeZero_of_localFactor (w.under (𝓞 F)) p w a ?_
+  refine (W.localRes_mem_selmerGroupA_iff (w.under (𝓞 F)) _ a).mp (hm _ hv) _ _ fun hc ↦ ?_
   exact Set.notMem_empty _ ((HeightOneSpectrum.mem_primesAbove_iff _ _ _ _).mp hc)
 
 /-!
@@ -2118,7 +2118,7 @@ private lemma two_mul_card_inf_ker_le (h2 : (2 : 𝓞 F) ∉ v.asIdeal) :
       = 2 * Nat.card φ.ker := by rw [hT]
     _ ≤ Nat.card φ.range * Nat.card φ.ker := Nat.mul_le_mul_right _ hrange2
     _ = Nat.card (𝕎[v].selmerGroupA 𝒪_[v] ∅) := by
-        rw [mul_comm]; exact φ.card_ker_mul_card_range
+        rw [mul_comm]; exact Subgroup.card_ker_mul_card_range φ
 
 end LocalCount
 
@@ -2246,7 +2246,7 @@ open scoped Classical in
 /-- The 2-Selmer group of an elliptic curve over a number field is finite. -/
 theorem finite_selmerGroup₂
     [(p : W.f.Factors) → Finite (ClassGroup (W.ringOfIntegersFactor (𝓞 F) p))]
-    [(p : W.f.Factors) → Group.FG (W.ringOfIntegersFactor (𝓞 F) p)ˣ] :
+    [(p : W.f.Factors) → IsMulFG (W.ringOfIntegersFactor (𝓞 F) p)ˣ] :
     Finite (W.selmerGroup₂ (𝓞 F) (fun v : InfinitePlace F ↦ v.Completion)) := by
   have hle := W.selmerGroup₂_le_selmerGroupA_inf_ker.trans inf_le_left
   have := W.finite_selmerGroupA (𝓞 F) (W.discBadPrimes (𝓞 F)) (W.finite_discBadPrimes (𝓞 F))
@@ -2268,7 +2268,7 @@ factor's everywhere-unramified Selmer group by `IsDedekindDomain.card_selmerGrou
 when the class group is trivial. -/
 theorem two_mul_card_selmerGroup₂_le [Fintype W.f.Factors]
     [∀ p : W.f.Factors, Subsingleton (ClassGroup (W.ringOfIntegersFactor (𝓞 F) p))]
-    [∀ p : W.f.Factors, Group.FG (W.ringOfIntegersFactor (𝓞 F) p)ˣ]
+    [∀ p : W.f.Factors, IsMulFG (W.ringOfIntegersFactor (𝓞 F) p)ˣ]
     (hd : W.discBadPrimes (𝓞 F) = ∅) (h1 : ¬ IsSquare (-1 : F)) :
     2 * Nat.card (W.selmerGroup₂ (𝓞 F) (fun v : InfinitePlace F ↦ v.Completion)) ≤
       ∏ p : W.f.Factors,

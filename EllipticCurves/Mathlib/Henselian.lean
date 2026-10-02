@@ -456,27 +456,10 @@ lemma HenselianLocalRing.exists_completeOrthogonalIdempotents_forall_isLocalRing
     · have : algebraMap _ he₀.Corner (ψ' (e i.castSucc)) = 1 := Subtype.ext ((he.idem _).map ψ')
       simpa [this] using Ideal.one_notMem Q'
 
-lemma Ideal.quotientKerAlgEquivOfSurjective_symm_apply' {R₁ A B : Type*} [CommSemiring R₁]
-    [Ring A] [Algebra R₁ A] [Semiring B] [Algebra R₁ B] {f : A →ₐ[R₁] B}
-    (hf : Function.Surjective ⇑f) (x : A) :
-    (Ideal.quotientKerAlgEquivOfSurjective hf).symm (f x) = x :=
-  (Ideal.quotientKerAlgEquivOfSurjective hf).symm_apply_eq.mpr rfl
-
 lemma Module.finrank_pos_of_free {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
     [Module.Free R M] [Module.Finite R M] [Nontrivial M] : 0 < Module.finrank R M := by
   nontriviality R
   simpa [Module.finrank_eq_card_chooseBasisIndex] using Fintype.card_pos
-
-lemma Module.finrank_eq_one_iff_algebraMap_bijective
-    {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    [Module.Free R S] [Nontrivial R] :
-    Module.finrank R S = 1 ↔ Function.Bijective (algebraMap R S) := by
-  constructor
-  · intro H
-    let := (Module.basisUnique Unit H).repr ≪≫ₗ Finsupp.uniqueLinearEquiv _ _ .unit
-    exact (LinearEquiv.algEquivOfRing this.symm).bijective
-  · intro H
-    rw [← (AlgEquiv.ofBijective (Algebra.ofId R S) H).toLinearEquiv.finrank_eq, finrank_self]
 
 attribute [local instance] RingHom.ker_isPrime in
 theorem HenselianLocalRing.of_finite_aux
@@ -568,7 +551,7 @@ lemma HenselianLocalRing.of_finite
     · rw [← Module.finrank_baseChange (R := 𝓀[A]), finrank_le_one_iff]
       refine ⟨1, H.forall.mpr fun x ↦
         ⟨x, by simp [Algebra.TensorProduct.one_def, TensorProduct.smul_tmul']⟩⟩
-  rw [Module.finrank_eq_one_iff_algebraMap_bijective] at this
+  rw [Algebra.finrank_eq_one_iff_bijective_algebraMap] at this
   obtain ⟨a, ha⟩ := this.2 (algebraMap _ _ (AdjoinRoot.root f))
   refine ⟨a, this.1 ?_, ?_⟩
   · rw [eval, hom_eval₂, RingHom.comp_id, ← aeval_def, ha, aeval_algebraMap_apply]
