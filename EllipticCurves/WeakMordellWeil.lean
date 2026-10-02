@@ -1169,7 +1169,7 @@ instance instIsTorsionFreeRingOfIntegersFactor (p : W.f.Factors) :
 below `w`, raised to the ramification index. -/
 lemma valuation_algebraMap_eq [W.IsElliptic] [W.IsCharNeTwoNF] (p : W.f.Factors)
     (w : HeightOneSpectrum (W.ringOfIntegersFactor R p)) (z : K) :
-    (w.below R).valuation K z ^ ((w.below R).asIdeal.ramificationIdx' w.asIdeal) =
+    (w.below R).valuation K z ^ w.asIdeal.ramificationIdx R =
       w.valuation (𝕃 p) (ι p z) :=
   HeightOneSpectrum.valuation_liesOver _ _ _ z
 

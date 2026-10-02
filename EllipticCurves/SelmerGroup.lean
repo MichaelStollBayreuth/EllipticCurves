@@ -657,7 +657,7 @@ theorem localRes_μX (x : K) :
     rw [μX_of_eval_f_eq_zero hxL, μX_of_eval_f_eq_zero hx, localRes_unit]
     refine congrArg _ (Units.ext ?_)
     rw [IsUnit.unit_spec, IsUnit.unit_spec]
-    simp only [RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, mapA_mk, Polynomial.map_add,
+    simp only [RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, mapA_mk, Polynomial.map_add,
       Polynomial.map_sub, Polynomial.map_C, Polynomial.map_X, W.baseChange_fCofactor]
   · have hxL : (W⁄L).toAffine.f.eval (algebraMap K L x) ≠ 0 := by
       rw [W.eval_baseChange_f]
@@ -665,7 +665,7 @@ theorem localRes_μX (x : K) :
     rw [μX_of_eval_f_ne_zero hxL, μX_of_eval_f_ne_zero hx, localRes_unit]
     refine congrArg _ (Units.ext ?_)
     rw [IsUnit.unit_spec, IsUnit.unit_spec]
-    simp only [RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, mapA_mk, Polynomial.map_sub,
+    simp only [RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, mapA_mk, Polynomial.map_sub,
       Polynomial.map_C, Polynomial.map_X]
 
 /-- Naturality of the descent map under base change: restricting square classes after the
@@ -1990,7 +1990,7 @@ private lemma valuation_projFactor_scalar (q : 𝕎[v].f.Factors)
         (Units.map (algebraMap F_[v] 𝕎[v].A).toMonoidHom
           (Units.map (algebraMap 𝒪_[v] F_[v]).toMonoidHom c)) :
         AdjoinRoot (q : F_[v][X]))) = 1 := by
-  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe]
+  simp only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass]
   rw [W.projFactor_algebraMap v q,
     ← IsScalarTower.algebraMap_apply 𝒪_[v] F_[v] (AdjoinRoot (q : F_[v][X])),
     IsScalarTower.algebraMap_apply 𝒪_[v] (𝕎[v].ringOfIntegersFactor 𝒪_[v] q)
@@ -2026,7 +2026,7 @@ private lemma normM_scalarClass_ne_one {c : 𝒪_[v]ˣ}
   obtain ⟨w, hw⟩ := (QuotientGroup.eq_one_iff _).mp h
   rw [powMonoidHom_apply, sq] at hw
   refine hc ⟨(w : F_[v]ˣ), ?_⟩
-  simpa only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_coe, Units.val_mul]
+  simpa only [Units.coe_map, RingHom.toMonoidHom_eq_coe, MonoidHom.coe_ofClass, Units.val_mul]
     using congrArg Units.val hw.symm
 
 variable {v}

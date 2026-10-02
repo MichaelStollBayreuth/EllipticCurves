@@ -437,7 +437,7 @@ the ramification index of `w` over `v`. Adapted from FLT's
 `valued_adicCompletionSemialgHom` (Buzzard, Yang, Jasper). -/
 lemma valued_adicCompletionExtension (x : v.adicCompletion K) :
     Valued.v (adicCompletionExtension K L v w x) =
-      Valued.v x ^ v.asIdeal.ramificationIdx' w.asIdeal := by
+      Valued.v x ^ w.asIdeal.ramificationIdx R := by
   rw [← adicCompletion.valued_toCompletion L w (adicCompletionExtension K L v w x),
     toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion K v x]
   have hsurjK : Function.Surjective (⇑(Valued.v : Valuation (v.valuation K).Completion ℤᵐ⁰)) :=
@@ -488,8 +488,7 @@ lemma comap_maximalIdeal_adicCompletionIntegersExtension :
       (Valuation.mem_maximalIdeal_iff (v := (Valued.v : Valuation (v.adicCompletion K)
         (WithZero (Multiplicative ℤ))))).symm
   rw [algebraMap_adicCompletionIntegersExtension K L v w, valued_adicCompletionExtension]
-  exact pow_lt_one_iff
-    (Ideal.IsDedekindDomain.ramificationIdx'_ne_zero_of_liesOver w.asIdeal v.ne_bot)
+  exact pow_lt_one_iff (Ideal.ramificationIdx_pos_of_isDedekindDomain' w.asIdeal v.ne_bot).ne'
 
 end Extension
 

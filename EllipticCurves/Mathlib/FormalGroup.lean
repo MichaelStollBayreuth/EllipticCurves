@@ -354,8 +354,8 @@ private lemma valued_norm_algebraMap [CharZero K]
       (IsLocalRing.maximalIdeal (v.adicCompletionIntegers K)) :=
     ⟨(IsLocalRing.eq_maximalIdeal inferInstance).symm⟩
   obtain ⟨n, hval, hspan⟩ := exists_intValuation_eq_exp_neg hr
-  have hrel : Ideal.span {Algebra.intNorm (v.adicCompletionIntegers K)
-      (integralClosure (v.adicCompletionIntegers K) L) r} =
+  have hrel : Ideal.span {(Algebra.intNorm (v.adicCompletionIntegers K)
+      (integralClosure (v.adicCompletionIntegers K) L) r)} =
       IsLocalRing.maximalIdeal (v.adicCompletionIntegers K) ^
         ((IsLocalRing.maximalIdeal (integralClosure (v.adicCompletionIntegers K) L)).inertiaDeg
           (v.adicCompletionIntegers K) * n) := by

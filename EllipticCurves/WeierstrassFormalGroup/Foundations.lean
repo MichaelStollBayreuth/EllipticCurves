@@ -707,7 +707,7 @@ private lemma points_eq_zero_of_nsmul_residueChar [CharZero K] {p : ℕ} (hp : p
   have hE : MvPowerSeries.HasEval (fun _ : Unit ↦ (z () : v.adicCompletionIntegers K)) :=
     MvPSeries.hasEval_of_mem fun _ ↦ (z ()).2
   have hevalA := MvPSeries.eval_mem_maximalIdeal_pow_add_mul hE (a := e) (c := 2)
-    (fun _ ↦ htk) A (fun d ↦ SetLike.le_def.mp
+    (fun _ ↦ htk) A (fun d ↦ IsConcreteLE.le_iff.mp
       ((Ideal.span_singleton_le_iff_mem _).mpr hpe) (hAmem d)) hAlow
   have hevalB := MvPSeries.eval_mem_maximalIdeal_pow_mul hE (c := p) (fun _ ↦ htk) B hBlow
   -- hence `p·t` lies one level too deep
@@ -774,7 +774,7 @@ private lemma mk_add_param {k : ℕ} {z z' : W₀.formalGroupLaw.Points}
   rw [← map_add (Ideal.Quotient.mk _)]
   refine (Ideal.Quotient.mk_eq_mk_iff_sub_mem _ _).mpr ?_
   rw [W₀.add_apply_coe_eq_addEval]
-  refine SetLike.le_def.mp
+  refine IsConcreteLE.le_iff.mp
     (Ideal.pow_le_pow_right (m := k + 2) (n := 2 * (k + 1)) (by lia)) ?_
   exact W₀.addEval_sub_add_mem (Nat.succ_ne_zero k) hz hz'
 

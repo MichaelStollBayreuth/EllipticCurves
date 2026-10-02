@@ -690,9 +690,9 @@ theorem exists_valuationOfNeZero_map_eq (φ : L →+* N) (ψ : B →+* C)
   have ht2 : IsScalarTower B C N := .of_algebraMap_eq fun x ↦ (RingHom.congr_fun hcomp x).symm
   have htf : Module.IsTorsionFree B C := Module.isTorsionFree_iff_algebraMap_injective.mpr hψ
   have hlie : w.asIdeal.LiesOver (comapOfNeBot ψ w hne).asIdeal := ⟨rfl⟩
-  refine ⟨(comapOfNeBot ψ w hne).asIdeal.ramificationIdx' w.asIdeal, fun u ↦ ?_⟩
+  refine ⟨w.asIdeal.ramificationIdx B, fun u ↦ ?_⟩
   rw [valuationOfNeZero_eq_iff, WithZero.coe_pow, valuationOfNeZero_eq, Units.coe_map,
-    MonoidHom.coe_coe]
+    MonoidHom.coe_ofClass]
   exact (valuation_liesOver N (comapOfNeBot ψ w hne) w (u : L)).symm
 
 /-- Divisibility of adic valuations transports along compatible embeddings: if the valuation

@@ -263,7 +263,7 @@ theorem eval_deriv {w : O} (hw : w ∈ maximalIdeal O) (h : O⟦X⟧) :
     ∑ j ∈ Finset.range (n - 1), n.choose j * z₀ ^ j * w ^ (n - 2 - j) with hc
   -- the tail coefficients lie in high powers of the maximal ideal, so `∑ aₙ cₙ` converges
   have hmem (n : ℕ) : coeff n h * c n ∈ maximalIdeal O ^ (n - 2) := by
-    refine Ideal.mul_mem_left _ _ (Ideal.sum_mem _ fun j hj ↦ ?_)
+    refine Ideal.mul_mem_left _ _ (Submodule.sum_mem _ fun j hj ↦ ?_)
     have hj2 : j + (n - 2 - j) = n - 2 := by
       have := Finset.mem_range.mp hj; lia
     have hmul := Ideal.mul_mem_mul (Ideal.pow_mem_pow hz₀ j)

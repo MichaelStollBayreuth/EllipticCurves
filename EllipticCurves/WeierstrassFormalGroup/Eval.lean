@@ -126,7 +126,7 @@ theorem _root_.ChabautyColeman.MvPSeries.eval_mem_maximalIdeal_pow_mul
         rw [Finset.prod_insert hs, Finset.sum_insert hs, Nat.mul_add, pow_add]
         exact Ideal.mul_mem_mul (pow_mul (maximalIdeal O) j (d s) ▸
           Ideal.pow_mem_pow (hmem s) (d s)) ih
-    refine Ideal.mul_mem_left _ _ (SetLike.le_def.mp
+    refine Ideal.mul_mem_left _ _ (IsConcreteLE.le_iff.mp
       (Ideal.pow_le_pow_right (by calc c * j ≤ d.degree * j := by gcongr
         _ = j * d.degree := mul_comm _ _)) ?_)
     have hdeg : d.degree = ∑ s ∈ d.support, d s := rfl
@@ -162,7 +162,7 @@ theorem _root_.ChabautyColeman.MvPSeries.eval_mem_maximalIdeal_pow_add_mul
         exact Ideal.mul_mem_mul (pow_mul (maximalIdeal O) j (d s) ▸
           Ideal.pow_mem_pow (hmem s) (d s)) ih
     rw [pow_add]
-    refine Ideal.mul_mem_mul (hcoeff d) (SetLike.le_def.mp
+    refine Ideal.mul_mem_mul (hcoeff d) (IsConcreteLE.le_iff.mp
       (Ideal.pow_le_pow_right (by calc c * j ≤ d.degree * j := by gcongr
         _ = j * d.degree := mul_comm _ _)) ?_)
     have hdeg : d.degree = ∑ s ∈ d.support, d s := rfl
