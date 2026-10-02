@@ -32,7 +32,7 @@ by `1`, giving `E(ℚ) ≅ ℤ`.
   order.
 * `InfiniteOrderExample.card_point_E3`, `.card_point_E5`: the reductions have `7` resp. `8`
   points.
-* The `IsAddTorsionFree E.Point` instance: `E(ℚ)` is torsion-free.
+* The `IsAddTorsionFree E.Point` and `HasUniqueDiv E.Point` instances: `E(ℚ)` is torsion-free.
 
 ## Implementation notes
 
@@ -237,6 +237,9 @@ instance : IsAddTorsionFree E.Point := by
     (q := 5) (by norm_num) (Ideal.mem_span_singleton_self _)
     (by rw [intPrime_asIdeal, Ideal.span_singleton_pow, Ideal.mem_span_singleton]; norm_num)
     (by rw [h3, h5]; decide)
+
+/-- `E(ℚ)` has unique division: Mathlib's spelling of torsion-freeness for commutative groups. -/
+instance : HasUniqueDiv E.Point := .of_isAddTorsionFree
 
 end InfiniteOrderExample
 

@@ -1863,7 +1863,7 @@ theorem card_range_μ_adicCompletion (v : HeightOneSpectrum (𝓞 F)) [Decidable
   have hczO : CharZero 𝒪_[v] :=
     charZero_of_injective_algebraMap (FaithfulSMul.algebraMap_injective (𝓞 F) 𝒪_[v])
   have hker : Nat.card ((nsmulAddMonoidHom (α := U) 2)).ker = 1 := by
-    have : IsAddTorsionFree U := Function.Injective.isAddTorsionFree e.toAddMonoidHom e.injective
+    have : HasUniqueDiv U := Function.Injective.hasUniqueDiv e.toAddMonoidHom e.injective
     rw [AddMonoidHom.ker_nsmulAddMonoidHom two_ne_zero]
     exact AddSubgroup.card_bot
   -- the Euler-characteristic identity for the finite-index subgroup `U`

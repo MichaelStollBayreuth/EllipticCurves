@@ -114,6 +114,21 @@ instance Subgroup.instFinitePi {ι : Type*} [Finite ι] {G : ι → Type*} [(i :
 
 end Group
 
+section TorsionFree
+
+/-- In a commutative monoid, torsion-freeness is the injectivity of every nonzero power map.
+Mathlib deliberately does not make this an instance (it would loop with the instance in the
+other direction), so it is supplied by hand where `HasUniqueRoots` is needed. -/
+@[to_additive /-- In a commutative additive monoid, torsion-freeness is the injectivity of
+multiplication by every nonzero natural number. Mathlib deliberately does not make this an
+instance (it would loop with the instance in the other direction), so it is supplied by hand
+where `HasUniqueDiv` is needed. -/]
+theorem HasUniqueRoots.of_isMulTorsionFree {M : Type*} [CommMonoid M] [IsMulTorsionFree M] :
+    HasUniqueRoots M :=
+  ⟨fun _ hn _ _ h ↦ eq_of_pow_eq_pow_of_commute hn (.all _ _) h⟩
+
+end TorsionFree
+
 section Units
 
 variable {α : Type*} [Monoid α]
