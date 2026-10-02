@@ -188,18 +188,6 @@ private theorem exists_etale_completeOrthogonalIdempotents_forall_liesOver_eq_au
   · rw [← hP'φ] at heP'; simpa [he'0]
   · simpa
 
-lemma ncard_primesOver_quotient_singleton_lt_of_notMem
-    {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    (P : Ideal R) (e : S) (P' : Ideal S) [P'.IsPrime] [P'.LiesOver P]
-    (heP' : e ∉ P') (H : (P.primesOver S).Finite) :
-    (P.primesOver (S ⧸ Ideal.span {e})).ncard < (P.primesOver S).ncard := by
-  rw [← Set.ncard_image_of_injective _
-    (Ideal.comap_injective_of_surjective _ Ideal.Quotient.mk_surjective)]
-  refine Set.ncard_lt_ncard (Set.ssubset_iff_exists.mpr ⟨?_, P', ⟨‹_›, ‹_›⟩, ?_⟩) H
-  · rintro _ ⟨q, ⟨_, _⟩, rfl⟩
-    exact ⟨inferInstance, inferInstanceAs ((q.comap (Ideal.Quotient.mkₐ R _)).LiesOver _)⟩
-  · rintro ⟨q, ⟨_, _⟩, rfl⟩; simp at heP'
-
 set_option backward.isDefEq.respectTransparency false in
 /-- A less universe polymorphic version of
 `exists_etale_completeOrthogonalIdempotents_forall_liesOver_eq`. Use that instead. -/
@@ -236,7 +224,7 @@ private lemma exists_etale_completeOrthogonalIdempotents_forall_liesOver_eq'.{u,
       Algebra.exists_etale_isIdempotentElem_forall_liesOver_eq p q
     have : (P.primesOver (R' ⊗[R] S ⧸ Ideal.span {e})).ncard < n + 1 := by
       let F := Ideal.fiberIsoOfBijectiveResidueField hpP (S := S)
-      refine (ncard_primesOver_quotient_singleton_lt_of_notMem _ _
+      refine (Ideal.ncard_primesOver_quotient_singleton_lt_of_notMem _ _
         P' heP' (F.finite_iff.mpr hpSfin)).trans_le ?_
       rw [← h, ← Nat.card_coe_set_eq, ← Nat.card_coe_set_eq, Nat.card_congr F.toEquiv]
     obtain ⟨R'', _, _, _, Q, _, _, n, e' : _ → R'' ⊗[R'] (R' ⊗[R] S ⧸ Ideal.span {e}),

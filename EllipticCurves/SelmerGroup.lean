@@ -1092,10 +1092,6 @@ local notation:max "𝕎[" v "]" =>
   WeierstrassCurve.toAffine (W⁄(HeightOneSpectrum.adicCompletion F v))
 local notation:max "𝕃" p:max => AdjoinRoot (p : F[X])
 
-instance instFiniteQuotientAsIdeal (v : HeightOneSpectrum (𝓞 F)) :
-    Finite (𝓞 F ⧸ v.asIdeal) :=
-  v.asIdeal.finiteQuotientOfFreeOfNeBot v.ne_bot
-
 /-!
 The passage between the global and the local conditions relates unramifiedness of a square
 class `m` of the étale algebra `A = F[X]/(f)` at the primes of the field factors of `A` above
