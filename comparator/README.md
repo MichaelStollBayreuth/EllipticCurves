@@ -1,7 +1,7 @@
 # Comparator verification harness
 
 This directory lets [Comparator](https://github.com/leanprover/comparator) — "a trustworthy judge
-for Lean proofs" — certify that this repository proves its two headline results, independently of
+for Lean proofs", built into Lake as `lake comparator` since Lean v4.35.0 — certify that this repository proves its two headline results, independently of
 the repository's own build and using only the permitted axioms:
 
 * the **Mordell-Weil Theorem** over a number field
@@ -20,8 +20,9 @@ the repository's own build and using only the permitted axioms:
 - [`Solution.lean`](Solution.lean) imports `EllipticCurves.MordellWeil` and
   `EllipticCurves.RankExample` and proves those statements via the library theorems.
 
-Comparator builds both modules (the solution in a sandbox), exports them with `lean4export`, and
-checks that each challenge theorem in the solution:
+`lake comparator` builds and exports both modules inside a `bubblewrap` sandbox (it never loads
+the project's `.olean`s into its own process) and checks that each challenge theorem in the
+solution:
 
 1. proves the **same statement** as in the challenge — comparing the full bodies (not just the
    types) of every definition the statement transitively refers to (here, all from Mathlib);
@@ -38,34 +39,23 @@ reproduced in the challenge; the challenge and solution statements are literally
 
 ## Running
 
-Prerequisites (see the Comparator README): a built `comparator` binary, `landrun` built from its
-`main` branch, and — crucially — a `lean4export` built at **the same Lean version as this project**
-(it loads the project's `.olean`s; a mismatch fails with `incompatible header`), i.e. the tag
-matching `lean-toolchain`. Point Comparator at them via `COMPARATOR_LANDRUN` /
-`COMPARATOR_LEAN4EXPORT`, or put them on `PATH`; the wrapper script also picks up a worktree named
-`~/lean4/lean4export-<toolchain-version>` (e.g. `lean4export-v4.33.1`, created with
-`git -C ~/lean4/lean4export worktree add ~/lean4/lean4export-v4.33.1 v4.33.0` and built with
-`lake build`) automatically. `lean4export` has no tag for every Lean patch release; when the tag
-is missing, check out the nearest one and set its `lean-toolchain` to the project's.
-
-Once installed, the wrapper [`scripts/run-comparator.sh`](../scripts/run-comparator.sh) builds the
-library and runs the check (override binary locations with `COMPARATOR_BIN` /
-`COMPARATOR_LEAN4EXPORT` / `COMPARATOR_LANDRUN`):
+Run from the **repository root**; the only prerequisite besides Lean is `bubblewrap` (`bwrap`)
+with unprivileged user namespaces (or installed setuid root):
 
 ```bash
-scripts/run-comparator.sh
+scripts/run-comparator.sh               # = lake build EllipticCurves && lake comparator --config comparator/challenges.json
+scripts/run-comparator.sh --paranoid    # also run all external checkers bundled with Lean
 ```
 
-The manual equivalent, run from the **repository root** (Comparator uses the current directory as
-the project and invokes `lake build Challenge` / `lake build Solution` there):
+Exit code `0` (and `Your solution is okay!`) means the check passed, `1` that it was rejected, `2`
+that it could not start (no `bwrap`, no `lake-manifest.json`, a malformed configuration). The
+wrapper builds the library first: the sandbox cannot write to the project directory, and with a
+current build the sandboxed builds only replay it (about five minutes in all, most of it the
+export).
 
-```bash
-lake exe cache get                       # trusted Mathlib oleans, optional
-lake build EllipticCurves                # so the Solution build reuses the library oleans
-lake env /path/to/comparator comparator/challenges.json
-```
-
-Exit code `0` (and `Your solution is okay!`) means the check passed.
+Until 2026-10-15 the check ran on the external tools — a separately built `comparator` binary,
+`landrun`, and a `lean4export` built at the project's Lean version — through an earlier version of
+the wrapper (see the history of `scripts/run-comparator.sh`); `lake comparator` replaces all three.
 
 The `Challenge`/`Solution` libraries are declared in the root `lakefile.toml` but are excluded from
 `defaultTargets`, so a plain `lake build` does not build them and the deliberate `sorry` in
