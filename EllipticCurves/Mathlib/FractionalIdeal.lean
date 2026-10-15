@@ -85,7 +85,7 @@ lemma _root_.ClassGroup.mk_eq_one_iff_exists {I : (FractionalIdeal R⁰ K)ˣ} :
     have hx' : (I : FractionalIdeal R⁰ K) = spanSingleton R⁰ x := by
       apply Subtype.coe_injective
       simp only [val_eq_coe, hx, coe_spanSingleton]
-    have hx0 : x ≠ 0 := fun h ↦ Units.ne_zero I (by rw [hx', h, spanSingleton_zero])
+    have hx0 : x ≠ 0 := fun h ↦ Units.ne_zero I (by rw [hx', h, map_zero])
     exact ⟨Units.mk0 x hx0, by rw [← Units.val_inj, coe_toPrincipalIdeal, hx']; rfl⟩
   · rintro ⟨x, rfl⟩
     exact ⟨⟨(x : K), by rw [coe_toPrincipalIdeal, coe_spanSingleton]⟩⟩

@@ -438,8 +438,8 @@ the ramification index of `w` over `v`. Adapted from FLT's
 lemma valued_adicCompletionExtension (x : v.adicCompletion K) :
     Valued.v (adicCompletionExtension K L v w x) =
       Valued.v x ^ w.asIdeal.ramificationIdx R := by
-  rw [← adicCompletion.valued_toCompletion L w (adicCompletionExtension K L v w x),
-    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion K v x]
+  rw [← adicCompletion.valued_toCompletion_apply L w (adicCompletionExtension K L v w x),
+    toCompletion_adicCompletionExtension, ← adicCompletion.valued_toCompletion_apply K v x]
   have hsurjK : Function.Surjective (⇑(Valued.v : Valuation (v.valuation K).Completion ℤᵐ⁰)) :=
     Valued.valuedCompletion_surjective_iff.mpr <| .of_comp (v.valuation_surjective K)
   have hsurjL : Function.Surjective (⇑(Valued.v : Valuation (w.valuation L).Completion ℤᵐ⁰)) :=
