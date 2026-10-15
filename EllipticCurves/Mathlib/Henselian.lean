@@ -74,17 +74,6 @@ lemma IsIdempotentElem.ker_toCorner
   · simpa [Ideal.span_le, sub_eq_zero, -FaithfulSMul.ker_algebraMap_eq_bot] using!
       Subtype.ext he.eq.symm
 
-instance {R S T : Type*} [CommRing R] [CommRing S] [CommRing T] [Algebra R S] [Algebra R T]
-    (f : S →ₐ[R] T) (I : Ideal T) (J : Ideal R) [I.LiesOver J] : (I.comap f).LiesOver J := by
-  constructor; ext; simp [I.over_def J]
-
-attribute [local instance] Localization.AtPrime.algebraOfLiesOver in
-instance {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-    [Algebra.EssFiniteType R S] (p : Ideal R) [p.IsPrime] (q : Ideal S) [q.IsPrime] [q.LiesOver p]
-    [Algebra.IsUnramifiedAt R q] :
-    Algebra.IsSeparable p.ResidueField q.ResidueField :=
-  ((Algebra.isUnramifiedAt_iff_map_eq _ _ _).mp inferInstance).1
-
 lemma Ideal.isRadical_ker {R S : Type*} [CommRing R] [CommRing S] [IsReduced S] (f : R →+* S) :
     (RingHom.ker f).IsRadical := by
   simpa [IsRadical, IsConcreteLE.le_iff, Ideal.mem_radical_iff] using
@@ -316,12 +305,6 @@ lemma Ideal.isMaximal_of_isMaximal_under_of_formallyUnramified
   refine (Ideal.IsMaximal.eq_of_le (Ideal.IsPrime.isMaximal' (R := Q.ResidueField ⊗[R] S)
     inferInstance) (Ideal.IsPrime.ne_top inferInstance) ?_).ge
   rwa [PrimeSpectrum.asIdeal_le_asIdeal, OrderIso.le_iff_le]
-
-instance {A : Type*} [CommRing A] [Algebra R A] [Algebra.Etale R A]
-    {P : Ideal A} [P.IsPrime] : Algebra.IsEtaleAt R P :=
-  have : Algebra.IsEtaleAt A P :=
-    .of_isLocalization P.primeCompl
-  Algebra.FormallyEtale.comp _ A _
 
 attribute [local instance] Localization.AtPrime.algebraOfLiesOver in
 lemma HenselianLocalRing.exists_lift_of_to_ResidueField
