@@ -1035,12 +1035,10 @@ private lemma exists_unique_neg_one_of_sum {ι : Type*} [Fintype ι] {e : ι →
   have he₀ : 1 ≤ (e q₀ : ℤ) := by exact_mod_cast he q₀
   -- the critical term is `-1`, i.e. `e q₀ = 1` and `l q₀ = -1`
   have hkey : (e q₀ : ℤ) * l q₀ = -1 := by
-    have h2 : (e q₀ : ℤ) * l q₀ ≤ 1 * l q₀ := mul_le_mul_of_nonpos_right he₀ hq₀.le
-    lia
+    lia [mul_le_mul_of_nonpos_right he₀ hq₀.le]
   have he₁ : (e q₀ : ℤ) = 1 := by
     by_contra! hne
-    have h2 : (e q₀ : ℤ) * l q₀ ≤ 2 * l q₀ := mul_le_mul_of_nonpos_right (by lia) hq₀.le
-    lia
+    lia [mul_le_mul_of_nonpos_right (show (2 : ℤ) ≤ e q₀ by lia) hq₀.le]
   refine ⟨q₀, by exact_mod_cast he₁, by lia, fun q hq ↦ ?_⟩
   -- the remaining terms are nonpositive with sum `0`, hence all vanish
   have hsum0 : ∑ q ∈ Finset.univ.erase q₀, (e q : ℤ) * l q = 0 := by lia

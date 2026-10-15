@@ -419,9 +419,7 @@ private lemma exists_integral_scaled_log {p e : ℕ} {π : v.adicCompletionInteg
       rw [map_mul, map_pow, hπe]
       refine le_trans (mul_le_mul_right h3 _) ?_
       rw [← exp_nsmul, nsmul_eq_mul, ← exp_add, ← exp_zero, exp_le_exp]
-      have hmono := (Nat.cast_le (α := ℤ)).mpr
-        (Nat.mul_le_mul_left e (show padicValNat p d.degree ≤ d.degree - 1 by lia))
-      lia
+      lia [Nat.mul_le_mul_left e (show padicValNat p d.degree ≤ d.degree - 1 by lia)]
   exact ⟨fun d ↦ ⟨_, hint d⟩, fun d ↦ rfl⟩
 
 private lemma unit_finsupp_of_degree_le_one {d : Unit →₀ ℕ} (h : d.degree ≤ 1) :

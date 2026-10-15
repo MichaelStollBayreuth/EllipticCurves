@@ -183,10 +183,8 @@ theorem log_injective (hp : p.Prime) (hp2 : p ≠ 2)
       have hpos : 0 < d.degree :=
         Nat.pos_of_ne_zero fun h ↦ hd0 ((Finsupp.degree_eq_zero_iff d).mp h)
       have hvp : 0 < d.degree - padicValNat p d.degree := by
-        have h1 := ChabautyColeman.pred_mul_padicValNat_le hp (Nat.one_le_iff_ne_zero.mpr hpos.ne')
-        have h2 : padicValNat p d.degree ≤ (p - 1) * padicValNat p d.degree :=
-          Nat.le_mul_of_pos_left _ (by have := hp.two_le; lia)
-        lia
+        lia [ChabautyColeman.pred_mul_padicValNat_le hp (Nat.one_le_iff_ne_zero.mpr hpos.ne'),
+          Nat.le_mul_of_pos_left (padicValNat p d.degree) (show 0 < p - 1 by lia [hp.two_le])]
       rw [heq]
       exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_of_mem _ hpmem _ hvp)
   choose c hc using fun i d ↦ hdvd i d

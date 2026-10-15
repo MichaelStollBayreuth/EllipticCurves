@@ -1108,9 +1108,7 @@ private lemma eq_one_of_le_one_of_exp_neg_one_le_sq {t : ℤᵐ⁰} (h1 : t ≤ 
   rw [← exp_nsmul, two_nsmul] at h2
   rw [← exp_zero] at h1
   rw [exp_eq_one]
-  have h1' := exp_le_exp.mp h1
-  have h2' := exp_le_exp.mp h2
-  lia
+  lia [exp_le_exp.mp h1, exp_le_exp.mp h2]
 
 open WithZero in
 /-- If `x` is a rational root of `f` and the coefficients of the cubic are `v`-integral with

@@ -77,7 +77,6 @@ private theorem one_add_pred_mul_le_pow (hp : 2 ≤ p) (v : ℕ) : (p - 1) * v +
     have h1 : (q + 1) * ((q + 1 - 1) * v + 1) ≤ (q + 1) * (q + 1) ^ v := Nat.mul_le_mul_left _ ih
     calc (q + 1 - 1) * (v + 1) + 1 ≤ (q + 1) * ((q + 1 - 1) * v + 1) := by
             simp only [Nat.add_sub_cancel]
-            have hexp : (q + 1) * (q * v + 1) = (q * (v + 1) + 1) + q * q * v := by ring
             lia
       _ ≤ (q + 1) * (q + 1) ^ v := h1
       _ = (q + 1) ^ (v + 1) := (pow_succ' (q + 1) v).symm
@@ -85,9 +84,8 @@ private theorem one_add_pred_mul_le_pow (hp : 2 ≤ p) (v : ℕ) : (p - 1) * v +
 /-- The key elementary inequality behind the exponential estimate: `(p-1) · v_p(M) ≤ M - 1`. -/
 theorem pred_mul_padicValNat_le (hp : p.Prime) {M : ℕ} (hM : 1 ≤ M) :
     (p - 1) * padicValNat p M ≤ M - 1 := by
-  have hle : p ^ padicValNat p M ≤ M := Nat.le_of_dvd (by lia) pow_padicValNat_dvd
-  have hb := one_add_pred_mul_le_pow hp.two_le (padicValNat p M)
-  lia
+  lia [Nat.le_of_dvd (by lia) (pow_padicValNat_dvd (p := p) (n := M)),
+    one_add_pred_mul_le_pow hp.two_le (padicValNat p M)]
 
 theorem pred_mul_Dexp_le (n : ℕ) : (p - 1) * Dexp p n ≤ n - 1 := by
   rw [Dexp_eq, mul_comm]; exact Nat.div_mul_le_self (n - 1) (p - 1)
@@ -286,8 +284,7 @@ private theorem prod_bound (hp2 : 2 ≤ p) {b : ι → MvPowerSeries ι K}
           intro y hy; simp only [Finset.mem_insert, Finset.mem_singleton] at hy
           rcases hy with rfl | rfl <;> assumption)
       rw [Finset.sum_pair (Ne.symm hx1ne)] at h2
-      have := hdeg1 x1 hx1T
-      lia
+      lia [hdeg1 x1 hx1T]
     have hlevel : IntLevel f p (∏ x ∈ T, coeff (l x) (b x.1)) (∑ x ∈ T, Dexp p (l x).degree) :=
       IntLevel.prod fun x hx ↦ hbN x.1 (l x) (hltN x hx)
     refine hlevel.mono ?_

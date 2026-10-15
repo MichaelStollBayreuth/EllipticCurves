@@ -144,9 +144,7 @@ theorem subsingleton_classGroup (p : E.f.Factors) :
   refine RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le
     (finrank_adjoinRoot p) ?_
   obtain ⟨q, hq⟩ := exists_eq_discr_mul_sq p
-  have h23 : |NumberField.discr (AdjoinRoot (p : ℚ[X]))| ≤ 23 :=
-    Int.le_of_dvd (by norm_num) ((abs_dvd _ _).mpr (dvd_neg.mp ⟨q ^ 2, hq⟩))
-  lia
+  lia [Int.le_of_dvd (by norm_num) ((abs_dvd _ _).mpr (dvd_neg.mp ⟨q ^ 2, hq⟩))]
 
 /-- The unit group of the ring of integers of `ℚ[x]/(x³ - x + 1)` has rank `1`: the field
 discriminant is negative (it times a square is `-23`), so the field has exactly one real and

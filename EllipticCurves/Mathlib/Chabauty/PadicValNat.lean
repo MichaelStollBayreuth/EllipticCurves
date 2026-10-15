@@ -38,8 +38,7 @@ theorem Nat.log_succ_le (b n : ℕ) : Nat.log b (n + 1) ≤ Nat.log b n + 1 := b
       rw [he, mul_comm]
       exact Nat.mul_le_mul_left _ hb
     have h4 : b ^ (L - 1) ≤ n := by lia
-    have := Nat.le_log_of_pow_le hb h4
-    lia
+    lia [Nat.le_log_of_pow_le hb h4]
   · simp [Nat.log_of_left_le_one (by lia : b ≤ 1)]
 
 /-- `n - Nat.log p n → ∞`: the base-`p` logarithm is sublinear. -/
@@ -47,16 +46,12 @@ theorem tendsto_sub_log_atTop {p : ℕ} (hp : 1 < p) :
     Tendsto (fun n ↦ n - Nat.log p n) atTop atTop := by
   apply tendsto_atTop_atTop_of_monotone
   · refine monotone_nat_of_le_succ fun n ↦ ?_
-    have h1 : Nat.log p (n + 1) ≤ Nat.log p n + 1 := Nat.log_succ_le p n
-    have h2 : Nat.log p n ≤ Nat.log p (n + 1) := Nat.log_mono_right (Nat.le_succ n)
-    lia
+    lia [Nat.log_succ_le p n, Nat.log_mono_right (b := p) (Nat.le_succ n)]
   · intro B
     refine ⟨p ^ (B + 1), ?_⟩
     rw [Nat.log_pow hp]
-    have hk : B + 1 ≤ 2 ^ B := Nat.lt_two_pow_self
-    have h2 : 2 ^ (B + 1) ≤ p ^ (B + 1) := Nat.pow_le_pow_left (by lia) (B + 1)
-    have h3 : 2 * (B + 1) ≤ 2 ^ (B + 1) := by rw [pow_succ]; lia
-    lia
+    have h3 : 2 * (B + 1) ≤ 2 ^ (B + 1) := by rw [pow_succ]; lia [Nat.lt_two_pow_self (n := B)]
+    lia [Nat.pow_le_pow_left (show 2 ≤ p by lia) (B + 1)]
 
 /-- `n - v_p(n) → ∞`: the `p`-adic valuation is sublinear. -/
 theorem tendsto_sub_padicValNat_atTop {p : ℕ} (hp : 1 < p) :

@@ -139,7 +139,6 @@ theorem log_sub_X_order (i : ι) (e : ι →₀ ℕ) (he : e.degree ≤ 1) :
       · rw [Finsupp.single_eq_same]; lia
       · rw [Finsupp.single_eq_of_ne hs]
         by_contra hne
-        have hes : 1 ≤ e s := Nat.one_le_iff_ne_zero.mpr hne
         have hsum : e j + e s ≤ e.degree := by
           have hsub : ({j, s} : Finset ι) ⊆ e.support := by
             intro x hx
@@ -302,8 +301,7 @@ theorem coeff_log_map_padic (hp : p.Prime) (hpmem : (p : O) ∈ maximalIdeal O)
   have hnd : ¬ p ∣ m := by
     intro hd
     have hdvd : p ^ (v + 1) ∣ k := by rw [hm, pow_succ]; exact mul_dvd_mul_left _ hd
-    have := (Nat.pow_dvd_iff_le_padicValNat hp.ne_one (by lia)).mp hdvd
-    lia
+    lia [(Nat.pow_dvd_iff_le_padicValNat hp.ne_one (by lia)).mp hdvd]
   obtain ⟨u, hu⟩ := isUnit_natCast_of_not_dvd hp hpmem hnd
   refine ⟨(↑u⁻¹ : O) * cd, ?_⟩
   have hkK : (k : K) = f (p : O) ^ v * f (↑u : O) := by
