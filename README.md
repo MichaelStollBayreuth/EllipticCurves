@@ -105,9 +105,10 @@ cubic field are fully proved from the single key fact that its field discriminan
 square is `−23` (`NumberField.exists_eq_discr_mul_sq` via
 `AdjoinRoot.discr_powerBasis_eq_discr`): the divisibility makes the Minkowski bound less
 than `2`, giving the trivial class group
-(`RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le`), and the negative
-sign forces signature `(1, 1)`, giving unit rank `1` by Dirichlet's unit theorem
-(`RingOfIntegers.finrank_additive_units_of_discr_neg`). The whole chain is thus `sorry`-free.
+(`NumberField.RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le`), and
+the negative sign forces signature `(1, 1)`, giving unit rank `1` by Dirichlet's unit theorem
+(`NumberField.RingOfIntegers.finrank_additive_units_of_discr_neg`). The whole chain is thus
+`sorry`-free.
 The reduction to these inputs runs
 via general building blocks: `x³ − x + 1` is irreducible (by reduction
 mod `2`) with squarefree discriminant, `discBadPrimes (𝓞 ℚ) = ∅`

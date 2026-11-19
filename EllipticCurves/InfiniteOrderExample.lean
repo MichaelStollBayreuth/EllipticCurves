@@ -239,7 +239,7 @@ instance : IsAddTorsionFree E.Point := by
     (by rw [h3, h5]; decide)
 
 /-- `E(ℚ)` has unique division: Mathlib's spelling of torsion-freeness for commutative groups. -/
-instance : HasUniqueDiv E.Point := .of_isAddTorsionFree
+instance : HasUniqueDiv E.Point := IsAddTorsionFree.hasUniqueDiv
 
 end InfiniteOrderExample
 

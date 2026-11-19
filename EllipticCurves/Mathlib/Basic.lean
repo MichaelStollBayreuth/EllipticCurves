@@ -45,9 +45,9 @@ that have nothing to do with elliptic curves and look like candidates for Mathli
   `NumberField.finrank_additive_units_integralClosure` transport triviality of the class
   group and the unit rank from `𝓞 L`.
 * `AdjoinRoot.discr_powerBasis_eq_discr`, `NumberField.exists_eq_discr_mul_sq`,
-  `RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le` and
-  `RingOfIntegers.finrank_additive_units_of_discr_neg` and
-  `RingOfIntegers.finrank_additive_units_of_discr_pos`: the discriminant of the power
+  `NumberField.RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le` and
+  `NumberField.RingOfIntegers.finrank_additive_units_of_discr_neg` and
+  `NumberField.RingOfIntegers.finrank_additive_units_of_discr_pos`: the discriminant of the power
   basis of `K[X]/(f)` is `f.discr`; the field discriminant is any integral power-basis
   discriminant divided by a square; a cubic field with `|discr| ≤ 49` has trivial class group
   (Minkowski bound), and the sign of its discriminant determines the unit rank (Dirichlet).
@@ -113,21 +113,6 @@ instance Subgroup.instFinitePi {ι : Type*} [Finite ι] {G : ι → Type*} [(i :
     Subtype.ext <| funext fun i ↦ congrArg Subtype.val (congrFun h i)
 
 end Group
-
-section TorsionFree
-
-/-- In a commutative monoid, torsion-freeness is the injectivity of every nonzero power map.
-Mathlib deliberately does not make this an instance (it would loop with the instance in the
-other direction), so it is supplied by hand where `HasUniqueRoots` is needed. -/
-@[to_additive /-- In a commutative additive monoid, torsion-freeness is the injectivity of
-multiplication by every nonzero natural number. Mathlib deliberately does not make this an
-instance (it would loop with the instance in the other direction), so it is supplied by hand
-where `HasUniqueDiv` is needed. -/]
-theorem HasUniqueRoots.of_isMulTorsionFree {M : Type*} [CommMonoid M] [IsMulTorsionFree M] :
-    HasUniqueRoots M :=
-  ⟨fun _ hn _ _ h ↦ eq_of_pow_eq_pow_of_commute hn (.all _ _) h⟩
-
-end TorsionFree
 
 section Units
 
@@ -1576,7 +1561,7 @@ theorem NumberField.exists_eq_discr_mul_sq (pb : PowerBasis ℚ K)
 
 /-- A cubic number field with negative discriminant has unit rank `1`: its signature is
 `(1, 1)`, so Dirichlet's unit theorem gives rank `1 + 1 - 1 = 1`. -/
-theorem RingOfIntegers.finrank_additive_units_of_discr_neg (h3 : finrank ℚ K = 3)
+theorem NumberField.RingOfIntegers.finrank_additive_units_of_discr_neg (h3 : finrank ℚ K = 3)
     (hd : discr K < 0) : finrank ℤ (Additive (𝓞 K)ˣ) = 1 := by
   have hsign := sign_discr K
   rw [Int.sign_eq_neg_one_of_neg hd] at hsign
@@ -1593,7 +1578,7 @@ theorem RingOfIntegers.finrank_additive_units_of_discr_neg (h3 : finrank ℚ K =
 
 /-- A cubic number field with positive discriminant has unit rank `2`: it is totally real,
 so Dirichlet's unit theorem gives rank `3 - 1 = 2`. -/
-theorem RingOfIntegers.finrank_additive_units_of_discr_pos (h3 : finrank ℚ K = 3)
+theorem NumberField.RingOfIntegers.finrank_additive_units_of_discr_pos (h3 : finrank ℚ K = 3)
     (hd : 0 < discr K) : finrank ℤ (Additive (𝓞 K)ˣ) = 2 := by
   have hsign := sign_discr K
   rw [Int.sign_eq_one_of_pos hd] at hsign
@@ -1610,9 +1595,9 @@ theorem RingOfIntegers.finrank_additive_units_of_discr_pos (h3 : finrank ℚ K =
 
 /-- A cubic number field with `|discr K| ≤ 49` has a principal ring of integers: its Minkowski
 bound is less than `2` for either signature. -/
-theorem RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le
+theorem NumberField.RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le
     (h3 : finrank ℚ K = 3) (hd : |discr K| ≤ 49) : IsPrincipalIdealRing (𝓞 K) := by
-  refine NumberField.RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt ?_
+  refine isPrincipalIdealRing_of_abs_discr_lt ?_
   have h2 := InfinitePlace.card_add_two_mul_card_eq_rank K
   rw [h3] at h2
   have hd' : (|discr K| : ℝ) ≤ 49 := by exact_mod_cast hd
