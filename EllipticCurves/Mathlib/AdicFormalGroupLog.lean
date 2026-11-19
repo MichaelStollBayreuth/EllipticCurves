@@ -399,9 +399,9 @@ private lemma exists_integral_scaled_log {p e : ℕ} {π : v.adicCompletionInteg
       rw [coeff_zero_eq_constantCoeff_apply, constantCoeff_log, mul_zero, map_zero]
       exact zero_le_one
     · obtain ⟨b, hb⟩ := Φ.coeff_log_map_padic hp hpmem _ hfp () d
-      have hvp : padicValNat p d.degree < d.degree :=
+      have hvp : multiplicity p d.degree < d.degree :=
         lt_of_lt_of_le (Nat.lt_pow_self hp.one_lt)
-          (Nat.le_of_dvd hpos (Nat.padicValNat_def ▸ pow_multiplicity_dvd ..))
+          (Nat.le_of_dvd hpos (pow_multiplicity_dvd ..))
       -- the coefficient of the logarithm has valuation at most `exp (e·v_p(n))`
       have h1 := congrArg Valued.v hb
       rw [map_mul, map_pow, show algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)
@@ -410,16 +410,16 @@ private lemma exists_integral_scaled_log {p e : ℕ} {π : v.adicCompletionInteg
       have hfb : Valued.v (algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K) b)
           ≤ 1 := b.2
       have h3 : Valued.v (coeff d ((Φ.map (algebraMap (v.adicCompletionIntegers K)
-          (v.adicCompletion K))).log ())) ≤ exp ((e * padicValNat p d.degree : ℕ) : ℤ) := by
+          (v.adicCompletion K))).log ())) ≤ exp ((e * multiplicity p d.degree : ℕ) : ℤ) := by
         have h4 := mul_le_mul_right (h1.le.trans hfb)
-          (exp ((e * padicValNat p d.degree : ℕ) : ℤ))
+          (exp ((e * multiplicity p d.degree : ℕ) : ℤ))
         rwa [mul_one, ← mul_assoc, ← exp_nsmul, nsmul_eq_mul, ← exp_add,
-          show ((e * padicValNat p d.degree : ℕ) : ℤ) + (padicValNat p d.degree : ℤ) *
+          show ((e * multiplicity p d.degree : ℕ) : ℤ) + (multiplicity p d.degree : ℤ) *
             -(e : ℤ) = 0 by push_cast; ring, exp_zero, one_mul] at h4
       rw [map_mul, map_pow, hπe]
       refine le_trans (mul_le_mul_right h3 _) ?_
       rw [← exp_nsmul, nsmul_eq_mul, ← exp_add, ← exp_zero, exp_le_exp]
-      lia [Nat.mul_le_mul_left e (show padicValNat p d.degree ≤ d.degree - 1 by lia)]
+      lia [Nat.mul_le_mul_left e (show multiplicity p d.degree ≤ d.degree - 1 by lia)]
   exact ⟨fun d ↦ ⟨_, hint d⟩, fun d ↦ rfl⟩
 
 private lemma unit_finsupp_of_degree_le_one {d : Unit →₀ ℕ} (h : d.degree ≤ 1) :

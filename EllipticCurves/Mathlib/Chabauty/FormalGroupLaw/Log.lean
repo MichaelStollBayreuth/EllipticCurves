@@ -289,20 +289,19 @@ over a local ring of residue characteristic `p`: multiplying the degree-`d` coef
 denominators are powers of `p`, with exponent `v_p(deg d)`. -/
 theorem coeff_log_map_padic (hp : p.Prime) (hpmem : (p : O) ∈ maximalIdeal O)
     (f : O →+* K) (hfp : f (p : O) ≠ 0) (i : ι) (d : ι →₀ ℕ) :
-    ∃ c : O, f (p : O) ^ (padicValNat p d.degree)
-      * MvPowerSeries.coeff d ((Φ.map f).log i) = f c := by
+    ∃ c : O, f (p : O) ^ multiplicity p d.degree *
+      MvPowerSeries.coeff d ((Φ.map f).log i) = f c := by
   rw [Φ.coeff_log_map f]
   set k := d.degree with hk
   set cd := MvPowerSeries.coeff d (∑ j, Φ.diffMatrix⁻¹ i j * MvPowerSeries.X j) with hcd
   rcases Nat.eq_zero_or_pos k with hk0 | hkpos
   · exact ⟨0, by simp [hk0]⟩
-  set v := padicValNat p k with hv
-  obtain ⟨m, hm⟩ : p ^ v ∣ k := hv ▸ Nat.padicValNat_def ▸ pow_multiplicity_dvd p k
+  set v := multiplicity p k
+  obtain ⟨m, hm⟩ : p ^ v ∣ k := pow_multiplicity_dvd p k
   have hnd : ¬ p ∣ m := by
     intro hd
     have hdvd : p ^ (v + 1) ∣ k := by rw [hm, pow_succ]; exact mul_dvd_mul_left _ hd
-    lia [(Nat.pow_dvd_iff_le_multiplicity hp.ne_one (by lia)).mp hdvd,
-      Nat.padicValNat_def (p := p) (n := k)]
+    lia [(Nat.pow_dvd_iff_le_multiplicity hp.ne_one (by lia)).mp hdvd]
   obtain ⟨u, hu⟩ := isUnit_natCast_of_not_dvd hp hpmem hnd
   refine ⟨(↑u⁻¹ : O) * cd, ?_⟩
   have hkK : (k : K) = f (p : O) ^ v * f (↑u : O) := by
@@ -322,12 +321,11 @@ explicit: `p^(deg d) · coeff_d Λ = f(p^(deg d - v_p(deg d)) · c)`. Substituti
 theorem coeff_log_map_scale (hp : p.Prime) (hpmem : (p : O) ∈ maximalIdeal O)
     (f : O →+* K) (hfp : f (p : O) ≠ 0) (i : ι) (d : ι →₀ ℕ) :
     ∃ c : O, f (p : O) ^ d.degree * MvPowerSeries.coeff d ((Φ.map f).log i)
-      = f ((p : O) ^ (d.degree - padicValNat p d.degree) * c) := by
+      = f ((p : O) ^ (d.degree - multiplicity p d.degree) * c) := by
   obtain ⟨c, hc⟩ := Φ.coeff_log_map_padic hp hpmem f hfp i d
   refine ⟨c, ?_⟩
-  have hvle : padicValNat p d.degree ≤ d.degree :=
-    (Nat.padicValNat_def.trans_le (multiplicity_le_nat_log d.degree)).trans
-      (Nat.log_le_self p d.degree)
+  have hvle : multiplicity p d.degree ≤ d.degree :=
+    (multiplicity_le_nat_log d.degree).trans (Nat.log_le_self p d.degree)
   rw [map_mul, map_pow, ← hc, ← mul_assoc, ← pow_add, Nat.sub_add_cancel hvle]
 
 end logBaseChange
@@ -352,15 +350,15 @@ theorem exists_integral_scaled_log (hp : p.Prime) (hpmem : (p : O) ∈ maximalId
       Tendsto (fun d ↦ coeff d H) cofinite (𝓝 0) := by
   have hb (d : ι →₀ ℕ) : ∃ b : O,
       f b = f (p : O) ^ d.degree * coeff d ((Φ.map f).log i)
-        ∧ b ∈ maximalIdeal O ^ (d.degree - padicValNat p d.degree) := by
+        ∧ b ∈ maximalIdeal O ^ (d.degree - multiplicity p d.degree) := by
     obtain ⟨c, hc⟩ := Φ.coeff_log_map_scale hp hpmem f hfp i d
-    exact ⟨(p : O) ^ (d.degree - padicValNat p d.degree) * c, hc.symm,
+    exact ⟨(p : O) ^ (d.degree - multiplicity p d.degree) * c, hc.symm,
       Ideal.mul_mem_right _ _ (Ideal.pow_mem_pow hpmem _)⟩
   choose b hb1 hb2 using hb
   refine ⟨b, fun d ↦ hb1 d, ?_⟩
   exact MvPSeries.tendsto_coeff_zero_of_mem_pow (h := b)
-    (e := fun d ↦ d.degree - padicValNat p d.degree) (fun d ↦ hb2 d)
-    ((tendsto_sub_padicValNat_atTop hp.one_lt).comp Finsupp.tendsto_degree_cofinite)
+    (e := fun d ↦ d.degree - multiplicity p d.degree) (fun d ↦ hb2 d)
+    ((tendsto_sub_multiplicity_atTop hp.one_lt).comp Finsupp.tendsto_degree_cofinite)
 
 end logConvergence
 

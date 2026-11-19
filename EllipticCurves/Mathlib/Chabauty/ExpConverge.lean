@@ -82,9 +82,8 @@ private theorem one_add_pred_mul_le_pow (hp : 2 ≤ p) (v : ℕ) : (p - 1) * v +
       _ = (q + 1) ^ (v + 1) := (pow_succ' (q + 1) v).symm
 
 /-- The key elementary inequality behind the exponential estimate: `(p-1) · v_p(M) ≤ M - 1`. -/
-theorem pred_mul_padicValNat_le (hp : p.Prime) {M : ℕ} (hM : 1 ≤ M) :
-    (p - 1) * padicValNat p M ≤ M - 1 := by
-  rw [Nat.padicValNat_def]
+theorem pred_mul_multiplicity_le (hp : p.Prime) {M : ℕ} (hM : 1 ≤ M) :
+    (p - 1) * multiplicity p M ≤ M - 1 := by
   lia [Nat.le_of_dvd (by lia) (pow_multiplicity_dvd p M),
     one_add_pred_mul_le_pow hp.two_le (multiplicity p M)]
 
@@ -96,11 +95,11 @@ theorem Dexp_mono {n m : ℕ} (h : n ≤ m) : Dexp p n ≤ Dexp p m :=
 
 theorem Dexp_le {n : ℕ} : Dexp p n ≤ n := (Nat.div_le_self _ _).trans (Nat.sub_le _ _)
 
-theorem padicValNat_le_Dexp (hp : p.Prime) {M : ℕ} (hM : 1 ≤ M) :
-    padicValNat p M ≤ Dexp p M := by
+theorem multiplicity_le_Dexp (hp : p.Prime) {M : ℕ} (hM : 1 ≤ M) :
+    multiplicity p M ≤ Dexp p M := by
   have hp2 := hp.two_le
   rw [Dexp_eq, Nat.le_div_iff_mul_le (by lia : 0 < p - 1), mul_comm]
-  exact pred_mul_padicValNat_le hp hM
+  exact pred_mul_multiplicity_le hp hM
 
 /-- The **partition inequality**: parts `k i ≥ 1` summing to `N` over `s.card` parts satisfy
 `Dexp s.card + ∑ Dexp (k i) ≤ Dexp N`. This absorbs the logarithm's `1/deg` denominator into
@@ -242,8 +241,8 @@ is integral. This relaxes `coeff_log_map_padic` (denominator `p^{v_p(deg m)}`) v
 theorem log_coeff_level (hp : p.Prime) (hpmem : (p : O) ∈ maximalIdeal O)
     (hfp : f (p : O) ≠ 0) (Φ : FormalGroupLaw O ι) (i : ι) (m : ι →₀ ℕ) (hm : 1 ≤ m.degree) :
     IntLevel f p (coeff m ((Φ.map f).log i)) (Dexp p m.degree) :=
-  (show IntLevel f p (coeff m ((Φ.map f).log i)) (padicValNat p m.degree) from
-    Φ.coeff_log_map_padic hp hpmem f hfp i m).mono (padicValNat_le_Dexp hp hm)
+  (show IntLevel f p (coeff m ((Φ.map f).log i)) (multiplicity p m.degree) from
+    Φ.coeff_log_map_padic hp hpmem f hfp i m).mono (multiplicity_le_Dexp hp hm)
 
 end
 

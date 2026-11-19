@@ -178,13 +178,13 @@ theorem log_injective (hp : p.Prime) (hp2 : p ≠ 2)
           coeff_zero_eq_constantCoeff_apply, (Φ.map f).constantCoeff_log])
       rw [this]; exact zero_mem _
     · obtain ⟨c, hc⟩ := Φ.coeff_log_map_scale hp hpmem f hfp i d
-      have heq : coeff d (HL i) = (p : O) ^ (d.degree - padicValNat p d.degree) * c :=
+      have heq : coeff d (HL i) = (p : O) ^ (d.degree - multiplicity p d.degree) * c :=
         hf (by rw [hHL_scale i d, hc, map_mul, map_pow])
       have hpos : 0 < d.degree :=
         Nat.pos_of_ne_zero fun h ↦ hd0 ((Finsupp.degree_eq_zero_iff d).mp h)
-      have hvp : 0 < d.degree - padicValNat p d.degree := by
-        lia [ChabautyColeman.pred_mul_padicValNat_le hp (Nat.one_le_iff_ne_zero.mpr hpos.ne'),
-          Nat.le_mul_of_pos_left (padicValNat p d.degree) (show 0 < p - 1 by lia [hp.two_le])]
+      have hvp : 0 < d.degree - multiplicity p d.degree := by
+        lia [ChabautyColeman.pred_mul_multiplicity_le hp (Nat.one_le_iff_ne_zero.mpr hpos.ne'),
+          Nat.le_mul_of_pos_left (multiplicity p d.degree) (show 0 < p - 1 by lia [hp.two_le])]
       rw [heq]
       exact Ideal.mul_mem_right _ _ (Ideal.pow_mem_of_mem _ hpmem _ hvp)
   choose c hc using fun i d ↦ hdvd i d

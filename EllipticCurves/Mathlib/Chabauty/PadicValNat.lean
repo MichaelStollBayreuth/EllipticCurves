@@ -54,10 +54,9 @@ theorem tendsto_sub_log_atTop {p : ℕ} (hp : 1 < p) :
     lia [Nat.pow_le_pow_left (show 2 ≤ p by lia) (B + 1)]
 
 /-- `n - v_p(n) → ∞`: the `p`-adic valuation is sublinear. -/
-theorem tendsto_sub_padicValNat_atTop {p : ℕ} (hp : 1 < p) :
-    Tendsto (fun n ↦ n - padicValNat p n) atTop atTop :=
-  tendsto_atTop_mono
-    (fun n ↦ Nat.sub_le_sub_left (Nat.padicValNat_def.trans_le (multiplicity_le_nat_log n)) n)
+theorem tendsto_sub_multiplicity_atTop {p : ℕ} (hp : 1 < p) :
+    Tendsto (fun n ↦ n - multiplicity p n) atTop atTop :=
+  tendsto_atTop_mono (fun n ↦ Nat.sub_le_sub_left (multiplicity_le_nat_log n) n)
     (tendsto_sub_log_atTop hp)
 
 end
