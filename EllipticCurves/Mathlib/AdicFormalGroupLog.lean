@@ -401,7 +401,7 @@ private lemma exists_integral_scaled_log {p e : ℕ} {π : v.adicCompletionInteg
     · obtain ⟨b, hb⟩ := Φ.coeff_log_map_padic hp hpmem _ hfp () d
       have hvp : padicValNat p d.degree < d.degree :=
         lt_of_lt_of_le (Nat.lt_pow_self hp.one_lt)
-          (Nat.le_of_dvd hpos pow_padicValNat_dvd)
+          (Nat.le_of_dvd hpos (Nat.padicValNat_def ▸ pow_multiplicity_dvd ..))
       -- the coefficient of the logarithm has valuation at most `exp (e·v_p(n))`
       have h1 := congrArg Valued.v hb
       rw [map_mul, map_pow, show algebraMap (v.adicCompletionIntegers K) (v.adicCompletion K)

@@ -316,7 +316,7 @@ theorem isAdic_maximalIdeal_adicCompletionIntegers :
         (fun x : v.adicCompletionIntegers K ↦ (x : v.adicCompletion K)) ⁻¹'
           {y | Valued.v.restrict y ≤ Valued.v.restrict z} := by
       ext x
-      rw [Set.mem_preimage, Set.mem_ofPred, Valuation.restrict_le_iff_le_embedding,
+      simp only [Set.mem_preimage, Set.mem_ofPred, Valuation.restrict_le_iff_le_embedding,
         Valuation.embedding_restrict, hz]
       exact v.mem_maximalIdeal_pow_iff (K := K)
     rw [this]

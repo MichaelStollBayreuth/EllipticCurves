@@ -1006,7 +1006,7 @@ lemma det_sylvesterBlock (hg : g.Monic) (p : R[X]) (hp : p.natDegree ≤ n) :
       simp
     · rw [toMatrix_apply, hinl, Basis.prod_repr_inr, fromBlocks_apply₂₁, of_apply]
     · rw [toMatrix_apply, hinr, hz, Basis.prod_repr_inr, fromBlocks_apply₂₂,
-        Basis.repr_self, one_apply, Finsupp.single_apply]
+        Basis.repr_self, Matrix.one_apply, Finsupp.single_apply]
       exact if_congr eq_comm rfl rfl
   rw [hmat, det_fromBlocks_zero₁₂, det_one, mul_one]
 
@@ -1612,7 +1612,7 @@ theorem RingOfIntegers.finrank_additive_units_of_discr_pos (h3 : finrank ℚ K =
 bound is less than `2` for either signature. -/
 theorem RingOfIntegers.isPrincipalIdealRing_of_finrank_eq_three_of_abs_discr_le
     (h3 : finrank ℚ K = 3) (hd : |discr K| ≤ 49) : IsPrincipalIdealRing (𝓞 K) := by
-  refine isPrincipalIdealRing_of_abs_discr_lt ?_
+  refine NumberField.RingOfIntegers.isPrincipalIdealRing_of_abs_discr_lt ?_
   have h2 := InfinitePlace.card_add_two_mul_card_eq_rank K
   rw [h3] at h2
   have hd' : (|discr K| : ℝ) ≤ 49 := by exact_mod_cast hd

@@ -297,11 +297,12 @@ theorem coeff_log_map_padic (hp : p.Prime) (hpmem : (p : O) ∈ maximalIdeal O)
   rcases Nat.eq_zero_or_pos k with hk0 | hkpos
   · exact ⟨0, by simp [hk0]⟩
   set v := padicValNat p k with hv
-  obtain ⟨m, hm⟩ : p ^ v ∣ k := pow_padicValNat_dvd
+  obtain ⟨m, hm⟩ : p ^ v ∣ k := hv ▸ Nat.padicValNat_def ▸ pow_multiplicity_dvd p k
   have hnd : ¬ p ∣ m := by
     intro hd
     have hdvd : p ^ (v + 1) ∣ k := by rw [hm, pow_succ]; exact mul_dvd_mul_left _ hd
-    lia [(Nat.pow_dvd_iff_le_padicValNat hp.ne_one (by lia)).mp hdvd]
+    lia [(Nat.pow_dvd_iff_le_multiplicity hp.ne_one (by lia)).mp hdvd,
+      Nat.padicValNat_def (p := p) (n := k)]
   obtain ⟨u, hu⟩ := isUnit_natCast_of_not_dvd hp hpmem hnd
   refine ⟨(↑u⁻¹ : O) * cd, ?_⟩
   have hkK : (k : K) = f (p : O) ^ v * f (↑u : O) := by
@@ -325,7 +326,8 @@ theorem coeff_log_map_scale (hp : p.Prime) (hpmem : (p : O) ∈ maximalIdeal O)
   obtain ⟨c, hc⟩ := Φ.coeff_log_map_padic hp hpmem f hfp i d
   refine ⟨c, ?_⟩
   have hvle : padicValNat p d.degree ≤ d.degree :=
-    (padicValNat_le_nat_log d.degree).trans (Nat.log_le_self p d.degree)
+    (Nat.padicValNat_def.trans_le (multiplicity_le_nat_log d.degree)).trans
+      (Nat.log_le_self p d.degree)
   rw [map_mul, map_pow, ← hc, ← mul_assoc, ← pow_add, Nat.sub_add_cancel hvle]
 
 end logBaseChange

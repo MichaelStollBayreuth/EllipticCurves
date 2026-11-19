@@ -392,9 +392,7 @@ theorem Units.card_ker_powMonoidHom_two (R : Type*) [CommRing R] [IsDomain R]
     · rintro ⟨k, rfl⟩
       calc ((-1 : Rˣ) ^ k) ^ 2 = ((-1 : Rˣ) ^ 2) ^ k := by group
         _ = 1 := by simp
-  have h1 : orderOf (-1 : Rˣ) = 2 := by
-    rw [← orderOf_units, Units.val_neg, Units.val_one, orderOf_neg_one, ite_eq_right h2]
-  rw [hker, Nat.card_zpowers, h1]
+  rw [hker, Nat.card_zpowers, orderOf_neg_one, ite_eq_right h2]
 
 open Module in
 /-- The order of `Rˣ/(Rˣ)²` for a domain `R` of characteristic `≠ 2` with finitely generated

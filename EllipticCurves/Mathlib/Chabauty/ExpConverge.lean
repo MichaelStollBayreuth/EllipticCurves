@@ -84,8 +84,9 @@ private theorem one_add_pred_mul_le_pow (hp : 2 ≤ p) (v : ℕ) : (p - 1) * v +
 /-- The key elementary inequality behind the exponential estimate: `(p-1) · v_p(M) ≤ M - 1`. -/
 theorem pred_mul_padicValNat_le (hp : p.Prime) {M : ℕ} (hM : 1 ≤ M) :
     (p - 1) * padicValNat p M ≤ M - 1 := by
-  lia [Nat.le_of_dvd (by lia) (pow_padicValNat_dvd (p := p) (n := M)),
-    one_add_pred_mul_le_pow hp.two_le (padicValNat p M)]
+  rw [Nat.padicValNat_def]
+  lia [Nat.le_of_dvd (by lia) (pow_multiplicity_dvd p M),
+    one_add_pred_mul_le_pow hp.two_le (multiplicity p M)]
 
 theorem pred_mul_Dexp_le (n : ℕ) : (p - 1) * Dexp p n ≤ n - 1 := by
   rw [Dexp_eq, mul_comm]; exact Nat.div_mul_le_self (n - 1) (p - 1)

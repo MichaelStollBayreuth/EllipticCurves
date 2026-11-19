@@ -96,8 +96,8 @@ theorem Ideal.map_eq_top_of_inv_subset {A : Subalgebra R K} {I : Ideal R} (hI : 
     Ideal.map (algebraMap R A) I = ⊤ := by
   set M := Ideal.map (algebraMap R A) I
   have key : (1 : Submodule R K) ≤ (M.restrictScalars R).map A.val.toLinearMap := by
-    rw [← FractionalIdeal.coe_one, ← FractionalIdeal.coe_ideal_mul_inv I hI,
-      FractionalIdeal.coe_mul]
+    rw [← FractionalIdeal.coeToSubmodule_one, ← FractionalIdeal.coeIdeal_mul_inv I hI,
+      FractionalIdeal.coeToSubmodule_mul]
     refine Submodule.mul_le.mpr fun x hx y hy ↦ ?_
     obtain ⟨a, ha, rfl⟩ := (FractionalIdeal.mem_coeIdeal R⁰).mp hx
     exact ⟨algebraMap R A a * ⟨y, h hy⟩, Ideal.mul_mem_right _ _ (Ideal.mem_map_of_mem _ ha), rfl⟩
@@ -462,7 +462,7 @@ lemma count_map_coeIdeal {v : HeightOneSpectrum R} (hv : v ∉ S) {J : Ideal R} 
           FractionalIdeal (S.integer K)⁰ K) =
       count K v (J : FractionalIdeal R⁰ K) := by
   have hmJ := Ideal.map_ne_bot_of_ne_bot (S := S.integer K) hJ
-  rw [count_coe K _ hmJ, count_coe K v hJ, Nat.cast_inj]
+  rw [count_coeIdeal K _ hmJ, count_coeIdeal K v hJ, Nat.cast_inj]
   refine Nat.le_antisymm
     ((v.le_count_iff_le hJ _).mpr ((map_le_map_pow_iff K S hv J _).mp
       (((primeOfNotMem K S hv).le_count_iff_le hmJ _).mp le_rfl)))
